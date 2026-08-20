@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Form Presensi Rapat | Pemkab Sinjai</title>
+
+  <!-- SEO Meta Tags -->
+  <meta name="description" content="Formulir Kehadiran Kegiatan Pemkab Sinjai (kehadiran.sinjaikab.go.id).">
+  <meta name="keywords" content="Kehadiran Sinjai, Absensi Rapat, Pemkab Sinjai">
+
+  <!-- Favicon Logo Pemkab Sinjai -->
+  <link rel="icon" type="image/png" href="../assets/sinjai2.png">
+  <link rel="shortcut icon" type="image/png" href="../assets/sinjai2.png">
+
+  <!-- Fonts & Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            sinjai: {
+              cyan: '#00a8e8',
+              hover: '#008dc6',
+              dark: '#005b8e',
+              bg: '#e8f4f8',
+              cream: '#fffdf0'
+            }
+          },
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- QRCode.js Library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+  <style>
+    body {
+      background: linear-gradient(135deg, #e0f2fe 0%, #ebf8ff 50%, #e8f4f8 100%);
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      color: #334155;
+    }
+
+    #signature-canvas {
+      touch-action: none;
+      cursor: crosshair;
+      background-color: #ffffff;
+    }
+
+    .card-cream-box {
+      background-color: #fffdf0;
+      border: 1px solid #fef08a;
+    }
+
+    .modal-backdrop {
+      background-color: rgba(15, 23, 42, 0.65);
+      backdrop-filter: blur(4px);
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between py-6 px-3 sm:px-4 antialiased selection:bg-sinjai-cyan selection:text-white">
+
+  <!-- ========================================================================= -->
+  <!-- CONTAINER 1: WARNING CARD RAPAT TIDAk TERSEDIA / BERAKHIR -->
+  <!-- ========================================================================= -->
+  <div id="container-expired" class="hidden my-auto max-w-md mx-auto w-full bg-white rounded-3xl p-6 sm:p-8 shadow-2xl border border-rose-100 text-center space-y-5">
+    <div class="w-16 h-16 bg-rose-50 border-4 border-rose-100 text-rose-500 rounded-full flex items-center justify-center mx-auto text-3xl shadow-inner">
+      <i class="fa-solid fa-triangle-exclamation"></i>
+    </div>
+
+    <div class="space-y-2">
+      <h2 class="text-lg sm:text-xl font-extrabold text-slate-800">Rapat Tidak Tersedia atau Telah Berakhir</h2>
+      <p class="text-xs text-slate-500 leading-relaxed">
+        Mohon maaf, pengisian daftar hadir untuk kegiatan <strong id="expired-event-title" class="text-slate-800"></strong> sudah dinonaktifkan atau masa pelaksanaan telah selesai.
+      </p>
+    </div>
+
+    <div class="pt-2">
+      <a href="../" 
+         class="w-full py-3 px-5 bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs sm:text-sm rounded-xl shadow-md inline-flex items-center justify-center space-x-2 transition-all">
+        <i class="fa-solid fa-arrow-left"></i>
+        <span>Kembali ke Halaman Utama Portal</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- CONTAINER 2: FORM PRESENSI UTAMA -->
+  <!-- ========================================================================= -->
+  <main id="container-form" class="hidden max-w-2xl mx-auto w-full bg-white rounded-3xl shadow-xl border border-blue-100/60 overflow-hidden my-auto">
+    
+    <!-- CARD HEADER (Warna Cyan Pemkab Sinjai #00a8e8 dengan Logo Kiri & Kanan) -->
+    <header class="bg-[#00a8e8] text-white p-4 sm:p-5 relative flex items-center justify-between gap-3 shadow-md">
+      
+      <!-- LOGO KIRI: sinjai2.png -->
+      <div class="flex items-center justify-center shrink-0">
+        <img src="../assets/sinjai2.png" 
+             onerror="if(this.src.includes('sinjai2.png')){this.src='../assets/sinjai.png';}else{this.src='../sinjai2.png';}" 
+             alt="Logo Pemkab Sinjai" class="h-11 sm:h-14 w-auto object-contain drop-shadow-sm">
+      </div>
+
+      <!-- MID HEADER: Title & Subtitle -->
+      <div class="text-right flex-grow pl-2">
+        <div class="flex items-center justify-end space-x-2 text-white">
+          <i class="fa-regular fa-square-check text-xl sm:text-2xl"></i>
+          <h1 class="text-lg sm:text-xl font-extrabold tracking-tight leading-none">Form Presensi Rapat</h1>
+        </div>
+        <p id="header-subtitle" class="text-xs text-blue-50 font-semibold mt-1 line-clamp-1">
+          Sistem Kehadiran Kegiatan Pemkab Sinjai
+        </p>
+      </div>
+
+      <!-- LOGO KANAN: kominfo.png -->
+      <div class="flex items-center justify-center shrink-0">
+        <img src="../assets/kominfo.png" 
+             onerror="if(this.src.includes('kominfo.png')){this.src='../kominfo.png';}else{this.src='../assets/kominfo.svg';}" 
+             alt="Logo Diskominfo Sinjai" class="h-11 sm:h-14 w-auto object-contain drop-shadow-sm">
+      </div>
+
+    </header>
+
+    <!-- FORM CONTAINER BODY -->
+    <div class="p-5 sm:p-7 space-y-6">
+
+      <!-- NOTIFIKASI ALERT -->
+      <div id="alert-box" class="hidden p-3.5 rounded-xl shadow-xs text-xs font-semibold flex items-center justify-between border">
+        <div class="flex items-center space-x-2.5">
+          <i id="alert-icon" class="text-base"></i>
+          <span id="alert-message"></span>
+        </div>
+        <button onclick="hideAlert()" class="text-gray-400 hover:text-gray-600">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Detail Banner Kegiatan terpilih -->
+      <div class="p-4 bg-gradient-to-r from-sky-50 to-blue-50/80 rounded-2xl border border-sky-100 space-y-2">
+        <div class="flex items-start space-x-2">
+          <i class="fa-solid fa-calendar-check text-sinjai-cyan text-base mt-0.5 shrink-0"></i>
+          <div>
+            <span class="text-[10px] font-bold text-sky-600 uppercase tracking-wider block">RAPAT / KEGIATAN TERDAFTAR</span>
+            <h2 id="event-display-title" class="text-sm sm:text-base font-extrabold text-slate-800 leading-snug">
+              Memuat data rapat...
+            </h2>
+          </div>
+        </div>
+        <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-600 font-semibold pt-1 border-t border-sky-100">
+          <span><i class="fa-regular fa-clock text-sinjai-cyan mr-1"></i> <span id="event-display-time">-</span></span>
+          <span><i class="fa-solid fa-location-dot text-sinjai-cyan mr-1"></i> <span id="event-display-location">-</span></span>
+        </div>
+      </div>
+
+      <!-- FORM UTAMA -->
+      <form id="attendance-form" onsubmit="handleFormSubmit(event)" class="space-y-6">
+        <input type="hidden" id="event_id" name="event_id" value="">
+
+        <!-- DIVIDER: IDENTITAS PESERTA -->
+        <div class="relative flex py-1 items-center">
+          <div class="flex-grow border-t border-gray-200"></div>
+          <span class="flex-shrink mx-4 text-[11px] font-bold text-gray-400 uppercase tracking-widest">IDENTITAS PESERTA</span>
+          <div class="flex-grow border-t border-gray-200"></div>
+        </div>
+
+        <!-- SECTION 2: CARD BOX IDENTITAS PESERTA -->
+        <div class="card-cream-box rounded-2xl p-4 sm:p-5 space-y-4">
+          
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            
+            <!-- Jenis Peserta -->
+            <div>
+              <label class="block text-xs font-bold text-gray-700 mb-2 flex items-center">
+                <i class="fa-solid fa-users text-gray-500 mr-1.5"></i>
+                Jenis Peserta <span class="text-red-500 ml-0.5">*</span>
+              </label>
+              <div class="flex items-center space-x-4">
+                <label class="inline-flex items-center cursor-pointer text-xs sm:text-sm font-semibold text-gray-800">
+                  <input type="radio" name="participant_type" value="Pegawai Pemkab" checked class="w-4 h-4 text-sinjai-cyan focus:ring-sinjai-cyan border-gray-300">
+                  <span class="ml-1.5">Pegawai Pemkab</span>
+                </label>
+                <label class="inline-flex items-center cursor-pointer text-xs sm:text-sm font-semibold text-gray-800">
+                  <input type="radio" name="participant_type" value="Eksternal" class="w-4 h-4 text-sinjai-cyan focus:ring-sinjai-cyan border-gray-300">
+                  <span class="ml-1.5">Eksternal</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Tipe Peserta -->
+            <div>
+              <label class="block text-xs font-bold text-gray-700 mb-2 flex items-center">
+                <i class="fa-solid fa-user-tag text-gray-500 mr-1.5"></i>
+                Tipe Peserta <span class="text-red-500 ml-0.5">*</span>
+              </label>
+              <div class="flex items-center space-x-4">
+                <label class="inline-flex items-center cursor-pointer text-xs sm:text-sm font-semibold text-gray-800">
+                  <input type="radio" name="role_type" value="Narasumber" class="w-4 h-4 text-sinjai-cyan focus:ring-sinjai-cyan border-gray-300">
+                  <span class="ml-1.5">Narasumber</span>
+                </label>
+                <label class="inline-flex items-center cursor-pointer text-xs sm:text-sm font-semibold text-gray-800">
+                  <input type="radio" name="role_type" value="Peserta" checked class="w-4 h-4 text-sinjai-cyan focus:ring-sinjai-cyan border-gray-300">
+                  <span class="ml-1.5">Peserta</span>
+                </label>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
+        <!-- FIELD NAMA LENGKAP -->
+        <div class="space-y-1.5">
+          <label for="name" class="block text-xs sm:text-sm font-bold text-gray-700 flex items-center">
+            <i class="fa-regular fa-user text-gray-500 mr-1.5"></i>
+            Nama Pegawai / Nama Lengkap <span class="text-red-500 ml-0.5">*</span>
+          </label>
+          <input type="text" id="name" name="name" required placeholder="Masukkan nama lengkap Anda"
+                 class="w-full px-3.5 py-2.5 bg-[#f8fafc] border border-[#cbd5e1] rounded-xl text-xs sm:text-sm font-medium text-gray-900 focus:bg-white focus:ring-2 focus:ring-sinjai-cyan focus:border-sinjai-cyan transition-all">
+        </div>
+
+        <!-- GRID JABATAN & INSTANSI -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div class="space-y-1.5">
+            <label for="position" class="block text-xs sm:text-sm font-bold text-gray-700 flex items-center">
+              Jabatan <span class="text-red-500 ml-0.5">*</span>
+            </label>
+            <input type="text" id="position" name="position" required placeholder="Contoh: Kepala Dinas / Kabag / Staf"
+                   class="w-full px-3.5 py-2.5 bg-[#f8fafc] border border-[#cbd5e1] rounded-xl text-xs sm:text-sm font-medium text-gray-900 focus:bg-white focus:ring-2 focus:ring-sinjai-cyan focus:border-sinjai-cyan transition-all">
+          </div>
+
+          <div class="space-y-1.5">
+            <label for="agency" class="block text-xs sm:text-sm font-bold text-gray-700 flex items-center">
+              Instansi / Organisasi <span class="text-red-500 ml-0.5">*</span>
+            </label>
+            <input type="text" id="agency" name="agency" required placeholder="Contoh: Diskominfo / Desa Bulu Tellue / Kelurahan Balakia" list="agency-list" autocomplete="off"
+                   class="w-full px-3.5 py-2.5 bg-[#f8fafc] border border-[#cbd5e1] rounded-xl text-xs sm:text-sm font-medium text-gray-900 focus:bg-white focus:ring-2 focus:ring-sinjai-cyan focus:border-sinjai-cyan transition-all">
+            <datalist id="agency-list"></datalist>
+            <p class="text-[11px] text-gray-500 flex items-center mt-1">
+              <i class="fa-solid fa-circle-info text-sinjai-cyan mr-1.5 text-xs"></i>
+              Ketik nama instansi, desa, atau kelurahan agar pilihan otomatis muncul.
+            </p>
+          </div>
+        </div>
+
+        <!-- FIELD NIP / NIK (ANGKA SAJA, MAKSIMAL 18 ANGKA, OPSIONAL) -->
+        <div class="space-y-1.5">
+          <label for="nip_nik" class="block text-xs sm:text-sm font-bold text-gray-700 flex items-center">
+            <i class="fa-regular fa-address-card text-gray-500 mr-1.5"></i>
+            NIP / NIK <span class="text-xs font-normal text-gray-400 ml-1">(Opsional, Maks. 18 Angka)</span>
+          </label>
+          <input type="text" id="nip_nik" name="nip_nik" maxlength="18"
+                 oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 18);"
+                 inputmode="numeric" pattern="[0-9]*"
+                 placeholder="Masukkan NIP atau NIK (Maksimal 18 angka)"
+                 class="w-full px-3.5 py-2.5 bg-[#f8fafc] border border-[#cbd5e1] rounded-xl text-xs sm:text-sm font-medium text-gray-900 focus:bg-white focus:ring-2 focus:ring-sinjai-cyan focus:border-sinjai-cyan transition-all">
+        </div>
+
+        <!-- GRID TELEPON & EMAIL (OPSIONAL) -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div class="space-y-1.5">
+            <label for="phone" class="block text-xs font-semibold text-gray-600">No. Telepon / Seluler (Opsional)</label>
+            <input type="tel" id="phone" name="phone" placeholder="0812xxxxxxxx"
+                   class="w-full px-3.5 py-2 bg-[#f8fafc] border border-[#cbd5e1] rounded-xl text-xs font-medium text-gray-800 focus:bg-white focus:ring-2 focus:ring-sinjai-cyan">
+          </div>
+          <div class="space-y-1.5">
+            <label for="email" class="block text-xs font-semibold text-gray-600">Email (Opsional)</label>
+            <input type="email" id="email" name="email" placeholder="nama@sinjaikab.go.id"
+                   class="w-full px-3.5 py-2 bg-[#f8fafc] border border-[#cbd5e1] rounded-xl text-xs font-medium text-gray-800 focus:bg-white focus:ring-2 focus:ring-sinjai-cyan">
+          </div>
+        </div>
+
+        <!-- DIVIDER: TANDA TANGAN -->
+        <div class="relative flex py-1 items-center">
+          <div class="flex-grow border-t border-gray-200"></div>
+          <span class="flex-shrink mx-4 text-[11px] font-bold text-gray-400 uppercase tracking-widest">TANDA TANGAN</span>
+          <div class="flex-grow border-t border-gray-200"></div>
+        </div>
+
+        <!-- SECTION 3: TANDA TANGAN CANVAS -->
+        <div class="space-y-3">
+          <div class="flex items-center justify-between">
+            <label class="block text-xs sm:text-sm font-bold text-gray-700 flex items-center">
+              <i class="fa-solid fa-pen-nib text-gray-500 mr-1.5"></i>
+              Tanda Tangan <span class="text-red-500 ml-0.5">*</span>
+            </label>
+            <div class="flex space-x-1.5">
+              <button type="button" onclick="undoSignature()" class="px-2.5 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 text-[11px] font-bold rounded-lg border border-gray-300 flex items-center space-x-1">
+                <i class="fa-solid fa-rotate-left"></i>
+                <span>Undo</span>
+              </button>
+              <button type="button" onclick="clearSignature()" class="px-2.5 py-1 bg-red-50 hover:bg-red-100 text-red-600 text-[11px] font-bold rounded-lg border border-red-200 flex items-center space-x-1">
+                <i class="fa-solid fa-trash-can"></i>
+                <span>Bersihkan</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="relative border-2 border-dashed border-slate-300 rounded-xl overflow-hidden bg-white hover:border-sinjai-cyan transition-colors">
+            <canvas id="signature-canvas" width="600" height="180" class="w-full h-44 block"></canvas>
+            <div id="signature-placeholder" class="absolute inset-0 pointer-events-none flex items-center justify-center text-gray-400 text-xs sm:text-sm font-medium">
+              Bubuhkan tanda tangan Anda di sini
+            </div>
+          </div>
+
+          <div>
+            <label class="inline-flex items-start cursor-pointer text-xs text-gray-700 font-medium leading-snug">
+              <input type="checkbox" id="signature-statement" required class="mt-0.5 w-4 h-4 text-sinjai-cyan border-gray-300 rounded focus:ring-sinjai-cyan">
+              <span class="ml-2">Saya menyatakan ini adalah benar tanda tangan saya</span>
+            </label>
+          </div>
+
+          <!-- Captcha Hitung Matematika -->
+          <div class="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3 bg-gray-50 p-3 rounded-xl border border-gray-200">
+            <div class="flex items-center space-x-2">
+              <span class="text-xs font-bold text-gray-500 uppercase">Verifikasi:</span>
+              <span id="captcha-question" class="font-black text-sm text-sinjai-dark"></span>
+              <button type="button" onclick="generateCaptcha()" class="text-gray-400 hover:text-sinjai-cyan" title="Muat Ulang">
+                <i class="fa-solid fa-arrows-rotate text-xs"></i>
+              </button>
+            </div>
+            <input type="number" id="captcha-answer" required placeholder="Hasil Jawaban *" 
+                   class="w-full sm:w-36 px-3 py-1.5 bg-white border border-gray-300 rounded-lg text-xs font-bold text-center focus:ring-2 focus:ring-sinjai-cyan">
+          </div>
+
+        </div>
+
+        <!-- TOMBOL SUBMIT -->
+        <div class="pt-2">
+          <button type="submit" 
+                  class="w-full py-3.5 px-6 bg-[#00a8e8] hover:bg-[#008dc6] active:bg-[#0074a4] text-white font-extrabold text-sm sm:text-base rounded-xl shadow-md flex items-center justify-center space-x-2 transition-all transform active:scale-[0.99] cursor-pointer">
+            <i class="fa-solid fa-paper-plane"></i>
+            <span>Kirim Kehadiran</span>
+          </button>
+        </div>
+
+      </form>
+
+    </div>
+
+    <!-- FOOTER COPYRIGHT -->
+    <footer class="bg-gray-50 py-4 text-center border-t border-gray-100 text-[11px] text-gray-500">
+      © 2026 Pemerintah Kabupaten Sinjai — Domain: <a href="../" class="text-sinjai-cyan hover:underline font-bold">kehadiran.sinjaikab.go.id</a>
+    </footer>
+
+  </main>
+
+  <!-- ========================================================================= -->
+  <!-- MODAL 1: KONFIRMASI -->
+  <!-- ========================================================================= -->
+  <div id="modal-confirm" class="hidden fixed inset-0 z-50 modal-backdrop flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 sm:p-7 shadow-2xl text-center space-y-4">
+      
+      <div class="mx-auto w-16 h-16 bg-blue-50 border-4 border-blue-100 rounded-full flex items-center justify-center shadow-inner">
+        <i class="fa-solid fa-question text-3xl text-sinjai-cyan"></i>
+      </div>
+
+      <h3 class="text-xl font-black text-gray-900">Konfirmasi Kehadiran</h3>
+      <p class="text-xs sm:text-sm text-gray-600 leading-relaxed">
+        Apakah data kehadiran Anda sudah benar?
+      </p>
+
+      <div class="flex items-center justify-center space-x-3 pt-2">
+        <button type="button" onclick="closeConfirmModal()" 
+                class="w-1/2 py-2.5 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl text-xs transition-all">
+          Batal
+        </button>
+        <button type="button" onclick="executeSubmit()" id="btn-execute-submit"
+                class="w-1/2 py-2.5 px-4 bg-[#00a8e8] hover:bg-[#008dc6] text-white font-bold rounded-xl text-xs shadow-md transition-all">
+          <span>Ya, Kirim</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- MODAL 2: COMBINED SUCCESS & SKM SURVEI KEPUASAN MASYARAKAT -->
+  <!-- ========================================================================= -->
+  <div id="modal-skm" class="hidden fixed inset-0 z-50 modal-backdrop flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-md w-full overflow-hidden shadow-2xl transform transition-all">
+      
+      <!-- Header Hijau & Cyan -->
+      <div class="bg-gradient-to-r from-emerald-600 to-[#00a8e8] text-white p-6 text-center relative">
+        <div class="mx-auto w-14 h-14 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center mb-3 shadow-inner">
+          <i class="fa-solid fa-circle-check text-3xl text-white"></i>
+        </div>
+        <h3 class="text-lg sm:text-xl font-extrabold">Presensi Berhasil Disimpan!</h3>
+        <p class="text-xs text-blue-50 mt-1 font-medium">
+          Seberapa puas Anda terhadap layanan kegiatan ini? Bagikan pengalaman Anda melalui Survei Kepuasan (SKM):
+        </p>
+      </div>
+
+      <!-- Body Modal: Black QR Code & URL Link -->
+      <div class="p-5 sm:p-6 text-center space-y-4">
+        <div class="flex justify-center">
+          <div class="p-3 bg-white border-2 border-gray-200 rounded-2xl shadow-sm inline-block">
+            <div id="skm-qrcode" class="flex justify-center"></div>
+          </div>
+        </div>
+
+        <div class="bg-gray-50 p-2.5 rounded-xl border border-gray-200 space-y-0.5">
+          <span class="text-[10px] text-gray-500 font-semibold block uppercase">Link Survei Kepuasan:</span>
+          <div class="flex items-center justify-center space-x-2">
+            <a id="skm-link-url" href="#" target="_blank" class="text-xs font-bold text-sinjai-cyan hover:underline break-all"></a>
+            <button onclick="copySkmUrl()" class="text-[11px] px-2 py-0.5 bg-white border rounded hover:bg-gray-100 text-gray-700 font-medium">
+              <i class="fa-regular fa-copy mr-1"></i>Salin
+            </button>
+          </div>
+        </div>
+
+        <p class="text-[11px] text-gray-400">Scan QR Code di atas atau klik tautan untuk langsung mengisi survei SKM.</p>
+      </div>
+
+      <!-- Footer Modal -->
+      <div class="bg-gray-50 px-5 py-3 border-t border-gray-100 flex justify-end">
+        <button type="button" onclick="closeSkmModal()" class="w-full sm:w-auto px-6 py-2 bg-gray-800 hover:bg-gray-900 text-white font-bold rounded-xl text-xs transition-all">
+          Selesai & Tutup
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT LOGIC FORM PRESENSI -->
+  <script>
+    let currentCaptchaAnswer = 0;
+    let canvas, ctx;
+    let isDrawing = false;
+    let strokeHistory = [];
+    let currentStroke = [];
+    let currentEventData = null;
+
+    async function apiFetch(actionName, options = {}) {
+      let queryStr = '';
+      let cleanAction = actionName;
+
+      if (typeof actionName === 'string') {
+        if (actionName.includes('&')) {
+          const parts = actionName.split('&');
+          cleanAction = parts[0];
+          queryStr = '&' + parts.slice(1).join('&');
+        } else if (actionName.includes('?')) {
+          const parts = actionName.split('?');
+          cleanAction = parts[0];
+          queryStr = '?' + parts.slice(1).join('?');
+        }
+      }
+
+      let rootPath = '';
+      const p = window.location.pathname;
+      if (p.includes('/meeting/')) {
+        rootPath = p.substring(0, p.indexOf('/meeting'));
+      }
+
+      const restMap = { 'attendance': 'attendance', 'agencies': 'agencies' };
+      const restEndpoint = restMap[cleanAction] ? ('/api/' + restMap[cleanAction]) : ('/api/' + cleanAction);
+
+      const candidates = [
+        rootPath + '/api.php?action=' + cleanAction + queryStr,
+        rootPath + restEndpoint + (queryStr ? ('?' + queryStr.replace(/^[&?]/, '')) : ''),
+        '../api.php?action=' + cleanAction + queryStr,
+        '/api.php?action=' + cleanAction + queryStr,
+        'api.php?action=' + cleanAction + queryStr
+      ];
+
+      let lastDetails = [];
+
+      for (const url of candidates) {
+        try {
+          const res = await fetch(url, options);
+          if (res) {
+            const text = await res.text();
+            let json = null;
+            try {
+              json = JSON.parse(text);
+            } catch(e) {
+              const match = text.match(/\{[\s\S]*\}/);
+              if (match) {
+                try { json = JSON.parse(match[0]); } catch(err) {}
+              }
+            }
+            if (json && json.success !== undefined) return json;
+            if (res.status !== 404) {
+              lastDetails.push(`HTTP ${res.status}: ${text.substring(0, 60)}`);
+            }
+          }
+        } catch(e) {
+          lastDetails.push(`FetchError: ${e.message}`);
+        }
+      }
+
+      const snippet = lastDetails.length > 0 ? lastDetails[0] : 'Tidak ada respon';
+      return { success: false, message: 'Gagal terhubung ke API (' + snippet + '). Silakan coba lagi.' };
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      generateCaptcha();
+      loadAgencies();
+
+      // Get code from URL path or parameter
+      const urlParams = new URLSearchParams(window.location.search);
+      let code = urlParams.get('code');
+      
+      if (!code) {
+        const pathParts = window.location.pathname.split('/');
+        const meetingIdx = pathParts.indexOf('meeting');
+        if (meetingIdx !== -1 && pathParts[meetingIdx + 1]) {
+          code = pathParts[meetingIdx + 1];
+        }
+      }
+
+      await checkMeetingStatus(code);
+    });
+
+    async function checkMeetingStatus(code) {
+      if (!code) {
+        showExpiredState('Kode kegiatan tidak ditentukan');
+        return;
+      }
+
+      try {
+        const res = await fetch(`../api.php?action=meeting_by_code&code=${encodeURIComponent(code)}`);
+        const json = await res.json();
+
+        if (json.success && json.status === 'active' && json.data) {
+          currentEventData = json.data;
+          document.getElementById('event_id').value = currentEventData.id;
+          document.getElementById('event-display-title').textContent = currentEventData.title;
+          document.getElementById('event-display-time').textContent = `${currentEventData.event_date || 'Hari ini'} (${currentEventData.start_time || '09:00'} - ${currentEventData.end_time || 'Selesai'})`;
+          document.getElementById('event-display-location').textContent = currentEventData.location || 'Kab. Sinjai';
+          document.getElementById('header-subtitle').textContent = currentEventData.title;
+
+          document.getElementById('container-form').classList.remove('hidden');
+          setTimeout(initCanvas, 100);
+        } else {
+          showExpiredState(json.data ? json.data.title : 'Rapat Terkait');
+        }
+      } catch (err) {
+        showExpiredState('Kegiatan');
+      }
+    }
+
+    function showExpiredState(eventTitle) {
+      document.getElementById('expired-event-title').textContent = eventTitle || 'Terpilih';
+      document.getElementById('container-expired').classList.remove('hidden');
+    }
+
+    async function loadAgencies() {
+      try {
+        const json = await apiFetch('agencies');
+        if (json && json.success && json.data) {
+          const datalist = document.getElementById('agency-list');
+          datalist.innerHTML = '';
+          json.data.forEach(item => {
+            const opt = document.createElement('option');
+            opt.value = item.name;
+            opt.label = item.category;
+            datalist.appendChild(opt);
+          });
+        }
+      } catch (e) {}
+    }
+
+    function initCanvas() {
+      canvas = document.getElementById('signature-canvas');
+      if (!canvas) return;
+      ctx = canvas.getContext('2d');
+      const rect = canvas.getBoundingClientRect();
+      const w = rect.width > 0 ? rect.width : 550;
+      const h = rect.height > 0 ? rect.height : 180;
+      canvas.width = w * 2;
+      canvas.height = h * 2;
+      ctx.scale(2, 2);
+      ctx.lineWidth = 3;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.strokeStyle = '#002b49';
+
+      canvas.addEventListener('mousedown', startDrawing);
+      canvas.addEventListener('mousemove', draw);
+      canvas.addEventListener('mouseup', stopDrawing);
+      canvas.addEventListener('mouseleave', stopDrawing);
+
+      canvas.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        const touch = e.touches[0];
+        const mouseEvent = new MouseEvent('mousedown', { clientX: touch.clientX, clientY: touch.clientY });
+        canvas.dispatchEvent(mouseEvent);
+      }, { passive: false });
+
+      canvas.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+        const touch = e.touches[0];
+        const mouseEvent = new MouseEvent('mousemove', { clientX: touch.clientX, clientY: touch.clientY });
+        canvas.dispatchEvent(mouseEvent);
+      }, { passive: false });
+
+      canvas.addEventListener('touchend', () => {
+        canvas.dispatchEvent(new MouseEvent('mouseup', {}));
+      }, { passive: false });
+    }
+
+    function getCanvasCoordinates(e) {
+      const rect = canvas.getBoundingClientRect();
+      return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+    }
+
+    function startDrawing(e) {
+      isDrawing = true;
+      const pos = getCanvasCoordinates(e);
+      ctx.beginPath();
+      ctx.moveTo(pos.x, pos.y);
+      currentStroke = [{ x: pos.x, y: pos.y }];
+      document.getElementById('signature-placeholder').classList.add('hidden');
+    }
+
+    function draw(e) {
+      if (!isDrawing) return;
+      const pos = getCanvasCoordinates(e);
+      ctx.lineTo(pos.x, pos.y);
+      ctx.stroke();
+      currentStroke.push({ x: pos.x, y: pos.y });
+    }
+
+    function stopDrawing() {
+      if (isDrawing) {
+        isDrawing = false;
+        if (currentStroke.length > 0) {
+          strokeHistory.push([...currentStroke]);
+          currentStroke = [];
+        }
+      }
+    }
+
+    function clearSignature() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      strokeHistory = [];
+      document.getElementById('signature-placeholder').classList.remove('hidden');
+    }
+
+    function undoSignature() {
+      if (strokeHistory.length === 0) return;
+      strokeHistory.pop();
+      redrawCanvas();
+    }
+
+    function redrawCanvas() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      if (strokeHistory.length === 0) {
+        document.getElementById('signature-placeholder').classList.remove('hidden');
+        return;
+      }
+      document.getElementById('signature-placeholder').classList.add('hidden');
+      strokeHistory.forEach(stroke => {
+        if (stroke.length < 2) return;
+        ctx.beginPath();
+        ctx.moveTo(stroke[0].x, stroke[0].y);
+        for (let i = 1; i < stroke.length; i++) {
+          ctx.lineTo(stroke[i].x, stroke[i].y);
+        }
+        ctx.stroke();
+      });
+    }
+
+    function generateCaptcha() {
+      const n1 = Math.floor(Math.random() * 10) + 1;
+      const n2 = Math.floor(Math.random() * 10) + 1;
+      currentCaptchaAnswer = n1 + n2;
+      document.getElementById('captcha-question').textContent = `${n1} + ${n2} = ?`;
+      document.getElementById('captcha-answer').value = '';
+    }
+
+    function handleFormSubmit(e) {
+      e.preventDefault();
+
+      if (strokeHistory.length === 0) {
+        showAlert('Silakan bubuhkan Tanda Tangan Anda!', 'error');
+        return;
+      }
+
+      const captchaInput = parseInt(document.getElementById('captcha-answer').value);
+      if (captchaInput !== currentCaptchaAnswer) {
+        showAlert('Hasil verifikasi hitungan belum tepat.', 'error');
+        generateCaptcha();
+        return;
+      }
+
+      document.getElementById('modal-confirm').classList.remove('hidden');
+    }
+
+    function closeConfirmModal() {
+      document.getElementById('modal-confirm').classList.add('hidden');
+    }
+
+    async function executeSubmit() {
+      const btn = document.getElementById('btn-execute-submit');
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Menyimpan...';
+
+      try {
+        const formData = {
+          event_id: document.getElementById('event_id').value,
+          participant_type: document.querySelector('input[name="participant_type"]:checked').value,
+          role_type: document.querySelector('input[name="role_type"]:checked').value,
+          name: document.getElementById('name').value,
+          position: document.getElementById('position').value,
+          agency: document.getElementById('agency').value,
+          nip_nik: document.getElementById('nip_nik').value,
+          phone: document.getElementById('phone').value,
+          email: document.getElementById('email').value,
+          signature_data: canvas.toDataURL('image/jpeg', 0.6)
+        };
+
+        const json = await apiFetch('attendance', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(formData)
+        });
+
+        closeConfirmModal();
+
+        if (json.success) {
+          document.getElementById('attendance-form').reset();
+          clearSignature();
+          generateCaptcha();
+          openSkmModal(json.skm_url);
+        } else {
+          showAlert(json.message || 'Gagal menyimpan kehadiran.', 'error');
+        }
+      } catch (err) {
+        closeConfirmModal();
+        showAlert('Terjadi kesalahan koneksi.', 'error');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<span>Ya, Kirim</span>';
+      }
+    }
+
+    function openSkmModal(skmUrl) {
+      const modal = document.getElementById('modal-skm');
+      const qrcodeContainer = document.getElementById('skm-qrcode');
+      const skmLink = document.getElementById('skm-link-url');
+      qrcodeContainer.innerHTML = '';
+      skmLink.href = skmUrl;
+      skmLink.textContent = skmUrl;
+
+      new QRCode(qrcodeContainer, {
+        text: skmUrl,
+        width: 140,
+        height: 140,
+        colorDark: "#000000",
+        colorLight: "#ffffff"
+      });
+
+      modal.classList.remove('hidden');
+    }
+
+    function closeSkmModal() {
+      document.getElementById('modal-skm').classList.add('hidden');
+      showAlert('Terima kasih! Kehadiran Anda telah berhasil dicatat.', 'success');
+      setTimeout(() => {
+        window.location.href = '../';
+      }, 2000);
+    }
+
+    function copySkmUrl() {
+      const urlText = document.getElementById('skm-link-url').textContent;
+      navigator.clipboard.writeText(urlText);
+      alert('Link SKM berhasil disalin!');
+    }
+
+    function showAlert(msg, type = 'error') {
+      const box = document.getElementById('alert-box');
+      const icon = document.getElementById('alert-icon');
+      const text = document.getElementById('alert-message');
+      text.textContent = msg;
+      box.classList.remove('hidden', 'bg-red-100', 'text-red-800', 'border-red-200', 'bg-green-100', 'text-green-800', 'border-green-200');
+      if (type === 'error') {
+        box.classList.add('bg-red-100', 'text-red-800', 'border', 'border-red-200');
+        icon.className = 'fa-solid fa-circle-exclamation text-red-600';
+      } else {
+        box.classList.add('bg-green-100', 'text-green-800', 'border', 'border-green-200');
+        icon.className = 'fa-solid fa-circle-check text-green-600';
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function hideAlert() {
+      document.getElementById('alert-box').classList.add('hidden');
+    }
+  </script>
+</body>
+</html>

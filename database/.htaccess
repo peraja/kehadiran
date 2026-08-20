@@ -1,0 +1,14 @@
+# Blokir total akses HTTP ke folder database.
+# Mencegah unduhan kehadiran.db (berisi hash password admin & tanda tangan digital),
+# file WAL/SHM, db.js, db.php, dan cache/fallback JSON.
+
+# Apache 2.4+
+<IfModule mod_authz_core.c>
+    Require all denied
+</IfModule>
+
+# Apache 2.2 (fallback)
+<IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+</IfModule>

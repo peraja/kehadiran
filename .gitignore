@@ -1,0 +1,16 @@
+# Documentation file (ignored from upload/push to GitHub)
+ALUR_SISTEM_KEHADIRAN.md
+
+# Dependencies & Build files
+node_modules/
+kehadiran-cpanel.zip
+*.zip
+
+# Runtime SQLite Database & Caches
+database/*.db
+database/agencies_cache.json
+database/attendances_fallback.json
+
+# System & OS Files
+.DS_Store
+Thumbs.db
