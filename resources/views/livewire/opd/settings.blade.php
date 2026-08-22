@@ -63,7 +63,7 @@ new #[Layout('layouts.app')] class extends Component {
     public function syncFromSimpeg(): void
     {
         if (!$this->opd || !$this->opd->unit_id) {
-            session()->flash('error', 'Kode unit OPD belum terhubung untuk sinkronisasi SIMPEG.');
+            session()->flash('error', 'Kode unit OPD belum terhubung.');
             return;
         }
 
@@ -75,7 +75,7 @@ new #[Layout('layouts.app')] class extends Component {
         $this->leader_title = $this->opd->leader_title ?? $this->leader_title;
         $this->leader_rank = $this->opd->leader_rank ?? $this->leader_rank;
 
-        session()->flash('message', "Sinkronisasi SIMPEG berhasil! Data Kepala OPD dan {$count} data pejabat penandatangan berhasil diperbarui.");
+        session()->flash('message', "Data Kepala OPD dan {$count} pejabat berhasil disinkronkan.");
     }
 
     public function saveSettings(): void
@@ -89,7 +89,7 @@ new #[Layout('layouts.app')] class extends Component {
             'leader_nip' => 'nullable|string|max:50',
             'leader_rank' => 'nullable|string|max:255',
         ], [
-            'email.email' => 'Format email tidak valid.',
+            'email.email' => 'Email tidak valid.',
         ]);
 
         if ($this->opd) {
@@ -104,7 +104,7 @@ new #[Layout('layouts.app')] class extends Component {
             ]);
         }
 
-        session()->flash('message', 'Pengaturan profil & pimpinan OPD berhasil disimpan.');
+        session()->flash('message', 'Pengaturan OPD berhasil disimpan.');
     }
 
     public function with(): array
@@ -149,15 +149,13 @@ new #[Layout('layouts.app')] class extends Component {
     <!-- Alert Notifications -->
     @if (session()->has('message'))
     <x-alert type="success">
-        <h3 class="font-semibold text-emerald-800">Berhasil</h3>
-        <p class="text-emerald-700 mt-0.5">{{ session('message') }}</p>
+        {{ session('message') }}
     </x-alert>
     @endif
 
     @if (session()->has('error'))
     <x-alert type="danger">
-        <h3 class="font-semibold text-rose-800">Perhatian</h3>
-        <p class="text-rose-700 mt-0.5">{{ session('error') }}</p>
+        {{ session('error') }}
     </x-alert>
     @endif
 
@@ -307,8 +305,13 @@ new #[Layout('layouts.app')] class extends Component {
 
         <!-- Global Save Button -->
         <div class="flex justify-end pt-4 pb-8">
-            <button type="submit" class="inline-flex items-center px-6 py-3 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white font-bold text-sm rounded-xl shadow-md transition-all gap-2">
-                <span wire:loading.remove wire:target="saveSettings">Simpan Pengaturan</span>
+            <button type="submit" class="inline-flex items-center px-6 py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white font-bold text-sm rounded-xl shadow-sm transition-all gap-2">
+                <span wire:loading.remove wire:target="saveSettings" class="flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                    Simpan Pengaturan
+                </span>
                 <span wire:loading wire:target="saveSettings" class="flex items-center gap-2">
                     <svg class="animate-spin w-4 h-4 text-white" fill="none" viewBox="0 0 24 24">
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>

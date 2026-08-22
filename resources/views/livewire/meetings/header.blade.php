@@ -111,12 +111,12 @@ new class extends Component {
     public function messages()
     {
         return [
-            'title.required' => 'Agenda rapat wajib diisi.',
-            'date.required' => 'Tanggal pelaksanaan rapat wajib diisi.',
-            'start_time.required' => 'Waktu mulai rapat wajib diisi.',
-            'end_time.required' => 'Waktu selesai rapat wajib diisi.',
-            'end_time.after' => 'Waktu selesai harus lebih lambat dari waktu mulai.',
-            'location.required' => 'Lokasi rapat wajib diisi.',
+            'title.required' => 'Agenda wajib diisi.',
+            'date.required' => 'Tanggal wajib diisi.',
+            'start_time.required' => 'Waktu mulai wajib diisi.',
+            'end_time.required' => 'Waktu selesai wajib diisi.',
+            'end_time.after' => 'Waktu selesai harus setelah waktu mulai.',
+            'location.required' => 'Lokasi wajib diisi.',
         ];
     }
 
@@ -128,7 +128,7 @@ new class extends Component {
 
         $this->meeting->update(['status' => 'ongoing']);
         $this->meeting->refresh();
-        session()->flash('message', 'Sesi rapat telah dimulai.');
+        session()->flash('message', 'Rapat dimulai.');
     }
 
     public function finishMeeting()
@@ -139,7 +139,7 @@ new class extends Component {
 
         $this->meeting->update(['status' => 'completed']);
         $this->meeting->refresh();
-        session()->flash('message', 'Sesi rapat telah diselesaikan.');
+        session()->flash('message', 'Rapat diselesaikan.');
     }
 
     public function openEditModal()
@@ -162,7 +162,7 @@ new class extends Component {
         $this->meeting->refresh();
 
         $this->dispatch('close-modal', 'edit-meeting-modal');
-        session()->flash('message', 'Data rapat berhasil diperbarui.');
+        session()->flash('message', 'Rapat berhasil diperbarui.');
     }
 
     public function deleteMeeting()
@@ -172,7 +172,7 @@ new class extends Component {
         }
 
         $this->meeting->delete();
-        session()->flash('message', 'Data rapat berhasil dihapus.');
+        session()->flash('message', 'Rapat berhasil dihapus.');
         $this->redirect(route('meetings.index'), navigate: true);
     }
 
@@ -187,17 +187,9 @@ new class extends Component {
 
 <div class="relative">
     @if (session()->has('message'))
-    <div class="mb-5 p-4 rounded-xl bg-emerald-50 border border-emerald-200 flex items-start gap-3">
-        <div class="shrink-0">
-            <svg class="w-5 h-5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-        </div>
-        <div>
-            <h3 class="text-sm font-semibold text-emerald-800">Berhasil</h3>
-            <p class="text-sm text-emerald-700 mt-0.5">{{ session('message') }}</p>
-        </div>
-    </div>
+    <x-alert type="success" class="mb-5">
+        {{ session('message') }}
+    </x-alert>
     @endif
 
     <div class="flex flex-col md:flex-row md:items-start justify-between gap-5 relative z-10">
@@ -317,12 +309,12 @@ new class extends Component {
 
                     <div class="flex gap-3">
                         <div class="w-1/2">
-                            <label for="edit_start_time" class="block text-sm font-bold text-slate-700 mb-1">Mulai (WITA)</label>
+                            <label for="edit_start_time" class="block text-sm font-bold text-slate-700 mb-1">Waktu Mulai</label>
                             <input wire:model="start_time" id="edit_start_time" type="time" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" required />
                             @error('start_time') <span class="text-xs text-red-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                         </div>
                         <div class="w-1/2">
-                            <label for="edit_end_time" class="block text-sm font-bold text-slate-700 mb-1">Selesai (WITA)</label>
+                            <label for="edit_end_time" class="block text-sm font-bold text-slate-700 mb-1">Waktu Selesai</label>
                             <input wire:model="end_time" id="edit_end_time" type="time" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" required />
                             @error('end_time') <span class="text-xs text-red-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                         </div>
@@ -349,7 +341,7 @@ new class extends Component {
 
                 <!-- Penandatangan -->
                 <div class="pt-4 border-t border-slate-100">
-                    <label for="edit_selected_signer_id" class="block text-sm font-bold text-slate-700 mb-1">Penandatangan Dokumen</label>
+                    <label for="edit_selected_signer_id" class="block text-sm font-bold text-slate-700 mb-1">Penandatangan</label>
                     <select wire:model.live="selected_signer_id" id="edit_selected_signer_id" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" {{ $isAdmin && empty($selected_opd_id) ? 'disabled' : '' }}>
                         <option value="">
                             @if($isAdmin && empty($selected_opd_id))
@@ -365,12 +357,17 @@ new class extends Component {
                 </div>
 
                 <div class="mt-8 pt-6 border-t border-slate-100 flex justify-end gap-3">
-                    <button type="button" x-on:click="$dispatch('close')" class="px-5 py-2.5 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 rounded-xl font-bold text-sm transition-colors shadow-sm">
+                    <button type="button" x-on:click="$dispatch('close')" class="px-5 py-2.5 bg-white border border-slate-300 hover:bg-slate-50 active:scale-95 text-slate-700 rounded-xl font-bold text-sm transition-all shadow-sm">
                         Batal
                     </button>
 
-                    <button type="submit" class="px-5 py-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-xl font-bold text-sm transition-colors shadow-sm active:scale-95">
-                        <span wire:loading.remove wire:target="updateMeeting">Simpan Perubahan</span>
+                    <button type="submit" class="px-5 py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl font-bold text-sm transition-all shadow-sm">
+                        <span wire:loading.remove wire:target="updateMeeting" class="flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                            </svg>
+                            Simpan Perubahan
+                        </span>
                         <span wire:loading wire:target="updateMeeting" class="flex items-center gap-2">
                             <svg class="animate-spin w-4 h-4 text-white" fill="none" viewBox="0 0 24 24">
                                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>

@@ -144,11 +144,11 @@ new #[Layout('layouts.app')] class extends Component {
             }
 
             $messages = [
-                'name.required' => 'Nama lengkap pengguna wajib diisi.',
+                'name.required' => 'Nama wajib diisi.',
                 'nip.required' => 'NIP wajib diisi.',
-                'nip.unique' => 'NIP sudah terdaftar di sistem.',
-                'role.required' => 'Peran pengguna wajib dipilih.',
-                'role.in' => 'Pilihan peran tidak valid.',
+                'nip.unique' => 'NIP sudah terdaftar.',
+                'role.required' => 'Role wajib dipilih.',
+                'role.in' => 'Role tidak valid.',
             ];
 
             $validated = $this->validate($rules, $messages);
@@ -163,7 +163,7 @@ new #[Layout('layouts.app')] class extends Component {
 
             $user->syncRoles([$validated['role']]);
 
-            session()->flash('message', 'Data pengguna berhasil diperbarui.');
+            session()->flash('message', 'Pengguna berhasil diperbarui.');
         } else {
             $rules = [
                 'name' => 'required|string|max:255',
@@ -179,11 +179,11 @@ new #[Layout('layouts.app')] class extends Component {
             }
 
             $messages = [
-                'name.required' => 'Nama lengkap pengguna wajib diisi.',
+                'name.required' => 'Nama wajib diisi.',
                 'nip.required' => 'NIP wajib diisi.',
-                'nip.unique' => 'NIP sudah terdaftar di sistem.',
-                'role.required' => 'Peran pengguna wajib dipilih.',
-                'role.in' => 'Pilihan peran tidak valid.',
+                'nip.unique' => 'NIP sudah terdaftar.',
+                'role.required' => 'Role wajib dipilih.',
+                'role.in' => 'Role tidak valid.',
             ];
 
             $validated = $this->validate($rules, $messages);
@@ -197,7 +197,7 @@ new #[Layout('layouts.app')] class extends Component {
 
             $user->assignRole($validated['role']);
 
-            session()->flash('message', 'Pengguna baru berhasil ditambahkan.');
+            session()->flash('message', 'Pengguna berhasil ditambahkan.');
         }
 
         $this->dispatch('close-modal', 'user-form-modal');
@@ -207,7 +207,7 @@ new #[Layout('layouts.app')] class extends Component {
     public function deleteUser($id)
     {
         if ($id == auth()->id()) {
-            session()->flash('error', 'Anda tidak dapat menghapus akun Anda sendiri.');
+            session()->flash('error', 'Tidak dapat menghapus akun sendiri.');
             return;
         }
 
@@ -268,15 +268,13 @@ new #[Layout('layouts.app')] class extends Component {
     <!-- Alert Notifications -->
     @if (session()->has('message'))
     <x-alert type="success">
-        <h3 class="font-semibold text-emerald-800">Berhasil</h3>
-        <p class="text-emerald-700 mt-0.5">{{ session('message') }}</p>
+        {{ session('message') }}
     </x-alert>
     @endif
 
     @if (session()->has('error'))
     <x-alert type="danger">
-        <h3 class="font-semibold text-rose-800">Perhatian</h3>
-        <p class="text-rose-700 mt-0.5">{{ session('error') }}</p>
+        {{ session('error') }}
     </x-alert>
     @endif
 
@@ -517,11 +515,16 @@ new #[Layout('layouts.app')] class extends Component {
                 </div>
 
                 <div class="mt-8 pt-6 border-t border-slate-100 flex justify-end gap-3">
-                    <button type="button" x-on:click="$dispatch('close')" class="px-5 py-2.5 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 rounded-xl font-bold text-sm transition-colors shadow-sm">
+                    <button type="button" x-on:click="$dispatch('close')" class="px-5 py-2.5 bg-white border border-slate-300 hover:bg-slate-50 active:scale-95 text-slate-700 rounded-xl font-bold text-sm transition-all shadow-sm">
                         Batal
                     </button>
-                    <button type="submit" class="px-5 py-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-xl font-bold text-sm transition-colors shadow-sm active:scale-95">
-                        <span wire:loading.remove wire:target="saveUser">{{ $isEdit ? 'Simpan Perubahan' : 'Tambah Pengguna' }}</span>
+                    <button type="submit" class="px-5 py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl font-bold text-sm transition-all shadow-sm">
+                        <span wire:loading.remove wire:target="saveUser" class="flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                            </svg>
+                            {{ $isEdit ? 'Simpan Perubahan' : 'Tambah Pengguna' }}
+                        </span>
                         <span wire:loading wire:target="saveUser" class="flex items-center gap-2">
                             <svg class="animate-spin w-4 h-4 text-white" fill="none" viewBox="0 0 24 24">
                                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>

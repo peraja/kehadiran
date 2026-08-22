@@ -50,7 +50,7 @@ $maxWidth = [
     x-on:keydown.tab.prevent="$event.shiftKey || nextFocusable().focus()"
     x-on:keydown.shift.tab.prevent="prevFocusable().focus()"
     x-show="show"
-    class="fixed inset-0 z-50 overflow-y-auto"
+    class="fixed inset-0 z-50 overflow-hidden"
     style="display: {{ $show ? 'block' : 'none' }};"
 >
     <!-- Modal Backdrop -->
@@ -66,12 +66,12 @@ $maxWidth = [
         x-transition:leave-end="opacity-0"
     ></div>
 
-    <!-- Centering & Scroll Wrapper -->
-    <div class="flex min-h-full justify-center p-4 sm:p-6 text-center">
-        <!-- Modal Content Card -->
+    <!-- Centering & Viewport Boundary Wrapper -->
+    <div class="fixed inset-0 z-10 flex items-center justify-center p-4 sm:p-6 text-center pointer-events-none">
+        <!-- Modal Content Card with Internal Scroll -->
         <div
             x-show="show"
-            class="relative w-full {{ $maxWidth }} transform overflow-hidden rounded-3xl bg-white text-left shadow-2xl border border-slate-200/80 transition-all m-auto z-10"
+            class="relative w-full {{ $maxWidth }} max-h-[calc(100dvh-2rem)] sm:max-h-[calc(100dvh-3.5rem)] transform overflow-y-auto rounded-3xl bg-white text-left shadow-2xl border border-slate-200/80 transition-all pointer-events-auto"
             x-transition:enter="ease-out duration-300"
             x-transition:enter-start="opacity-0 scale-95 translate-y-2"
             x-transition:enter-end="opacity-100 scale-100 translate-y-0"

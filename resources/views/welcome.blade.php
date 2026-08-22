@@ -48,7 +48,10 @@
                     Dashboard &rarr;
                 </a>
                 @else
-                <a href="{{ route('login') }}" wire:navigate class="inline-flex items-center justify-center px-5 py-2.5 bg-slate-900 hover:bg-slate-800 active:scale-95 text-white rounded-xl font-bold text-sm transition-all shadow-sm">
+                <a href="{{ route('login') }}" wire:navigate class="inline-flex items-center justify-center px-5 py-2.5 bg-slate-900 hover:bg-slate-800 active:scale-95 text-white rounded-xl font-bold text-sm transition-all shadow-sm gap-2">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+                    </svg>
                     Login NIP
                 </a>
                 @endauth
@@ -106,13 +109,14 @@
                         </div>
                         <div class="shrink-0 self-start sm:self-auto">
                             @if($m->status === 'ongoing')
-                            <a href="{{ route('meetings.check-in', $m->id) }}" class="inline-flex items-center justify-center px-4 py-2 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-xl text-xs font-bold transition-all shadow-sm">
-                                Presensi &rarr;
+                            <a href="{{ route('meetings.check-in', $m->id) }}" class="inline-flex items-center justify-center px-4 py-2 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl text-xs font-bold transition-all shadow-sm gap-1.5">
+                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                Presensi
                             </a>
-                            @elseif($m->status === 'scheduled')
-                            <span class="inline-flex px-3 py-1.5 bg-slate-100 text-slate-600 rounded-xl text-xs font-bold">Dijadwalkan</span>
                             @else
-                            <span class="inline-flex px-3 py-1.5 bg-white border border-slate-200 text-slate-400 rounded-xl text-xs font-bold">Selesai</span>
+                            <x-meeting-status-badge :status="$m->status" />
                             @endif
                         </div>
                     </div>

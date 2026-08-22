@@ -118,7 +118,7 @@ new #[Layout('layouts.app')] class extends Component {
         ]);
 
         $this->dispatch('close-modal', 'opd-form-modal');
-        session()->flash('message', 'Data OPD berhasil diperbarui.');
+        session()->flash('message', 'OPD berhasil diperbarui.');
         $this->resetForm();
     }
 
@@ -128,16 +128,15 @@ new #[Layout('layouts.app')] class extends Component {
         $opd->is_active = !$opd->is_active;
         $opd->save();
 
-        session()->flash('message', "Status OPD '{$opd->name}' berhasil diubah.");
+        session()->flash('message', 'Status OPD berhasil diubah.');
     }
 
     public function deleteOpd(int $id): void
     {
         $opd = Opd::findOrFail($id);
-        $opdName = $opd->name;
         $opd->delete();
 
-        session()->flash('message', "OPD '{$opdName}' berhasil dihapus.");
+        session()->flash('message', 'OPD berhasil dihapus.');
     }
 
     public function syncFromApi(): void
@@ -164,14 +163,14 @@ new #[Layout('layouts.app')] class extends Component {
                         }
                     }
 
-                    session()->flash('message', "Sinkronisasi berhasil! Sebanyak {$count} data OPD dan pimpinan telah diperbarui dari SIMPEG.");
+                    session()->flash('message', "{$count} data OPD berhasil disinkronkan.");
                     return;
                 }
             }
 
-            session()->flash('error', 'Gagal menyinkronkan data. Server SIMPEG tidak merespons dengan benar.');
+            session()->flash('error', 'Gagal menyinkronkan data SIMPEG.');
         } catch (\Throwable $e) {
-            session()->flash('error', 'Terjadi kesalahan saat menghubungi API SIMPEG: ' . $e->getMessage());
+            session()->flash('error', 'Gagal menghubungi API SIMPEG.');
         }
     }
 
@@ -242,15 +241,13 @@ new #[Layout('layouts.app')] class extends Component {
     <!-- Alert Notifications -->
     @if (session()->has('message'))
     <x-alert type="success">
-        <h3 class="font-semibold text-emerald-800">Berhasil</h3>
-        <p class="text-emerald-700 mt-0.5">{{ session('message') }}</p>
+        {{ session('message') }}
     </x-alert>
     @endif
 
     @if (session()->has('error'))
     <x-alert type="danger">
-        <h3 class="font-semibold text-rose-800">Kesalahan</h3>
-        <p class="text-rose-700 mt-0.5">{{ session('error') }}</p>
+        {{ session('error') }}
     </x-alert>
     @endif
 
@@ -303,7 +300,7 @@ new #[Layout('layouts.app')] class extends Component {
                 <thead class="bg-slate-50 border-b border-slate-200 text-slate-500">
                     <tr class="text-[11px] font-extrabold uppercase tracking-wider">
                         <th class="py-4 px-6 text-left w-28">Kode Unit</th>
-                        <th class="py-4 px-6 text-left">Nama OPD & Pimpinan</th>
+                        <th class="py-4 px-6 text-left">Nama & Kepala OPD</th>
                         <th class="py-4 px-6 text-left">Alamat & Kontak</th>
                         <th class="py-4 px-6 text-center w-32">Status</th>
                         <th class="py-4 px-6 text-right w-24">Aksi</th>
@@ -319,7 +316,7 @@ new #[Layout('layouts.app')] class extends Component {
                             </span>
                         </td>
 
-                        <!-- Nama OPD & Pimpinan -->
+                        <!-- Nama & Kepala OPD -->
                         <td class="py-4 px-6 text-left">
                             <div class="font-extrabold text-slate-900 group-hover:text-primary-600 transition-colors">
                                 {{ $opd->name }}
@@ -327,9 +324,6 @@ new #[Layout('layouts.app')] class extends Component {
                             @if($opd->leader_name)
                             <div class="text-xs text-slate-500 font-medium mt-1">
                                 <span class="text-slate-700 font-semibold">{{ $opd->leader_name }}</span>
-                                @if($opd->leader_rank)
-                                <span class="text-slate-400 font-normal">({{ $opd->leader_rank }})</span>
-                                @endif
                             </div>
                             @endif
                         </td>
@@ -514,11 +508,16 @@ new #[Layout('layouts.app')] class extends Component {
 
                 <!-- Modal Actions -->
                 <div class="flex justify-end gap-3 pt-5 border-t border-slate-100">
-                    <button type="button" x-on:click="$dispatch('close')" class="px-5 py-2.5 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 rounded-xl font-bold text-sm transition-colors shadow-sm">
+                    <button type="button" x-on:click="$dispatch('close')" class="px-5 py-2.5 bg-white border border-slate-300 hover:bg-slate-50 active:scale-95 text-slate-700 rounded-xl font-bold text-sm transition-all shadow-sm">
                         Batal
                     </button>
-                    <button type="submit" class="px-5 py-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-xl font-bold text-sm transition-colors shadow-sm active:scale-95">
-                        <span wire:loading.remove wire:target="saveOpd">Simpan Perubahan</span>
+                    <button type="submit" class="px-5 py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl font-bold text-sm transition-all shadow-sm">
+                        <span wire:loading.remove wire:target="saveOpd" class="flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                            </svg>
+                            Simpan Perubahan
+                        </span>
                         <span wire:loading wire:target="saveOpd" class="flex items-center gap-2">
                             <svg class="animate-spin w-4 h-4 text-white" fill="none" viewBox="0 0 24 24">
                                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>

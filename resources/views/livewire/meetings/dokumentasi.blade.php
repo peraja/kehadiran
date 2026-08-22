@@ -86,7 +86,7 @@ new #[Layout('layouts.app')] class extends Component {
         $this->reset(['photos']);
         $this->uploadKey++;
         $this->meeting->refresh();
-        session()->flash('message', 'Foto dokumentasi berhasil diunggah.');
+        session()->flash('message', 'Foto berhasil diunggah.');
     }
 
     public function removeTempPhoto(int $index): void
@@ -100,7 +100,7 @@ new #[Layout('layouts.app')] class extends Component {
     public function deletePhoto($id)
     {
         if (!$this->canEdit) {
-            abort(403, 'Akses tidak diizinkan.');
+            abort(403);
         }
 
         $photo = $this->meeting->photos()->find($id);
@@ -115,17 +115,9 @@ new #[Layout('layouts.app')] class extends Component {
 
 <x-meeting-layout :meeting="$meeting" activeTab="dokumentasi">
     @if (session()->has('message'))
-    <div class="mb-6 p-4 rounded-xl bg-emerald-50 border border-emerald-200 flex items-start gap-3">
-        <div class="shrink-0">
-            <svg class="w-5 h-5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-        </div>
-        <div>
-            <h3 class="text-sm font-semibold text-emerald-800">Berhasil</h3>
-            <p class="text-sm text-emerald-700 mt-0.5">{{ session('message') }}</p>
-        </div>
-    </div>
+    <x-alert type="success" class="mb-6">
+        {{ session('message') }}
+    </x-alert>
     @endif
 
     <div class="space-y-8">
@@ -195,7 +187,7 @@ new #[Layout('layouts.app')] class extends Component {
                         <div class="p-3 bg-white border border-slate-200 rounded-xl flex gap-3 overflow-x-auto shadow-2xs">
                             @foreach($photos as $index => $photo)
                             <div class="relative group shrink-0">
-                                <img src="{{ $photo->temporaryUrl() }}" class="h-20 w-24 object-cover rounded-lg border border-slate-200 shadow-2xs">
+                                <img src="{{ $photo->temporaryUrl() }}" class="h-20 w-24 object-cover rounded-xl border border-slate-200 shadow-2xs">
                                 <button type="button" wire:click="removeTempPhoto({{ $index }})" class="absolute -top-1.5 -right-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-full p-1 shadow-sm transition-transform active:scale-90" title="Hapus foto ini">
                                     <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>

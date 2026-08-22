@@ -17,8 +17,7 @@ new #[Layout('layouts.app')] class extends Component {
 <x-meeting-layout :meeting="$meeting" activeTab="presensi">
     @if (session()->has('message'))
     <x-alert type="success" class="mb-5">
-        <h3 class="font-semibold text-emerald-800">Berhasil</h3>
-        <p class="text-emerald-700 mt-0.5">{{ session('message') }}</p>
+        {{ session('message') }}
     </x-alert>
     @endif
 

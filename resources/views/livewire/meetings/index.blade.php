@@ -58,14 +58,14 @@ new #[Layout('layouts.app')] class extends Component {
     public function messages()
     {
         return [
-            'title.required' => 'Agenda rapat wajib diisi.',
-            'date.required' => 'Tanggal pelaksanaan rapat wajib diisi.',
-            'start_time.required' => 'Waktu mulai rapat wajib diisi.',
-            'end_time.required' => 'Waktu selesai rapat wajib diisi.',
-            'end_time.after' => 'Waktu selesai harus lebih lambat dari waktu mulai.',
-            'location.required' => 'Lokasi rapat wajib diisi.',
-            'selected_opd_id.required' => 'Pilih OPD terlebih dahulu.',
-            'selected_opd_id.exists' => 'OPD yang dipilih tidak valid.',
+            'title.required' => 'Agenda wajib diisi.',
+            'date.required' => 'Tanggal wajib diisi.',
+            'start_time.required' => 'Waktu mulai wajib diisi.',
+            'end_time.required' => 'Waktu selesai wajib diisi.',
+            'end_time.after' => 'Waktu selesai harus setelah waktu mulai.',
+            'location.required' => 'Lokasi wajib diisi.',
+            'selected_opd_id.required' => 'OPD wajib dipilih.',
+            'selected_opd_id.exists' => 'OPD tidak valid.',
         ];
     }
 
@@ -220,8 +220,7 @@ new #[Layout('layouts.app')] class extends Component {
 
     @if (session()->has('message'))
     <x-alert type="success">
-        <h3 class="font-semibold text-emerald-800">Berhasil</h3>
-        <p class="text-emerald-700 mt-0.5">{{ session('message') }}</p>
+        {{ session('message') }}
     </x-alert>
     @endif
 
@@ -300,13 +299,11 @@ new #[Layout('layouts.app')] class extends Component {
 
                         <!-- Tanggal & Waktu -->
                         <td class="py-4 px-6 text-left whitespace-nowrap">
-                            <div class="font-bold text-slate-700 mb-2 text-sm">
+                            <div class="font-bold text-slate-700 mb-1.5 text-sm">
                                 {{ $meeting->date->translatedFormat('d F Y') }}
                             </div>
                             <div class="text-xs text-slate-500 font-semibold flex items-center">
-                                <span class="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200 shadow-sm">{{ $meeting->start_time ? $meeting->start_time->format('H:i') : '' }}</span>
-                                <span class="text-slate-400 mx-1.5">s/d</span>
-                                <span class="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200 shadow-sm">{{ $meeting->end_time ? $meeting->end_time->format('H:i') : 'Selesai' }}</span>
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200 font-mono">{{ $meeting->start_time ? $meeting->start_time->format('H:i') : '' }} - {{ $meeting->end_time ? $meeting->end_time->format('H:i') : 'Selesai' }} WITA</span>
                             </div>
                         </td>
 
@@ -317,8 +314,12 @@ new #[Layout('layouts.app')] class extends Component {
 
                         <!-- Aksi -->
                         <td class="py-4 px-6 text-right whitespace-nowrap">
-                            <a href="{{ route('meetings.overview', $meeting->id) }}" wire:navigate class="inline-flex items-center px-4 py-2 border border-slate-200 text-xs font-bold rounded-xl text-slate-600 bg-white hover:bg-slate-50 hover:text-slate-900 active:scale-95 transition-all shadow-sm">
-                                Kelola
+                            <a href="{{ route('meetings.overview', $meeting->id) }}" wire:navigate class="inline-flex items-center justify-center px-3.5 py-1.5 border border-slate-200 text-xs font-bold rounded-xl text-slate-600 bg-white hover:bg-slate-50 hover:text-slate-900 active:scale-95 transition-all shadow-2xs gap-1.5">
+                                <svg class="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
+                                Lihat
                             </a>
                         </td>
                     </tr>
@@ -387,12 +388,12 @@ new #[Layout('layouts.app')] class extends Component {
 
                     <div class="flex gap-3">
                         <div class="w-1/2">
-                            <label for="start_time" class="block text-sm font-bold text-slate-700 mb-1">Mulai (WITA)</label>
+                            <label for="start_time" class="block text-sm font-bold text-slate-700 mb-1">Waktu Mulai</label>
                             <input wire:model="start_time" id="start_time" type="time" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" required />
                             @error('start_time') <span class="text-xs text-red-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                         </div>
                         <div class="w-1/2">
-                            <label for="end_time" class="block text-sm font-bold text-slate-700 mb-1">Selesai (WITA)</label>
+                            <label for="end_time" class="block text-sm font-bold text-slate-700 mb-1">Waktu Selesai</label>
                             <input wire:model="end_time" id="end_time" type="time" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" required />
                             @error('end_time') <span class="text-xs text-red-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                         </div>
@@ -420,7 +421,7 @@ new #[Layout('layouts.app')] class extends Component {
 
                 <!-- Penandatangan -->
                 <div class="pt-4 border-t border-slate-100">
-                    <label for="selected_signer_id" class="block text-sm font-bold text-slate-700 mb-1">Penandatangan Dokumen</label>
+                    <label for="selected_signer_id" class="block text-sm font-bold text-slate-700 mb-1">Penandatangan</label>
                     <select wire:model.live="selected_signer_id" id="selected_signer_id" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" {{ $isAdmin && empty($selected_opd_id) ? 'disabled' : '' }}>
                         <option value="">
                             @if($isAdmin && empty($selected_opd_id))
@@ -436,12 +437,17 @@ new #[Layout('layouts.app')] class extends Component {
                 </div>
 
                 <div class="mt-8 pt-6 border-t border-slate-100 flex justify-end gap-3">
-                    <button type="button" x-on:click="$dispatch('close')" class="px-5 py-2.5 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 rounded-xl font-bold text-sm transition-colors shadow-sm">
+                    <button type="button" x-on:click="$dispatch('close')" class="px-5 py-2.5 bg-white border border-slate-300 hover:bg-slate-50 active:scale-95 text-slate-700 rounded-xl font-bold text-sm transition-all shadow-sm">
                         Batal
                     </button>
 
-                    <button type="submit" class="px-5 py-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-xl font-bold text-sm transition-colors shadow-sm active:scale-95">
-                        <span wire:loading.remove wire:target="saveMeeting">Simpan Rapat</span>
+                    <button type="submit" class="px-5 py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl font-bold text-sm transition-all shadow-sm">
+                        <span wire:loading.remove wire:target="saveMeeting" class="flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                            </svg>
+                            Simpan Rapat
+                        </span>
                         <span wire:loading wire:target="saveMeeting" class="flex items-center gap-2">
                             <svg class="animate-spin w-4 h-4 text-white" fill="none" viewBox="0 0 24 24">
                                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>

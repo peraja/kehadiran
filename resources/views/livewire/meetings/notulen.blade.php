@@ -43,14 +43,14 @@ new #[Layout('layouts.app')] class extends Component {
         );
 
         $this->lastSaved = now()->format('H:i') . ' WITA';
-        session()->flash('message', 'Notulen rapat berhasil disimpan.');
+        session()->flash('message', 'Notulen berhasil disimpan.');
     }
 }; ?>
 
 <x-meeting-layout :meeting="$meeting" activeTab="notulen">
     @if (session()->has('message'))
     <x-alert type="success" class="mb-5">
-        <p class="font-bold">{{ session('message') }}</p>
+        {{ session('message') }}
     </x-alert>
     @endif
 

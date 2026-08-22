@@ -26,7 +26,7 @@ new #[Layout('layouts.app')] class extends Component {
             'skm_url' => 'required|url|max:500',
         ], [
             'skm_url.required' => 'Link SKM wajib diisi.',
-            'skm_url.url' => 'Format URL tidak valid (harus diawali http:// atau https://).',
+            'skm_url.url' => 'Link SKM tidak valid.',
         ]);
 
         Setting::set('skm_url', trim($this->skm_url));
@@ -54,17 +54,9 @@ new #[Layout('layouts.app')] class extends Component {
 
     <!-- Alert Notifications -->
     @if (session()->has('message'))
-    <div class="p-4 rounded-xl bg-emerald-50 border border-emerald-200 flex items-start gap-3">
-        <div class="shrink-0">
-            <svg class="w-5 h-5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-        </div>
-        <div>
-            <h3 class="text-sm font-semibold text-emerald-800">Berhasil</h3>
-            <p class="text-sm text-emerald-700 mt-0.5">{{ session('message') }}</p>
-        </div>
-    </div>
+    <x-alert type="success">
+        {{ session('message') }}
+    </x-alert>
     @endif
 
     <form wire:submit="saveSettings" class="space-y-6">
@@ -96,7 +88,12 @@ new #[Layout('layouts.app')] class extends Component {
         <!-- Global Save Button -->
         <div class="flex justify-end pt-2">
             <button type="submit" wire:loading.attr="disabled" wire:target="saveSettings" class="inline-flex items-center justify-center px-6 py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white font-bold text-sm rounded-xl shadow-sm transition-all gap-2">
-                <span wire:loading.remove wire:target="saveSettings">Simpan Pengaturan</span>
+                <span wire:loading.remove wire:target="saveSettings" class="flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                    Simpan Pengaturan
+                </span>
                 <span wire:loading wire:target="saveSettings" class="flex items-center gap-2">
                     <svg class="animate-spin w-4 h-4 text-white" fill="none" viewBox="0 0 24 24">
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>

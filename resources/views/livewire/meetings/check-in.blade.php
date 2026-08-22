@@ -120,7 +120,7 @@ new #[Layout('layouts.guest')] class extends Component {
 
         if (!$user) {
             $this->nip_checked = false;
-            $this->addError('nip', 'NIP tidak terdaftar. Periksa kembali atau pilih tab Eksternal.');
+            $this->addError('nip', 'NIP tidak ditemukan.');
             return;
         }
 
@@ -130,7 +130,7 @@ new #[Layout('layouts.guest')] class extends Component {
             $this->status = 'success';
             $this->employee_name = $user->name;
             $this->recorded_time = $existingAttendance->check_in->format('H:i') . ' WITA';
-            $this->message = 'Presensi Anda (' . $user->name . ') telah tercatat sebelumnya pada rapat ini.';
+            $this->message = 'Presensi sudah tercatat sebelumnya.';
             return;
         }
 
@@ -145,14 +145,14 @@ new #[Layout('layouts.guest')] class extends Component {
     {
         if ($this->meeting->status !== 'ongoing') {
             $this->status = 'not_available';
-            $this->message = 'Presensi tidak dapat dikirim karena rapat belum dimulai atau telah selesai.';
+            $this->message = 'Presensi hanya dibuka saat rapat berlangsung.';
             return;
         }
 
         $this->validate([
             'signature' => 'required|string',
         ], [
-            'signature.required' => 'Tanda tangan wajib dibubuhkan sebelum mengirim presensi.'
+            'signature.required' => 'Tanda tangan wajib diisi.'
         ]);
 
         $now = now();
@@ -160,7 +160,7 @@ new #[Layout('layouts.guest')] class extends Component {
 
         if ($this->participant_type == 'internal') {
             if (!$this->nip_checked || !$this->employee_id) {
-                $this->addError('nip', 'Silakan klik tombol "Cek NIP" terlebih dahulu.');
+                $this->addError('nip', 'Silakan cek NIP terlebih dahulu.');
                 return;
             }
 
@@ -168,7 +168,7 @@ new #[Layout('layouts.guest')] class extends Component {
             $existingAttendance = $this->meeting->attendances()->where('user_id', $this->employee_id)->first();
             if ($existingAttendance) {
                 $this->status = 'success';
-                $this->message = 'Presensi Anda (' . $this->employee_name . ') telah tercatat sebelumnya.';
+                $this->message = 'Presensi sudah tercatat sebelumnya.';
                 return;
             }
 
@@ -186,8 +186,8 @@ new #[Layout('layouts.guest')] class extends Component {
                 'guest_agency' => 'required|string|max:255',
                 'guest_position' => 'nullable|string|max:255',
             ], [
-                'guest_name.required' => 'Nama lengkap wajib diisi.',
-                'guest_agency.required' => 'Instansi / Lembaga wajib diisi.',
+                'guest_name.required' => 'Nama wajib diisi.',
+                'guest_agency.required' => 'Instansi wajib diisi.',
             ]);
 
             $this->meeting->attendances()->create([
@@ -262,17 +262,26 @@ new #[Layout('layouts.guest')] class extends Component {
                 </div>
 
                 @if(!$nip_checked)
-                <button type="button" wire:click="checkNip" wire:loading.attr="disabled" class="w-full sm:w-auto shrink-0 inline-flex justify-center items-center px-5 py-3 bg-slate-900 hover:bg-slate-800 active:scale-95 text-white rounded-xl font-bold text-sm transition-all shadow-sm">
-                    <span wire:loading.remove wire:target="checkNip">Cek NIP</span>
+                <button type="button" wire:click="checkNip" wire:loading.attr="disabled" class="w-full sm:w-auto shrink-0 inline-flex justify-center items-center px-5 py-3 bg-slate-900 hover:bg-slate-800 active:scale-95 text-white rounded-xl font-bold text-sm transition-all shadow-sm gap-2">
+                    <span wire:loading.remove wire:target="checkNip" class="flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                        Cek NIP
+                    </span>
                     <span wire:loading wire:target="checkNip" class="flex items-center gap-2">
                         <svg class="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>
+                        Mengecek...
                     </span>
                 </button>
                 @else
-                <button type="button" wire:click="resetNip" class="w-full sm:w-auto shrink-0 inline-flex justify-center items-center px-5 py-3 bg-white border border-slate-300 hover:bg-slate-50 active:scale-95 text-slate-700 rounded-xl font-bold text-sm transition-all shadow-sm">
+                <button type="button" wire:click="resetNip" class="w-full sm:w-auto shrink-0 inline-flex justify-center items-center px-5 py-3 bg-white border border-slate-300 hover:bg-slate-50 active:scale-95 text-slate-700 rounded-xl font-bold text-sm transition-all shadow-sm gap-2">
+                    <svg class="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
                     Ganti NIP
                 </button>
                 @endif

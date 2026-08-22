@@ -29,8 +29,11 @@ Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/
 - Penghapusan kartu metrik statistik berlebih pada Master Pengguna dan Master OPD demi tata letak yang lebih ringkas dan fokus.
 - Standardisasi seluruh teks *placeholder* di semua formulir dan *field* pencarian menggunakan format contoh yang seragam.
 - Standardisasi seluruh *Page Header* dan *Modal Header* di semua modul (Daftar Rapat, Dashboard, Pengguna, OPD, Pengaturan, dan Profil).
-- Refaktor modal sistem (`components/modal.blade.php`) menggunakan `m-auto` untuk penyelarasan vertikal otomatis dan scroll mulus pada modal tinggi.
-- Relabeling *field* judul menjadi "Agenda" pada form Buat & Edit Rapat, serta pembersihan *field* ganda.
+- Refaktor modal sistem (`components/modal.blade.php`): penguncian backdrop luar dan penerapan scroll internal pada kartu modal untuk modal dengan konten panjang.
+- Relabeling *field* form rapat menjadi "Agenda", "Waktu Mulai", "Waktu Selesai", dan "Penandatangan", serta penyelarasan pesan error validasi agar presisi sesuai nama label form.
+- Audit dan standardisasi notifikasi alert (`<x-alert>`) dan pesan kesalahan di seluruh modul agar ringkas, to-the-point, dan bebas dari tag header redundan.
+- Audit dan penyelarasan seluruh tombol di sistem: penambahan ikon relevan pada tombol aksi simpan modal, halaman publik (*welcome*, *login*, *check-in*), tombol aksi tabel daftar rapat ("Lihat" dengan ikon mata), dan perbaikan tombol dasbor ("Presensi" & "Isi Notulen") menjadi tombol solid.
+- Penyesuaian kolom tabel Master OPD: penyederhanaan nama kolom menjadi "Nama & Kepala OPD" dan penghapusan tampilan pangkat pimpinan dari tabel.
 - Penataan ulang kartu *Informasi Rapat* pada tab Ringkasan detail rapat agar menyatu langsung tanpa bingkai ganda (*card inside card*).
 - Penempatan *badge* status rapat ke posisi atas (*eyebrow badge*) di *header* detail rapat untuk mendukung judul agenda yang sangat panjang.
 - Penyempurnaan halaman profil pengguna: pemindahan *badge* peran ke sudut kanan *header*, NIP sebagai subjudul, dan pembersihan baris duplikat.
