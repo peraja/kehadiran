@@ -4,6 +4,7 @@ use Livewire\Volt\Component;
 use App\Models\Meeting;
 use App\Models\Opd;
 use App\Models\OpdSigner;
+use App\Services\BsreEsignService;
 
 new class extends Component {
     public Meeting $meeting;
@@ -14,10 +15,51 @@ new class extends Component {
     public $opd;
     public $opdSigners = [];
 
+    public bool $showSignModal = false;
+    public string $passphrase = '';
+    public string $errorMessage = '';
+
     public function mount(Meeting $meeting)
     {
         $this->meeting = $meeting;
         $this->loadMeetingData();
+    }
+
+    public function openSignModal()
+    {
+        $this->passphrase = '';
+        $this->errorMessage = '';
+        $this->showSignModal = true;
+        $this->dispatch('open-modal', 'sign-all-modal');
+    }
+
+    public function closeSignModal()
+    {
+        $this->showSignModal = false;
+        $this->passphrase = '';
+        $this->errorMessage = '';
+        $this->dispatch('close-modal', 'sign-all-modal');
+    }
+
+    public function executeSign(BsreEsignService $esignService)
+    {
+        $this->errorMessage = '';
+        $this->validate([
+            'passphrase' => 'required|string',
+        ], [
+            'passphrase.required' => 'Passphrase BSrE wajib diisi.',
+        ]);
+
+        $result = $esignService->signAllDocuments($this->meeting, auth()->user(), $this->passphrase);
+
+        if ($result['success']) {
+            $this->meeting->refresh();
+            $this->closeSignModal();
+            session()->flash('message', $result['message']);
+            $this->redirect(request()->header('Referer') ?: route('meetings.overview', $this->meeting->id), navigate: true);
+        } else {
+            $this->errorMessage = $result['message'];
+        }
     }
 
     public function loadMeetingData()
@@ -235,22 +277,46 @@ new class extends Component {
             </div>
         </div>
 
-        @if(auth()->user()->hasRole(['admin', 'admin_opd']) || $meeting->created_by === auth()->id())
         <div class="flex flex-wrap items-center gap-2.5 shrink-0 w-full md:w-auto mt-2 md:mt-0">
+            @if(auth()->user()->hasRole('pimpinan') && $meeting->status === 'completed')
+                @if($meeting->isFullySigned())
+                <span class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-100/80 text-emerald-800 rounded-xl text-xs font-bold shadow-xs">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" /></svg>
+                    <span>Sudah TTE</span>
+                </span>
+                @else
+                <button type="button" x-data="" x-on:click.prevent="$dispatch('open-modal', 'sign-all-modal'); $wire.openSignModal()" class="flex-1 md:flex-none inline-flex justify-center items-center px-4 py-2 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl font-bold text-sm transition-all shadow-sm gap-2">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                    </svg>
+                    <span>TTE Semua Dokumen</span>
+                </button>
+                @endif
+            @endif
+
+            @if(auth()->user()->hasRole(['admin', 'admin_opd']) || $meeting->created_by === auth()->id())
             @if($meeting->status == 'scheduled')
-            <button wire:click="startMeeting" wire:confirm="Mulai rapat ini?" class="flex-1 md:flex-none inline-flex justify-center items-center px-4 py-2 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl font-bold text-sm transition-all shadow-sm hover:shadow-md">
-                <svg class="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <button wire:click="startMeeting" wire:loading.attr="disabled" wire:target="startMeeting" wire:confirm="Mulai rapat ini?" class="flex-1 md:flex-none inline-flex justify-center items-center px-4 py-2 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl font-bold text-sm transition-all shadow-sm hover:shadow-md gap-1.5">
+                <svg wire:loading.remove wire:target="startMeeting" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path>
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                 </svg>
-                Mulai Rapat
+                <svg wire:loading wire:target="startMeeting" class="animate-spin w-4 h-4 text-white" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                </svg>
+                <span>Mulai Rapat</span>
             </button>
             @elseif($meeting->status == 'ongoing')
-            <button wire:click="finishMeeting" wire:confirm="Selesaikan rapat ini?" class="flex-1 md:flex-none inline-flex justify-center items-center px-4 py-2 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-xl font-bold text-sm transition-all shadow-sm hover:shadow-md">
-                <svg class="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <button wire:click="finishMeeting" wire:loading.attr="disabled" wire:target="finishMeeting" wire:confirm="Selesaikan rapat ini?" class="flex-1 md:flex-none inline-flex justify-center items-center px-4 py-2 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-xl font-bold text-sm transition-all shadow-sm hover:shadow-md gap-1.5">
+                <svg wire:loading.remove wire:target="finishMeeting" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                 </svg>
-                Selesaikan
+                <svg wire:loading wire:target="finishMeeting" class="animate-spin w-4 h-4 text-white" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                </svg>
+                <span>Selesaikan</span>
             </button>
             @endif
 
@@ -267,8 +333,8 @@ new class extends Component {
                 </svg>
                 Edit
             </button>
+            @endif
         </div>
-        @endif
     </div>
 
     <!-- Modal Edit Rapat -->
@@ -446,6 +512,70 @@ new class extends Component {
                 <p class="text-sm font-medium text-slate-500 mt-2">Sesi presensi untuk rapat ini telah ditutup.</p>
             </div>
             @endif
+        </div>
+    </x-modal>
+
+    <!-- Modal Konfirmasi TTE BSrE (Semua Dokumen) -->
+    <x-modal name="sign-all-modal" maxWidth="lg" :show="$showSignModal">
+        <div class="p-6 sm:p-8">
+            <div class="flex justify-between items-center pb-4 mb-5 border-b border-slate-100">
+                <h2 class="text-xl font-extrabold text-slate-900">
+                    Tanda Tangan Elektronik
+                </h2>
+                <button type="button" x-on:click="$dispatch('close')" wire:click="closeSignModal" class="p-2 bg-slate-50 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-colors">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+
+            @if($errorMessage)
+            <div class="mb-5 p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-xs font-semibold text-rose-700 flex items-start gap-2.5">
+                <svg class="w-4 h-4 text-rose-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span class="flex-1 leading-relaxed">{{ $errorMessage }}</span>
+            </div>
+            @endif
+
+            <form wire:submit="executeSign" class="space-y-5">
+                <div class="p-4 bg-slate-50 border border-slate-200/80 rounded-2xl space-y-2.5 text-sm">
+                    <div class="flex items-center justify-between text-xs sm:text-sm">
+                        <span class="text-slate-500 font-medium">Dokumen</span>
+                        <span class="font-extrabold text-slate-900 text-right">Semua Dokumen Rapat</span>
+                    </div>
+                    <div class="flex items-center justify-between text-xs sm:text-sm">
+                        <span class="text-slate-500 font-medium">Penandatangan</span>
+                        <span class="font-bold text-slate-900 text-right">{{ auth()->user()->name }}</span>
+                    </div>
+                    <div class="flex items-center justify-between text-xs sm:text-sm">
+                        <span class="text-slate-500 font-medium">NIK</span>
+                        <span class="font-mono font-bold text-slate-800 text-right">{{ auth()->user()->nik ?: '-' }}</span>
+                    </div>
+                </div>
+
+                <div>
+                    <label for="passphrase_header" class="block text-sm font-bold text-slate-700 mb-1">Passphrase BSrE</label>
+                    <input wire:model="passphrase" id="passphrase_header" type="password" class="w-full text-sm py-2.5 px-3.5 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Masukkan passphrase" required autofocus />
+                    @error('passphrase') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
+                </div>
+
+                <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+                    <button type="button" x-on:click="$dispatch('close')" wire:click="closeSignModal" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-700 font-bold text-sm rounded-xl transition-all shadow-sm">
+                        Batal
+                    </button>
+                    <button type="submit" wire:loading.attr="disabled" wire:target="executeSign" class="inline-flex items-center justify-center px-5 py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white text-sm font-bold rounded-xl shadow-sm transition-all gap-2">
+                        <svg wire:loading.remove wire:target="executeSign" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                        </svg>
+                        <svg wire:loading wire:target="executeSign" class="animate-spin w-4 h-4 text-white" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                        </svg>
+                        <span>Tandatangani</span>
+                    </button>
+                </div>
+            </form>
         </div>
     </x-modal>
 </div>

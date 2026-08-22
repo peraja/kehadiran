@@ -208,8 +208,11 @@ class Opd extends Model
             return true;
         }
 
+        $baseUrl = config('services.simpeg.url', 'http://apps.sinjaikab.go.id/api/pegawai');
+        $timeout = config('services.simpeg.timeout', 10);
+
         try {
-            $response = \Illuminate\Support\Facades\Http::timeout(10)->get('http://apps.sinjaikab.go.id/api/pegawai/get_unit');
+            $response = \Illuminate\Support\Facades\Http::timeout($timeout)->get("{$baseUrl}/get_unit");
             if ($response->successful()) {
                 $units = $response->json();
                 $unitList = isset($units['data']) && is_array($units['data']) ? $units['data'] : (is_array($units) ? $units : []);
@@ -251,10 +254,13 @@ class Opd extends Model
             return 0;
         }
 
+        $baseUrl = config('services.simpeg.url', 'http://apps.sinjaikab.go.id/api/pegawai');
+        $timeout = config('services.simpeg.timeout', 10);
+
         try {
             $pegawaiList = null;
             for ($attempt = 1; $attempt <= 3; $attempt++) {
-                $response = \Illuminate\Support\Facades\Http::timeout(12)->get('http://apps.sinjaikab.go.id/api/pegawai/get_pegawai/', [
+                $response = \Illuminate\Support\Facades\Http::timeout($timeout)->get("{$baseUrl}/get_pegawai/", [
                     'unit_id' => $this->unit_id,
                 ]);
 

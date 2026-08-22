@@ -35,4 +35,16 @@ return [
         ],
     ],
 
+    'simpeg' => [
+        'url' => rtrim(env('SIMPEG_API_URL', 'http://apps.sinjaikab.go.id/api/pegawai'), '/'),
+        'timeout' => (int) env('SIMPEG_API_TIMEOUT', 10),
+    ],
+
+    'bsre' => [
+        'url' => rtrim(env('BSRE_ESIGN_URL', 'http://localhost:8080/api/v2'), '/'),
+        'username' => env('BSRE_AUTH_USERNAME', ''),
+        'password' => env('BSRE_AUTH_PASSWORD', ''),
+        'location' => env('BSRE_SIGN_LOCATION', 'Kabupaten Sinjai'),
+    ],
+
 ];

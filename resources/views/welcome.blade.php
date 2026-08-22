@@ -98,26 +98,22 @@
                 <!-- Body -->
                 <div class="p-6 pt-2 divide-y divide-slate-200/60">
                     @foreach($todayMeetings as $m)
+                    @php
+                        $opdName = $m->opd?->name ?? $m->creator?->unit_name ?? 'Pemerintah Kabupaten Sinjai';
+                    @endphp
                     <div class="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 group">
                         <div class="min-w-0 flex-1">
                             <div class="font-bold text-slate-900 text-sm group-hover:text-primary-600 transition-colors leading-snug">{{ $m->title }}</div>
                             <div class="text-xs text-slate-500 font-normal mt-1 flex flex-wrap items-center gap-1.5">
                                 <span class="font-semibold text-slate-700">{{ $m->start_time ? $m->start_time->format('H:i') . ' WITA' : '' }}</span>
                                 <span class="text-slate-300">&bull;</span>
+                                <span class="text-slate-700 font-semibold">{{ $opdName }}</span>
+                                <span class="text-slate-300">&bull;</span>
                                 <span class="truncate text-slate-500">{{ $m->location ?: 'Ruang Rapat' }}</span>
                             </div>
                         </div>
                         <div class="shrink-0 self-start sm:self-auto">
-                            @if($m->status === 'ongoing')
-                            <a href="{{ route('meetings.check-in', $m->id) }}" class="inline-flex items-center justify-center px-4 py-2 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl text-xs font-bold transition-all shadow-sm gap-1.5">
-                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                                Presensi
-                            </a>
-                            @else
                             <x-meeting-status-badge :status="$m->status" />
-                            @endif
                         </div>
                     </div>
                     @endforeach
@@ -130,7 +126,7 @@
                     {{ \Carbon\Carbon::now()->translatedFormat('l, d F Y') }}
                 </div>
                 <div class="w-12 h-12 bg-slate-100 text-slate-400 rounded-2xl flex items-center justify-center mx-auto mb-3">
-                    <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
                 </div>
@@ -138,6 +134,7 @@
                     Tidak Ada Rapat Hari Ini
                 </h3>
                 @auth
+                @unless(auth()->user()->hasRole('pimpinan'))
                 <div class="mt-5">
                     <a href="{{ route('meetings.index') }}" wire:navigate class="inline-flex items-center justify-center px-4 py-2 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl text-xs font-bold transition-all shadow-sm gap-2">
                         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -146,6 +143,7 @@
                         Buat Rapat
                     </a>
                 </div>
+                @endunless
                 @endauth
             </div>
             @endif
@@ -158,8 +156,8 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path>
                         </svg>
                     </div>
-                    <h3 class="font-extrabold text-slate-900 text-base mb-2">Presensi Digital QR</h3>
-                    <p class="text-sm font-medium text-slate-500 leading-relaxed">Sistem kehadiran rapat berbasis pemindaian QR code dan integrasi tanda tangan digital instan.</p>
+                    <h3 class="font-extrabold text-slate-900 text-base mb-2">Presensi & SIMPEG</h3>
+                    <p class="text-sm font-medium text-slate-500 leading-relaxed">Presensi QR code terintegrasi SIMPEG ASN Sinjai dan tanda tangan digital.</p>
                 </div>
 
                 <div class="bg-white/60 backdrop-blur-sm p-6 rounded-3xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
@@ -168,8 +166,8 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                         </svg>
                     </div>
-                    <h3 class="font-extrabold text-slate-900 text-base mb-2">Notulen & Cetak PDF</h3>
-                    <p class="text-sm font-medium text-slate-500 leading-relaxed">Rekap hasil keputusan rapat dengan fitur unduh otomatis berformat PDF standar kop resmi daerah.</p>
+                    <h3 class="font-extrabold text-slate-900 text-base mb-2">Notulen & TTE</h3>
+                    <p class="text-sm font-medium text-slate-500 leading-relaxed">Pencatatan hasil rapat terstruktur dengan dukungan pengesahan TTE pimpinan.</p>
                 </div>
 
                 <div class="bg-white/60 backdrop-blur-sm p-6 rounded-3xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
@@ -178,8 +176,8 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                         </svg>
                     </div>
-                    <h3 class="font-extrabold text-slate-900 text-base mb-2">Arsip Dokumentasi</h3>
-                    <p class="text-sm font-medium text-slate-500 leading-relaxed">Pengarsipan foto aktivitas yang terkompresi otomatis, dapat diunduh sekaligus dalam format ZIP.</p>
+                    <h3 class="font-extrabold text-slate-900 text-base mb-2">Dokumentasi & PDF</h3>
+                    <p class="text-sm font-medium text-slate-500 leading-relaxed">Pengarsipan foto kegiatan otomatis dan cetak dokumen PDF ber-KOP resmi.</p>
                 </div>
             </div>
         </div>

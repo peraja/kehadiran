@@ -75,15 +75,32 @@ new class extends Component {
             ->take(5)
             ->get();
 
+        $isPimpinan = auth()->user()->hasRole('pimpinan');
+
+        // Meetings waiting for TTE (only needed for pimpinan role)
+        $pendingTteMeetings = $isPimpinan ? (clone $query)
+            ->where('status', 'completed')
+            ->where(function($q) {
+                $q->whereNull('minutes_signed_at')
+                  ->orWhereNull('attendance_signed_at')
+                  ->orWhereNull('photos_signed_at');
+            })
+            ->with(['opd', 'creator', 'attendances', 'photos', 'minutes'])
+            ->orderBy('date', 'desc')
+            ->take(6)
+            ->get() : collect();
+
         return compact(
             'isAdmin',
+            'isPimpinan',
             'meetingsToday',
             'meetingsThisWeek',
             'meetingsThisMonth',
             'meetingsThisYear',
             'ongoingMeetings',
             'upcomingMeetings',
-            'missingMinutesMeetings'
+            'missingMinutesMeetings',
+            'pendingTteMeetings'
         );
     }
 }; ?>
@@ -100,12 +117,14 @@ new class extends Component {
                 {{ $isAdmin ? 'Pemerintah Kabupaten Sinjai' : (auth()->user()->unit_name ?? 'Pemkab Sinjai') }}
             </p>
         </div>
+        @unless($isPimpinan)
         <div class="relative z-10 flex items-center gap-3">
             <a href="{{ route('meetings.index') }}" wire:navigate class="inline-flex items-center justify-center px-5 py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl font-bold text-sm transition-all shadow-sm gap-2">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                 Buat Rapat
             </a>
         </div>
+        @endunless
     </div>
 
     <!-- Stat Cards -->
@@ -200,6 +219,76 @@ new class extends Component {
     </div>
     @endif
 
+    <!-- Menunggu TTE Widget (Khusus Pimpinan) -->
+    @if($isPimpinan && $pendingTteMeetings->isNotEmpty())
+    <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="px-6 py-5 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
+            <h3 class="font-extrabold text-slate-900 text-sm">Menunggu TTE</h3>
+            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-extrabold bg-amber-100 text-amber-800">
+                {{ $pendingTteMeetings->count() }}
+            </span>
+        </div>
+        <div class="divide-y divide-slate-100">
+            @foreach($pendingTteMeetings as $meeting)
+            <div class="p-5 hover:bg-slate-50 flex flex-col md:flex-row md:items-center justify-between gap-4 transition-colors group">
+                <div class="min-w-0 flex-1">
+                    <a href="{{ route('meetings.overview', $meeting->id) }}" wire:navigate class="font-extrabold text-sm text-slate-900 group-hover:text-primary-600 transition-colors truncate block">
+                        {{ $meeting->title }}
+                    </a>
+                    <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500 mt-1 font-medium">
+                        <span>{{ $meeting->date->translatedFormat('d F Y') }}</span>
+                        @if($isAdmin)
+                        <span>&bull;</span>
+                        <span>{{ $meeting->opd?->name ?? $meeting->creator?->unit_name ?? 'Pemkab Sinjai' }}</span>
+                        @endif
+                    </div>
+
+                    <!-- 3 Dokumen Badges -->
+                    <div class="flex flex-wrap items-center gap-2 mt-2.5">
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold {{ $meeting->attendance_signed_at ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-600 border border-slate-200' }}">
+                            @if($meeting->attendance_signed_at)
+                            <svg class="w-3 h-3 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" /></svg>
+                            @else
+                            <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+                            @endif
+                            <span>Presensi</span>
+                        </span>
+
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold {{ $meeting->photos_signed_at ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-600 border border-slate-200' }}">
+                            @if($meeting->photos_signed_at)
+                            <svg class="w-3 h-3 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" /></svg>
+                            @else
+                            <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+                            @endif
+                            <span>Dokumentasi</span>
+                        </span>
+
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold {{ $meeting->minutes_signed_at ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-600 border border-slate-200' }}">
+                            @if($meeting->minutes_signed_at)
+                            <svg class="w-3 h-3 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" /></svg>
+                            @else
+                            <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+                            @endif
+                            <span>Notulen</span>
+                        </span>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2 shrink-0">
+                    <a href="{{ route('meetings.overview', $meeting->id) }}" wire:navigate class="inline-flex items-center justify-center px-4 py-2 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl font-bold text-xs transition-all shadow-sm gap-1.5">
+                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                        </svg>
+                        TTE Dokumen
+                    </a>
+                </div>
+            </div>
+            @endforeach
+        </div>
+    </div>
+    @endif
+
+    @unless($isPimpinan)
     <!-- Lists -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <!-- Rapat Mendatang -->
@@ -270,4 +359,5 @@ new class extends Component {
             </div>
         </div>
     </div>
+    @endunless
 </div>

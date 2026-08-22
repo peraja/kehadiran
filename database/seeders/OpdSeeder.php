@@ -69,5 +69,15 @@ class OpdSeeder extends Seeder
                 ]
             );
         }
+
+        // Set default Diskominfo leader for TTE testing
+        Opd::where('unit_id', '730714')->update([
+            'leader_name' => 'Testing TTE',
+            'leader_nip' => '123456',
+            'leader_nik' => '7307010101800001',
+            'leader_title' => 'Kepala Dinas Komunikasi Informatika dan Persandian',
+            'leader_rank' => 'Pembina Utama Muda (IV/c)',
+            'leader_eselon' => 'II.b',
+        ]);
     }
 }

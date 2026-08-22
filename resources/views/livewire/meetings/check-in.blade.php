@@ -76,8 +76,11 @@ new #[Layout('layouts.guest')] class extends Component {
 
         // If user not yet in local database, fetch from Kepegawaian API
         if (!$user) {
+            $baseUrl = config('services.simpeg.url', 'http://apps.sinjaikab.go.id/api/pegawai');
+            $timeout = config('services.simpeg.timeout', 10);
+
             try {
-                $pegawaiResponse = \Illuminate\Support\Facades\Http::timeout(6)->get('http://apps.sinjaikab.go.id/api/pegawai/data_pegawai/', [
+                $pegawaiResponse = \Illuminate\Support\Facades\Http::timeout($timeout)->get("{$baseUrl}/data_pegawai/", [
                     'nip' => $nip
                 ]);
 
@@ -91,7 +94,7 @@ new #[Layout('layouts.guest')] class extends Component {
                     $unit_name = null;
 
                     if ($unit_id) {
-                        $unitResponse = \Illuminate\Support\Facades\Http::timeout(5)->get('http://apps.sinjaikab.go.id/api/pegawai/get_unit/', [
+                        $unitResponse = \Illuminate\Support\Facades\Http::timeout(5)->get("{$baseUrl}/get_unit/", [
                             'unit_id' => $unit_id
                         ]);
                         $unitData = $unitResponse->json();
@@ -284,19 +287,21 @@ new #[Layout('layouts.guest')] class extends Component {
 
             @if($nip_checked)
             <!-- Verified Employee Identity Card -->
-            <div class="mt-4 p-4 bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-200 rounded-2xl">
-                <div class="flex items-start gap-3.5">
-                    <div class="w-10 h-10 rounded-xl bg-emerald-500 text-white flex items-center justify-center font-bold shadow-sm shrink-0 mt-0.5">
-                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
-                        </svg>
-                    </div>
-                    <div class="min-w-0 flex-1 space-y-0.5">
-                        <div class="font-extrabold text-base text-slate-900 leading-snug">{{ $employee_name }}</div>
-                        <div class="text-slate-700 font-semibold text-xs leading-relaxed">{{ $employee_jabatan }}</div>
-                        <div class="text-slate-500 font-medium text-xs leading-relaxed pt-1 border-t border-emerald-200/60">{{ $employee_unit }}</div>
-                    </div>
+            <div class="mt-3 p-3.5 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center justify-between gap-3 animate-in fade-in slide-in-from-top-2">
+                <div class="min-w-0 space-y-0.5">
+                    <p class="text-sm font-bold text-emerald-900 truncate">{{ $employee_name }}</p>
+                    @if($employee_jabatan)
+                    <p class="text-xs font-semibold text-emerald-800 truncate">{{ $employee_jabatan }}</p>
+                    @endif
+                    @if($employee_unit)
+                    <p class="text-xs font-medium text-emerald-600 truncate">{{ $employee_unit }}</p>
+                    @endif
                 </div>
+                <span class="shrink-0 flex items-center justify-center w-7 h-7 bg-emerald-500 text-white rounded-xl shadow-xs" title="Terverifikasi SIMPEG">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+                    </svg>
+                </span>
             </div>
             @endif
         </div>
@@ -353,11 +358,15 @@ new #[Layout('layouts.guest')] class extends Component {
         </div>
 
         <div class="pt-6">
-            <button type="submit" class="w-full flex justify-center items-center px-6 py-4 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-2xl font-extrabold text-base transition-all shadow-sm">
-                <svg class="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <button type="submit" wire:loading.attr="disabled" wire:target="submitAttendance" class="w-full flex justify-center items-center px-6 py-4 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-2xl font-extrabold text-base transition-all shadow-sm gap-2">
+                <svg wire:loading.remove wire:target="submitAttendance" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                Kirim Presensi
+                <svg wire:loading wire:target="submitAttendance" class="animate-spin w-5 h-5 text-white" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                </svg>
+                <span>Kirim Presensi</span>
             </button>
         </div>
         @endif

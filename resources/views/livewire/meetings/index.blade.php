@@ -71,6 +71,9 @@ new #[Layout('layouts.app')] class extends Component {
 
     public function openModal()
     {
+        if (auth()->user()->hasRole('pimpinan')) {
+            return;
+        }
         $this->resetValidation();
         $this->reset(['title', 'date', 'start_time', 'end_time', 'location', 'selected_signer_id', 'selected_opd_id']);
     }
@@ -82,6 +85,9 @@ new #[Layout('layouts.app')] class extends Component {
 
     public function saveMeeting()
     {
+        if (auth()->user()->hasRole('pimpinan')) {
+            abort(403, 'Pimpinan tidak memiliki akses untuk membuat rapat.');
+        }
         $validated = $this->validate();
         $validated['agenda'] = $validated['title']; // Fallback for DB constraint
         $validated['created_by'] = auth()->id();
@@ -208,6 +214,7 @@ new #[Layout('layouts.app')] class extends Component {
                 {{ auth()->user()->hasRole('admin') ? 'Pemerintah Kabupaten Sinjai' : (auth()->user()->unit_name ?? 'Pemkab Sinjai') }}
             </p>
         </div>
+        @unless(auth()->user()->hasRole('pimpinan'))
         <div class="relative z-10">
             <button x-data="" x-on:click.prevent="$dispatch('open-modal', 'add-meeting-modal'); $wire.openModal()" class="inline-flex items-center justify-center px-5 py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl font-bold text-sm shadow-sm transition-all gap-2">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -216,6 +223,7 @@ new #[Layout('layouts.app')] class extends Component {
                 Buat Rapat
             </button>
         </div>
+        @endunless
     </div>
 
     @if (session()->has('message'))
@@ -337,7 +345,7 @@ new #[Layout('layouts.app')] class extends Component {
                                 <button type="button" wire:click="resetFilters" class="mt-3 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors">
                                     Reset Filter
                                 </button>
-                                @else
+                                @elseif(!auth()->user()->hasRole('pimpinan'))
                                 <button x-data="" x-on:click.prevent="$dispatch('open-modal', 'add-meeting-modal'); $wire.openModal()" class="mt-3 inline-flex items-center px-4 py-2 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white text-xs font-bold rounded-xl transition-all shadow-sm gap-2">
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
@@ -356,6 +364,7 @@ new #[Layout('layouts.app')] class extends Component {
         <x-pagination :paginator="$meetings" />
     </div>
 
+    @unless(auth()->user()->hasRole('pimpinan'))
     <!-- Modal Buat Rapat -->
     <x-modal name="add-meeting-modal" maxWidth="3xl" :show="$errors->isNotEmpty()" x-on:meeting-saved.window="show = false">
         <div class="p-6 sm:p-8">
@@ -371,65 +380,64 @@ new #[Layout('layouts.app')] class extends Component {
             </div>
 
             <form wire:submit="saveMeeting" class="space-y-5">
+                <!-- Agenda / Judul Rapat -->
                 <div>
-                    <label for="title" class="block text-sm font-bold text-slate-700 mb-1">Agenda</label>
-                    <input wire:model="title" id="title" type="text" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Contoh: Rapat Koordinasi SPBE" required />
+                    <label for="title" class="block text-sm font-bold text-slate-700 mb-1">Agenda Rapat</label>
+                    <input wire:model="title" id="title" type="text" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Contoh: Rapat Koordinasi Evaluasi SPBE Triwulan II" />
                     @error('title') <span class="text-xs text-red-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                 </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <!-- Tanggal -->
                     <div>
                         <label for="date" class="block text-sm font-bold text-slate-700 mb-1">Tanggal</label>
-                        <input wire:model="date" id="date" type="date" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" required />
+                        <input wire:model="date" id="date" type="date" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" />
                         @error('date') <span class="text-xs text-red-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                     </div>
 
-                    <div class="flex gap-3">
-                        <div class="w-1/2">
-                            <label for="start_time" class="block text-sm font-bold text-slate-700 mb-1">Waktu Mulai</label>
-                            <input wire:model="start_time" id="start_time" type="time" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" required />
-                            @error('start_time') <span class="text-xs text-red-600 mt-1 block font-medium">{{ $message }}</span> @enderror
-                        </div>
-                        <div class="w-1/2">
-                            <label for="end_time" class="block text-sm font-bold text-slate-700 mb-1">Waktu Selesai</label>
-                            <input wire:model="end_time" id="end_time" type="time" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" required />
-                            @error('end_time') <span class="text-xs text-red-600 mt-1 block font-medium">{{ $message }}</span> @enderror
-                        </div>
+                    <!-- Jam Mulai -->
+                    <div>
+                        <label for="start_time" class="block text-sm font-bold text-slate-700 mb-1">Waktu Mulai</label>
+                        <input wire:model="start_time" id="start_time" type="time" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" />
+                        @error('start_time') <span class="text-xs text-red-600 mt-1 block font-medium">{{ $message }}</span> @enderror
+                    </div>
+
+                    <!-- Jam Selesai -->
+                    <div>
+                        <label for="end_time" class="block text-sm font-bold text-slate-700 mb-1">Waktu Selesai</label>
+                        <input wire:model="end_time" id="end_time" type="time" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" />
+                        @error('end_time') <span class="text-xs text-red-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                     </div>
                 </div>
 
+                <!-- Lokasi -->
                 <div>
-                    <label for="location" class="block text-sm font-bold text-slate-700 mb-1">Lokasi</label>
-                    <input wire:model="location" id="location" type="text" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Contoh: Ruang Pola Kantor Bupati" required />
+                    <label for="location" class="block text-sm font-bold text-slate-700 mb-1">Lokasi / Tempat</label>
+                    <input wire:model="location" id="location" type="text" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Contoh: Ruang Pola Kantor Bupati Sinjai" />
                     @error('location') <span class="text-xs text-red-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                 </div>
 
                 @if($isAdmin)
+                <!-- OPD Selection (Admin Only) -->
                 <div>
-                    <label for="selected_opd_id" class="block text-sm font-bold text-slate-700 mb-1">OPD</label>
-                    <select wire:model.live="selected_opd_id" id="selected_opd_id" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" required>
-                        <option value="">-- Pilih OPD --</option>
-                        @foreach($allOpds as $opdItem)
-                        <option value="{{ $opdItem->id }}">{{ $opdItem->name }}</option>
+                    <label for="selected_opd_id" class="block text-sm font-bold text-slate-700 mb-1">OPD / Instansi</label>
+                    <select wire:model.live="selected_opd_id" id="selected_opd_id" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors">
+                        <option value="">Pilih OPD</option>
+                        @foreach($allOpds as $o)
+                        <option value="{{ $o->id }}">{{ $o->name }}</option>
                         @endforeach
                     </select>
                     @error('selected_opd_id') <span class="text-xs text-red-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                 </div>
                 @endif
 
-                <!-- Penandatangan -->
+                <!-- Pejabat Penandatangan -->
                 <div>
-                    <label for="selected_signer_id" class="block text-sm font-bold text-slate-700 mb-1">Penandatangan</label>
-                    <select wire:model.live="selected_signer_id" id="selected_signer_id" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" {{ $isAdmin && empty($selected_opd_id) ? 'disabled' : '' }}>
-                        <option value="">
-                            @if($isAdmin && empty($selected_opd_id))
-                                -- Pilih OPD terlebih dahulu --
-                            @elseif(!empty($opd?->leader_name))
-                                {{ $opd->leader_title ?: 'Kepala OPD' }} — {{ $opd->leader_name }} (Default)
-                            @else
-                                -- Pilih Penandatangan --
-                            @endif
-                        </option>
+                    <label for="selected_signer_id" class="block text-sm font-bold text-slate-700 mb-1">
+                        Pejabat Penandatangan Dokumen <span class="text-xs font-normal text-slate-400">(Opsional)</span>
+                    </label>
+                    <select wire:model="selected_signer_id" id="selected_signer_id" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors">
+                        <option value="">Pilih Pejabat Penandatangan</option>
                         @foreach($opdSigners as $s)
                         <option value="{{ $s->id }}">{{ $s->title }} — {{ $s->name }}</option>
                         @endforeach
@@ -455,4 +463,5 @@ new #[Layout('layouts.app')] class extends Component {
             </form>
         </div>
     </x-modal>
+    @endunless
 </div>

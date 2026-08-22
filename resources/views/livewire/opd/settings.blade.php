@@ -168,8 +168,11 @@ new #[Layout('layouts.app')] class extends Component {
             return;
         }
 
+        $baseUrl = config('services.simpeg.url', 'http://apps.sinjaikab.go.id/api/pegawai');
+        $timeout = config('services.simpeg.timeout', 10);
+
         try {
-            $pegawaiResponse = \Illuminate\Support\Facades\Http::timeout(6)->get('http://apps.sinjaikab.go.id/api/pegawai/data_pegawai/', [
+            $pegawaiResponse = \Illuminate\Support\Facades\Http::timeout($timeout)->get("{$baseUrl}/data_pegawai/", [
                 'nip' => $nip
             ]);
 
@@ -498,12 +501,19 @@ new #[Layout('layouts.app')] class extends Component {
             </div>
 
             <form wire:submit="saveSigner" class="space-y-4">
+                <!-- Nama Lengkap (Paling Atas) -->
+                <div>
+                    <label for="signer_name" class="block text-sm font-bold text-slate-700 mb-1">Nama Lengkap</label>
+                    <input wire:model="signer_name" id="signer_name" type="text" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Contoh: Dr. H. Ahmad Yani, M.Si" required />
+                    @error('signer_name') <span class="text-xs text-red-600 mt-1 block font-medium">{{ $message }}</span> @enderror
+                </div>
+
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <!-- NIP dengan Cek SIMPEG -->
                     <div>
                         <label for="signer_nip" class="block text-sm font-bold text-slate-700 mb-1">NIP</label>
                         <div class="flex items-center gap-2">
-                            <input wire:model="signer_nip" wire:keydown.enter.prevent="checkNipFromApi" id="signer_nip" type="text" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 font-mono focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="18 digit NIP" />
+                            <input wire:model="signer_nip" wire:keydown.enter.prevent="checkNipFromApi" id="signer_nip" type="text" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 font-mono focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Contoh: 198501012010011001" />
 
                             <button type="button" wire:click="checkNipFromApi" wire:loading.attr="disabled" wire:target="checkNipFromApi" class="shrink-0 inline-flex items-center justify-center px-3 py-2.5 bg-slate-800 hover:bg-slate-900 active:scale-95 text-white rounded-xl font-bold text-xs transition-all shadow-sm gap-1.5" title="Tarik dari SIMPEG">
                                 <svg wire:loading.remove wire:target="checkNipFromApi" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -519,30 +529,33 @@ new #[Layout('layouts.app')] class extends Component {
                         @error('signer_nip') <span class="text-xs text-red-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                     </div>
 
-                    <!-- NIK (KTP untuk TTE BSrE) -->
+                    <!-- NIK -->
                     <div>
-                        <label for="signer_nik" class="block text-sm font-bold text-slate-700 mb-1">NIK (KTP untuk TTE BSrE)</label>
-                        <input wire:model="signer_nik" id="signer_nik" type="text" maxlength="16" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 font-mono focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="16 digit NIK" />
+                        <label for="signer_nik" class="block text-sm font-bold text-slate-700 mb-1">NIK</label>
+                        <input wire:model="signer_nik" id="signer_nik" type="text" maxlength="16" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 font-mono focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Contoh: 7307010101850001" />
                         @error('signer_nik') <span class="text-xs text-red-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                     </div>
                 </div>
 
                 <!-- API Status Feedback -->
-                @if($apiSynced && $apiStatusMessage)
-                <div class="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs flex items-center gap-2">
-                    <svg class="w-4 h-4 text-emerald-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                    </svg>
-                    <span>{{ $apiStatusMessage }}</span>
+                @if($apiSynced)
+                <div class="p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center justify-between gap-3">
+                    <div class="min-w-0 space-y-0.5">
+                        <p class="text-sm font-bold text-emerald-900 truncate">{{ $signer_name }}</p>
+                        @if($signer_title)
+                        <p class="text-xs font-semibold text-emerald-800 truncate">{{ $signer_title }}</p>
+                        @endif
+                        @if($signer_bidang)
+                        <p class="text-xs font-medium text-emerald-600 truncate">{{ $signer_bidang }}</p>
+                        @endif
+                    </div>
+                    <span class="shrink-0 flex items-center justify-center w-7 h-7 bg-emerald-500 text-white rounded-xl shadow-xs" title="Terverifikasi SIMPEG">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+                        </svg>
+                    </span>
                 </div>
                 @endif
-
-                <!-- Nama Lengkap -->
-                <div>
-                    <label for="signer_name" class="block text-sm font-bold text-slate-700 mb-1">Nama Lengkap</label>
-                    <input wire:model="signer_name" id="signer_name" type="text" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Nama dan gelar" required />
-                    @error('signer_name') <span class="text-xs text-red-600 mt-1 block font-medium">{{ $message }}</span> @enderror
-                </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <!-- Eselon -->
@@ -563,7 +576,7 @@ new #[Layout('layouts.app')] class extends Component {
                     <!-- Pangkat / Golongan -->
                     <div>
                         <label for="signer_rank" class="block text-sm font-bold text-slate-700 mb-1">Pangkat</label>
-                        <input wire:model="signer_rank" id="signer_rank" type="text" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Pembina (IV/a)" />
+                        <input wire:model="signer_rank" id="signer_rank" type="text" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Contoh: Pembina (IV/a)" />
                         @error('signer_rank') <span class="text-xs text-red-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                     </div>
                 </div>
@@ -571,7 +584,7 @@ new #[Layout('layouts.app')] class extends Component {
                 <!-- Jabatan -->
                 <div>
                     <label for="signer_title" class="block text-sm font-bold text-slate-700 mb-1">Jabatan</label>
-                    <input wire:model="signer_title" id="signer_title" type="text" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Nama jabatan" required />
+                    <input wire:model="signer_title" id="signer_title" type="text" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Contoh: Kepala Bidang Hubungan Masyarakat" required />
                     @error('signer_title') <span class="text-xs text-red-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                 </div>
 
@@ -579,7 +592,7 @@ new #[Layout('layouts.app')] class extends Component {
                 <!-- Unit Kerja -->
                 <div>
                     <label for="signer_bidang" class="block text-sm font-bold text-slate-700 mb-1">Unit Kerja</label>
-                    <input wire:model="signer_bidang" id="signer_bidang" type="text" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Nama unit kerja" />
+                    <input wire:model="signer_bidang" id="signer_bidang" type="text" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Contoh: Bidang Informasi dan Komunikasi Publik" />
                     @error('signer_bidang') <span class="text-xs text-red-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                 </div>
                 @endif

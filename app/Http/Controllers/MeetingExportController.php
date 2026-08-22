@@ -27,6 +27,11 @@ class MeetingExportController extends Controller
             abort(403);
         }
 
+        // Dokumen hanya dapat diekspor jika rapat telah diselesaikan
+        if ($meeting->status !== 'completed') {
+            abort(403, 'Dokumen notulen hanya dapat diekspor setelah status rapat diselesaikan.');
+        }
+
         $pdf = Pdf::loadView('exports.meeting-minutes', compact('meeting'))->setPaper('a4', 'portrait');
         $fileName = $this->generateFileName($meeting, 'Notulen_Rapat');
 
@@ -38,6 +43,11 @@ class MeetingExportController extends Controller
         // Pastikan pengguna berhak mengakses
         if (!auth()->user()->hasRole('admin') && $meeting->created_by !== auth()->id() && auth()->user()->unit_name !== $meeting->creator?->unit_name) {
             abort(403);
+        }
+
+        // Dokumen hanya dapat diekspor jika rapat telah diselesaikan
+        if ($meeting->status !== 'completed') {
+            abort(403, 'Daftar hadir hanya dapat diekspor setelah status rapat diselesaikan.');
         }
 
         $pdf = Pdf::loadView('exports.meeting-attendance', compact('meeting'))->setPaper('a4', 'portrait');
@@ -53,32 +63,53 @@ class MeetingExportController extends Controller
             abort(403);
         }
 
-        if ($meeting->photos->isEmpty()) {
-            return back()->with('message', 'Tidak ada foto untuk diunduh.');
+        // Dokumentasi foto hanya dapat diekspor jika rapat telah diselesaikan
+        if ($meeting->status !== 'completed') {
+            abort(403, 'Dokumentasi foto hanya dapat diekspor setelah status rapat diselesaikan.');
         }
 
-        $zip = new \ZipArchive;
-        $fileName = $this->generateFileName($meeting, 'Dokumentasi_Foto', 'zip');
-        $filePath = storage_path('app/private/' . $fileName);
+        $pdf = Pdf::loadView('exports.meeting-documentation', compact('meeting'))->setPaper('a4', 'portrait');
+        $fileName = $this->generateFileName($meeting, 'Dokumentasi_Foto');
 
-        if (!file_exists(storage_path('app/private'))) {
-            mkdir(storage_path('app/private'), 0755, true);
-        }
+        return $pdf->stream($fileName);
+    }
 
-        if ($zip->open($filePath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) === TRUE) {
-            $counter = 1;
-            foreach ($meeting->photos as $photo) {
-                $absPath = storage_path('app/public/' . $photo->file);
-                if (file_exists($absPath)) {
-                    $ext = pathinfo($absPath, PATHINFO_EXTENSION);
-                    $zip->addFile($absPath, 'Foto_' . str_pad($counter, 3, '0', STR_PAD_LEFT) . '.' . $ext);
-                    $counter++;
+    /**
+     * Public download for verified electronically signed documents.
+     */
+    public function downloadSigned(Meeting $meeting, string $type)
+    {
+        $type = strtolower($type);
+
+        switch ($type) {
+            case 'presensi':
+            case 'attendance':
+                if (!$meeting->attendance_signed_at) {
+                    abort(404, 'Dokumen daftar hadir belum ditandatangani secara elektronik.');
                 }
-            }
-            $zip->close();
-        }
+                $pdf = Pdf::loadView('exports.meeting-attendance', compact('meeting'))->setPaper('a4', 'portrait');
+                $fileName = $this->generateFileName($meeting, 'Daftar_Hadir_TTE');
+                return $pdf->stream($fileName);
 
-        return response()->download($filePath)->deleteFileAfterSend(true);
+            case 'dokumentasi':
+            case 'photos':
+                if (!$meeting->photos_signed_at) {
+                    abort(404, 'Dokumen dokumentasi foto belum ditandatangani secara elektronik.');
+                }
+                $pdf = Pdf::loadView('exports.meeting-documentation', compact('meeting'))->setPaper('a4', 'portrait');
+                $fileName = $this->generateFileName($meeting, 'Dokumentasi_Foto_TTE');
+                return $pdf->stream($fileName);
+
+            case 'notulen':
+            case 'minutes':
+            default:
+                if (!$meeting->minutes_signed_at) {
+                    abort(404, 'Dokumen notulen rapat belum ditandatangani secara elektronik.');
+                }
+                $pdf = Pdf::loadView('exports.meeting-minutes', compact('meeting'))->setPaper('a4', 'portrait');
+                $fileName = $this->generateFileName($meeting, 'Notulen_Rapat_TTE');
+                return $pdf->stream($fileName);
+        }
     }
 }
 

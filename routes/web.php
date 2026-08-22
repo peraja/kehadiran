@@ -28,6 +28,10 @@ Route::middleware(['auth'])->group(function () {
 // Public Check-in Route
 Volt::route('meetings/{meeting}/check-in', 'meetings.check-in')->name('meetings.check-in');
 
+// Public TTE Document Verification
+Volt::route('meetings/{meeting}/verify/{type?}', 'meetings.verify-tte')->name('meetings.verify.tte');
+Route::get('meetings/{meeting}/verify/{type}/download', [\App\Http\Controllers\MeetingExportController::class, 'downloadSigned'])->name('meetings.verify.download');
+
 Route::view('profile', 'profile')
     ->middleware(['auth'])
     ->name('profile');

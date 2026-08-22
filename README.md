@@ -8,6 +8,7 @@ Aplikasi digitalisasi tata kelola administrasi rapat resmi untuk lingkungan Pemk
 
 - **Manajemen Agenda Rapat:** Penjadwalan, pengaturan status rapat (*Dijadwalkan*, *Berlangsung*, *Selesai*), lokasi, serta batas akses OPD.
 - **Presensi Mandiri QR & Tanda Tangan Digital:** Integrasi data ASN via API Kepegawaian (NIP) dan dukungan peserta eksternal dilengkapi *signature pad* canvas HTML5.
+- **Tanda Tangan Elektronik (TTE) BSrE - BSSN:** Pengesahan digital dokumen resmi (Notulen, Daftar Hadir, Dokumentasi) via API BSrE, dilengkapi QR Code verifikasi publik dan *footer legal disclaimer* standar Permendagri No. 1 Tahun 2023.
 - **Notulen Rapat & Ekspor PDF:** Pencatatan ringkasan pembahasan serta cetak otomatis ke PDF resmi bertata letak kop dinas (DomPDF).
 - **Dokumentasi Terintegrasi & ZIP Archive:** Unggah multi-foto dengan kompresi otomatis (Intervention Image) serta unduh galeri dalam format berkas ZIP.
 - **Desain UI Responsif Berbasis Tailwind CSS:** Mematuhi panduan desain pada `DESIGN.md` dengan pendekatan *Mobile First*, interaksi mikro 6 kondisi, dan aksesibilitas ramah pengguna.

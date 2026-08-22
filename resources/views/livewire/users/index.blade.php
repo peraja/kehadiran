@@ -99,8 +99,11 @@ new #[Layout('layouts.app')] class extends Component {
             return;
         }
 
+        $baseUrl = config('services.simpeg.url', 'http://apps.sinjaikab.go.id/api/pegawai');
+        $timeout = config('services.simpeg.timeout', 10);
+
         try {
-            $pegawaiResponse = Http::timeout(6)->get('http://apps.sinjaikab.go.id/api/pegawai/data_pegawai/', [
+            $pegawaiResponse = Http::timeout($timeout)->get("{$baseUrl}/data_pegawai/", [
                 'nip' => $nip
             ]);
 
@@ -118,7 +121,7 @@ new #[Layout('layouts.app')] class extends Component {
 
                 $unit_id = $pData['unit_id'] ?? $pData['id_unit'] ?? null;
                 if ($unit_id) {
-                    $unitResponse = Http::timeout(5)->get('http://apps.sinjaikab.go.id/api/pegawai/get_unit/', [
+                    $unitResponse = Http::timeout(5)->get("{$baseUrl}/get_unit/", [
                         'unit_id' => $unit_id
                     ]);
                     $unitData = $unitResponse->json();
@@ -469,15 +472,24 @@ new #[Layout('layouts.app')] class extends Component {
                 </button>
             </div>
 
-            <form wire:submit="saveUser" class="space-y-5">
+            <form wire:submit="saveUser" class="space-y-4">
+                <!-- Nama Lengkap (Paling Atas) -->
+                <div>
+                    <label for="name" class="block text-sm font-bold text-slate-700 mb-1">Nama Lengkap</label>
+                    <input wire:model="name" id="name" type="text" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Contoh: Ahmad Yani, S.Kom" required />
+                    @error('name') <span class="text-xs text-red-600 mt-1 block font-medium">{{ $message }}</span> @enderror
+                </div>
+
+                @if($role === 'pimpinan')
+                <!-- NIP & NIK (1 Baris untuk Pimpinan) -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <!-- NIP -->
+                    <!-- NIP dengan Cek SIMPEG -->
                     <div>
                         <label for="nip" class="block text-sm font-bold text-slate-700 mb-1">NIP</label>
                         <div class="flex items-center gap-2">
-                            <input wire:model="nip" wire:keydown.enter.prevent="checkNipFromApi" id="nip" type="text" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 font-mono focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="18 digit NIP" />
+                            <input wire:model="nip" wire:keydown.enter.prevent="checkNipFromApi" id="nip" type="text" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 font-mono focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Contoh: 198501012010011001" />
 
-                            <button type="button" wire:click="checkNipFromApi" wire:loading.attr="disabled" class="shrink-0 flex items-center justify-center px-3 py-2.5 bg-slate-800 hover:bg-slate-900 text-white rounded-xl font-bold text-xs transition-colors shadow-sm gap-1.5" title="Tarik dari SIMPEG">
+                            <button type="button" wire:click="checkNipFromApi" wire:loading.attr="disabled" wire:target="checkNipFromApi" class="shrink-0 inline-flex items-center justify-center px-3.5 py-2.5 bg-slate-800 hover:bg-slate-900 active:scale-95 text-white rounded-xl font-bold text-xs transition-all shadow-sm gap-1.5" title="Tarik dari SIMPEG">
                                 <svg wire:loading.remove wire:target="checkNipFromApi" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                                 </svg>
@@ -488,44 +500,62 @@ new #[Layout('layouts.app')] class extends Component {
                                 <span>Cek</span>
                             </button>
                         </div>
-                        @error('nip') <span class="text-xs text-red-600 mt-1.5 block font-medium">{{ $message }}</span> @enderror
+                        @error('nip') <span class="text-xs text-red-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                     </div>
 
-                    <!-- NIK (KTP untuk TTE BSrE) -->
+                    <!-- NIK -->
                     <div>
-                        <label for="nik" class="block text-sm font-bold text-slate-700 mb-1">NIK (KTP untuk TTE BSrE)</label>
-                        <input wire:model="nik" id="nik" type="text" maxlength="16" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 font-mono focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="16 digit NIK" />
-                        @error('nik') <span class="text-xs text-red-600 mt-1.5 block font-medium">{{ $message }}</span> @enderror
+                        <label for="nik" class="block text-sm font-bold text-slate-700 mb-1">NIK</label>
+                        <input wire:model="nik" id="nik" type="text" maxlength="16" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 font-mono focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Contoh: 7307010101850001" />
+                        @error('nik') <span class="text-xs text-red-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                     </div>
                 </div>
+                @else
+                <!-- NIP (Jika bukan Pimpinan) -->
+                <div>
+                    <label for="nip" class="block text-sm font-bold text-slate-700 mb-1">NIP</label>
+                    <div class="flex items-center gap-2">
+                        <input wire:model="nip" wire:keydown.enter.prevent="checkNipFromApi" id="nip" type="text" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 font-mono focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Contoh: 198501012010011001" />
+
+                        <button type="button" wire:click="checkNipFromApi" wire:loading.attr="disabled" wire:target="checkNipFromApi" class="shrink-0 inline-flex items-center justify-center px-3.5 py-2.5 bg-slate-800 hover:bg-slate-900 active:scale-95 text-white rounded-xl font-bold text-xs transition-all shadow-sm gap-1.5" title="Tarik dari SIMPEG">
+                            <svg wire:loading.remove wire:target="checkNipFromApi" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            </svg>
+                            <svg wire:loading wire:target="checkNipFromApi" class="animate-spin w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                            </svg>
+                            <span>Cek</span>
+                        </button>
+                    </div>
+                    @error('nip') <span class="text-xs text-red-600 mt-1 block font-medium">{{ $message }}</span> @enderror
+                </div>
+                @endif
 
                 @if($apiSynced)
-                    <div class="mt-3 p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center justify-between gap-3 animate-in fade-in slide-in-from-top-2">
-                        <div class="min-w-0">
-                            <p class="text-sm font-bold text-emerald-900 truncate">{{ $name }}</p>
-                            <p class="text-xs font-medium text-emerald-700 truncate mt-0.5">{{ $jabatan ? $jabatan . ' • ' : '' }}{{ $unit_name }}</p>
-                        </div>
-                        <span class="shrink-0 flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 bg-emerald-200 text-emerald-800 rounded-xl uppercase tracking-wide">
-                            <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                            </svg>
-                        </span>
+                <div class="p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center justify-between gap-3">
+                    <div class="min-w-0 space-y-0.5">
+                        <p class="text-sm font-bold text-emerald-900 truncate">{{ $name }}</p>
+                        @if($jabatan)
+                        <p class="text-xs font-semibold text-emerald-800 truncate">{{ $jabatan }}</p>
+                        @endif
+                        @if($unit_name)
+                        <p class="text-xs font-medium text-emerald-600 truncate">{{ $unit_name }}</p>
+                        @endif
                     </div>
-                    @endif
+                    <span class="shrink-0 flex items-center justify-center w-7 h-7 bg-emerald-500 text-white rounded-xl shadow-xs" title="Terverifikasi SIMPEG">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+                        </svg>
+                    </span>
                 </div>
+                @endif
 
-                <!-- Nama Lengkap -->
-                <div>
-                    <label for="name" class="block text-sm font-bold text-slate-700 mb-1">Nama Lengkap</label>
-                    <input wire:model="name" id="name" type="text" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Contoh: Ahmad Yani, S.Kom" required />
-                    @error('name') <span class="text-xs text-red-600 mt-1 block font-medium">{{ $message }}</span> @enderror
-                </div>
-
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <!-- Peran (Role) -->
                     <div>
                         <label for="role" class="block text-sm font-bold text-slate-700 mb-1">Role</label>
-                        <select wire:model="role" id="role" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors appearance-none">
+                        <select wire:model.live="role" id="role" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors">
                             <option value="pegawai">Pegawai</option>
                             <option value="pimpinan">Pimpinan</option>
                             <option value="admin_opd">Admin OPD</option>
@@ -547,7 +577,7 @@ new #[Layout('layouts.app')] class extends Component {
                 <!-- OPD -->
                 <div>
                     <label for="unit_name" class="block text-sm font-bold text-slate-700 mb-1">OPD</label>
-                    <input wire:model="unit_name" id="unit_name" type="text" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Contoh: Dinas Komunikasi dan Informatika" />
+                    <input wire:model="unit_name" id="unit_name" type="text" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Contoh: Dinas Komunikasi Informatika dan Persandian" />
                     @error('unit_name') <span class="text-xs text-red-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                 </div>
 

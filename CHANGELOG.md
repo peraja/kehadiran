@@ -7,12 +7,23 @@ Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/
 ## [Unreleased] - 2026-08-23
 
 ### Ditambahkan
+- Integrasi modul **Tanda Tangan Elektronik (TTE) BSrE - BSSN** (`app/Services/BsreEsignService.php`) untuk pengesahan digital Notulen, Daftar Hadir, dan Dokumentasi Foto Rapat.
+- Modal eksekusi TTE terintegrasi pada workspace rapat dengan validasi Passphrase dan verifikasi NIK pejabat penandatangan.
+- Halaman verifikasi publik TTE (`resources/views/livewire/meetings/verify-tte.blade.php`) dengan *design system* konsisten untuk memvalidasi keabsahan dokumen serta stempel waktu (*timestamp*) penandatanganan.
+- Rute publik pengunduhan dokumen PDF bertanda tangan digital resmi (`meetings.verify.download`).
+- Blok QR Code verifikasi dinamis pada PDF ekspor dokumen rapat yang mengarahkan pembaca ke halaman verifikasi publik.
+- Catatan kaki (*footer legal disclaimer*) standar BSrE BSSN dan Permendagri No. 1 Tahun 2023 pada margin bawah berkas PDF yang telah ditandatangani.
 - Seeder modular Master OPD ([`OpdSeeder.php`](database/seeders/OpdSeeder.php)) yang memuat 42 Perangkat Daerah se-Kabupaten Sinjai lengkap dengan `unit_id` resmi SIMPEG.
 - Kolom `nik` (16 digit) pada tabel `users`, `opds` (`leader_nik`), dan `opd_signers` (`nik`) untuk kesiapan integrasi TTE BSrE (BSSN).
 - Fitur **Cek NIP SIMPEG** otomatis pada modal form penandatangan di Pengaturan OPD dan Master Pengguna.
 - Komponen paginasi kustom minimalis berikon (`<x-pagination>`) untuk penyajian data tabel yang rapi.
+- Test suite pengujian TTE BSrE dan rute verifikasi publik ([`tests/Feature/BsreEsignTest.php`](tests/Feature/BsreEsignTest.php)).
 
 ### Diubah
+- Standardisasi seluruh tipografi dan tata letak dokumen ekspor PDF (Notulen, Daftar Hadir, Dokumentasi) sesuai standar Permendagri No. 1 Tahun 2023 menggunakan font `Arial, sans-serif` murni.
+- Penyesuaian blok tanda tangan pada PDF: nama pejabat berformat tebal (`font-bold`) tanpa garis bawah (*underline*).
+- Penambahan restriksi peran *Pimpinan*: penutupan akses dan penyembunyian tombol buat rapat pada antarmuka serta proteksi *authorization guard* backend.
+- Pembaruan label status TTE pada antarmuka menjadi *"Sudah TTE"* dengan lencana hijau emerald.
 - Konsolidasi seluruh migrasi database menjadi 11 berkas atomik bersih siap pasang di server cPanel / produksi.
 - Penggabungan tampilan Kepala OPD ke dalam tabel Pejabat Penandatangan pada halaman Pengaturan OPD dengan dukungan modal edit dinamis (Eselon, Pangkat, Jabatan, NIK, dan Unit Kerja).
 - Penghapusan input manual password pada form pembuatan pengguna karena otentikasi login terhubung langsung ke Gateway ENIKDA / SIMPEG Sinjai.

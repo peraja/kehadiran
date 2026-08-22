@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Daftar Hadir Rapat - {{ $meeting->title }}</title>
+    <title>Dokumentasi Foto Rapat - {{ $meeting->title }}</title>
     <style>
         @page {
             size: a4 portrait;
@@ -113,40 +113,55 @@
             color: #111827;
         }
 
-        .attendance-table {
+        .divider {
+            border-bottom: 1px solid #cbd5e1;
+            margin-bottom: 14px;
+        }
+
+        .photo-table {
             width: 100%;
-            border-collapse: collapse;
-            margin-top: 8px;
-            font-size: 9pt;
+            border-collapse: separate;
+            border-spacing: 10px;
+            margin-top: 5px;
         }
 
-        .attendance-table th,
-        .attendance-table td {
-            border: 1px solid #94a3b8;
-            padding: 5px 6px;
-            text-align: left;
-        }
-
-        .attendance-table th {
-            background-color: #f1f5f9;
+        .photo-card {
+            width: 50%;
+            vertical-align: top;
+            border: 1px solid #e2e8f0;
+            padding: 6px;
+            background-color: #f8fafc;
             text-align: center;
-            font-size: 9pt;
+            page-break-inside: avoid;
+        }
+
+        .photo-img {
+            width: 100%;
+            max-height: 220px;
+            display: block;
+            margin: 0 auto;
+        }
+
+        .photo-caption {
+            font-size: 8.5pt;
+            color: #475569;
             font-weight: bold;
-            color: #111827;
-        }
-
-        .attendance-table .center {
+            margin-top: 5px;
             text-align: center;
         }
 
-        .signature-img {
-            height: 26px;
+        .empty-state {
+            text-align: center;
+            padding: 30px;
+            font-style: italic;
+            color: #64748b;
+            font-size: 9.5pt;
         }
     </style>
 </head>
 
 <body>
-    @if($meeting->attendance_signed_at)
+    @if($meeting->photos_signed_at)
     <footer>
         Dokumen ini telah ditandatangani secara elektronik menggunakan sertifikat elektronik yang diterbitkan oleh Balai Sertifikasi Elektronik (BSrE), BSSN.
     </footer>
@@ -184,7 +199,7 @@
         </div>
     </div>
 
-    <div class="doc-title">DAFTAR HADIR RAPAT</div>
+    <div class="doc-title">DOKUMENTASI FOTO RAPAT</div>
 
     <table class="info-table">
         <tr>
@@ -201,61 +216,58 @@
         </tr>
     </table>
 
-    <table class="attendance-table">
-        <thead>
-            <tr>
-                <th width="6%">No</th>
-                <th width="32%">Nama Peserta</th>
-                <th width="26%">OPD / Instansi</th>
-                <th width="20%">Jabatan</th>
-                <th width="16%">Tanda Tangan</th>
-            </tr>
-        </thead>
-        <tbody>
-            @forelse($meeting->attendances as $index => $attendance)
-            <tr>
-                <td class="center">{{ $loop->iteration }}</td>
-                <td>
-                    @if($attendance->user)
-                    <div style="font-weight: bold;">{{ $attendance->user->name }}</div>
-                    @if($attendance->user->nip)
-                    <div style="font-size: 9pt; color: #555;">NIP. {{ $attendance->user->nip }}</div>
-                    @endif
-                    @else
-                    <div style="font-weight: bold;">{{ $attendance->guest_name }}</div>
-                    @endif
-                </td>
-                <td>
-                    {{ $attendance->user ? ($attendance->user->unit_name ?? 'Pemkab Sinjai') : $attendance->guest_agency }}
-                </td>
-                <td>
-                    {{ $attendance->user ? ($attendance->user->jabatan ?? '-') : ($attendance->guest_position ?: '-') }}
-                </td>
-                <td class="center">
-                    @if($attendance->signature)
-                    <img src="{{ $attendance->signature }}" class="signature-img" onerror="this.style.display='none'">
-                    @else
-                    -
-                    @endif
-                </td>
-            </tr>
-            @empty
-            <tr>
-                <td colspan="5" class="center">Belum ada peserta yang hadir.</td>
-            </tr>
-            @endforelse
-        </tbody>
+    <div class="divider"></div>
+
+    @if($meeting->photos->count() > 0)
+    <table class="photo-table">
+        <?php
+        $photos = $meeting->photos->values();
+        $chunks = $photos->chunk(2);
+        $counter = 1;
+        ?>
+        @foreach($chunks as $row)
+        <tr>
+            @foreach($row as $photo)
+            <?php
+            $photoPath = storage_path('app/public/' . $photo->file);
+            $photoBase64 = '';
+            if (file_exists($photoPath)) {
+                $ext = pathinfo($photoPath, PATHINFO_EXTENSION);
+                $photoBase64 = 'data:image/' . ($ext === 'jpg' ? 'jpeg' : $ext) . ';base64,' . base64_encode(file_get_contents($photoPath));
+            }
+            ?>
+            <td class="photo-card">
+                @if($photoBase64)
+                <img src="{{ $photoBase64 }}" class="photo-img" alt="Dokumentasi {{ $counter }}">
+                @else
+                <div style="padding: 40px 0; color: #94a3b8; font-size: 8pt;">Foto tidak tersedia</div>
+                @endif
+                <div class="photo-caption">Dokumentasi {{ str_pad($counter, 2, '0', STR_PAD_LEFT) }}</div>
+            </td>
+            <?php $counter++; ?>
+            @endforeach
+
+            @if($row->count() === 1)
+            <td style="width: 50%; border: none; background: transparent;"></td>
+            @endif
+        </tr>
+        @endforeach
     </table>
+    @else
+    <div class="empty-state">
+        Tidak ada foto dokumentasi yang dilampirkan pada rapat ini.
+    </div>
+    @endif
 
     <?php
     $signerTitle = $meeting->signer_title ?: ($opd?->leader_title ?: ('Kepala ' . $unitName));
     $signerName = $meeting->signer_name ?: ($opd?->leader_name ?: '..................................................');
     $signerNip = $meeting->signer_nip ?: ($opd?->leader_nip ?: '..................................................');
     $signerRank = $meeting->signer_rank ?: ($opd?->leader_rank ?: null);
-    $signedAt = $meeting->attendance_signed_at;
+    $signedAt = $meeting->photos_signed_at;
     $qrCodeBase64 = '';
     if ($signedAt) {
-        $qrData = route('meetings.verify.tte', ['meeting' => $meeting->id, 'type' => 'presensi']);
+        $qrData = route('meetings.verify.tte', ['meeting' => $meeting->id, 'type' => 'dokumentasi']);
         $qrCodeBase64 = base64_encode(\SimpleSoftwareIO\QrCode\Facades\QrCode::format('svg')->size(46)->errorCorrection('M')->generate($qrData));
     }
     ?>

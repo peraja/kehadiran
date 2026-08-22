@@ -153,10 +153,13 @@ new #[Layout('layouts.app')] class extends Component {
             return;
         }
 
+        $baseUrl = config('services.simpeg.url', 'http://apps.sinjaikab.go.id/api/pegawai');
+        $timeout = config('services.simpeg.timeout', 15);
+
         try {
             $units = null;
             for ($attempt = 1; $attempt <= 3; $attempt++) {
-                $response = Http::timeout(15)->get('http://apps.sinjaikab.go.id/api/pegawai/get_unit');
+                $response = Http::timeout($timeout)->get("{$baseUrl}/get_unit");
                 if ($response->successful()) {
                     $data = $response->json();
                     if (is_array($data) && !isset($data['error'])) {

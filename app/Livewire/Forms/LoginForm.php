@@ -32,9 +32,12 @@ class LoginForm extends Form
         $nip = trim($this->nip);
         $password = $this->password;
 
+        $baseUrl = config('services.simpeg.url', 'http://apps.sinjaikab.go.id/api/pegawai');
+        $timeout = config('services.simpeg.timeout', 10);
+
         // 1. Try API Kepegawaian Authentication
         try {
-            $authResponse = \Illuminate\Support\Facades\Http::timeout(6)->get('http://apps.sinjaikab.go.id/api/pegawai/user_auth/', [
+            $authResponse = \Illuminate\Support\Facades\Http::timeout(min(6, $timeout))->get("{$baseUrl}/user_auth/", [
                 'username' => $nip,
                 'password' => $password
             ]);
@@ -43,7 +46,7 @@ class LoginForm extends Form
 
             if ($authResponse->successful() && !empty($authBody)) {
                 // API Auth Succeeded -> Fetch full employee details
-                $pegawaiResponse = \Illuminate\Support\Facades\Http::timeout(5)->get('http://apps.sinjaikab.go.id/api/pegawai/data_pegawai/', [
+                $pegawaiResponse = \Illuminate\Support\Facades\Http::timeout(min(5, $timeout))->get("{$baseUrl}/data_pegawai/", [
                     'nip' => $nip
                 ]);
 
@@ -56,7 +59,7 @@ class LoginForm extends Form
                 $unit_name = null;
 
                 if ($unit_id) {
-                    $unitResponse = \Illuminate\Support\Facades\Http::timeout(4)->get('http://apps.sinjaikab.go.id/api/pegawai/get_unit/', [
+                    $unitResponse = \Illuminate\Support\Facades\Http::timeout(min(4, $timeout))->get("{$baseUrl}/get_unit/", [
                         'unit_id' => $unit_id
                     ]);
                     $unitData = $unitResponse->json();
@@ -73,25 +76,25 @@ class LoginForm extends Form
                     ]
                 );
 
-                if ($user->roles->count() === 0) {
+                if ($user->wasRecentlyCreated || $user->roles()->count() === 0) {
                     $user->assignRole('pegawai');
                 }
 
-                Auth::login($user, $this->remember);
-                RateLimiter::clear($this->throttleKey());
+                \Illuminate\Support\Facades\Auth::login($user, $this->remember);
+                \Illuminate\Support\Facades\RateLimiter::clear($this->throttleKey());
                 return;
             }
         } catch (\Exception $e) {
-            // If API connection error, proceed to check local DB fallback
+            // If external API fails, continue to fallback to local DB check
         }
 
-        // 2. Check Local Database fallback (seeded accounts / local users)
-        if (Auth::attempt(['nip' => $nip, 'password' => $password], $this->remember)) {
-            RateLimiter::clear($this->throttleKey());
+        // 2. Fallback to local authentication (for default admin 'kalamangna' or users with local password)
+        if (\Illuminate\Support\Facades\Auth::attempt(['nip' => $nip, 'password' => $password], $this->remember)) {
+            \Illuminate\Support\Facades\RateLimiter::clear($this->throttleKey());
             return;
         }
 
-        RateLimiter::hit($this->throttleKey());
+        \Illuminate\Support\Facades\RateLimiter::hit($this->throttleKey());
 
         // Check if user exists locally or in API Kepegawaian
         $userExistsLocally = \App\Models\User::where('nip', $nip)->exists();
@@ -99,7 +102,7 @@ class LoginForm extends Form
 
         if (!$userExistsLocally) {
             try {
-                $checkPegawai = \Illuminate\Support\Facades\Http::timeout(3)->get('http://apps.sinjaikab.go.id/api/pegawai/data_pegawai/', [
+                $checkPegawai = \Illuminate\Support\Facades\Http::timeout(3)->get("{$baseUrl}/data_pegawai/", [
                     'nip' => $nip
                 ]);
                 if ($checkPegawai->successful()) {
