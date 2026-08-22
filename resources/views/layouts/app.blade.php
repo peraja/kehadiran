@@ -78,10 +78,8 @@
                                 <div class="flex items-center justify-between gap-3">
                                     <p class="text-sm font-extrabold text-slate-900 truncate">{{ auth()->user()->name }}</p>
                                 </div>
-                                <div class="flex items-center gap-2 mt-1">
-                                    <span class="inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider {{ $roleName === 'admin' ? 'bg-purple-100 text-purple-700' : ($roleName === 'admin_opd' ? 'bg-primary-100 text-primary-700' : 'bg-slate-200 text-slate-700') }}">
-                                        {{ $roleLabel }}
-                                    </span>
+                                <div class="flex items-center gap-2 mt-1.5">
+                                    <x-user-role-badge :role="$roleName" />
                                     <p class="text-[11px] font-mono text-slate-500">NIP: {{ auth()->user()->nip ?? '-' }}</p>
                                 </div>
                             </div>

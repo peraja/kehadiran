@@ -44,4 +44,8 @@ Volt::route('opd/settings', 'opd.settings')
     ->middleware(['auth', 'verified'])
     ->name('opd.settings');
 
+Volt::route('settings', 'admin.settings')
+    ->middleware(['auth', 'verified'])
+    ->name('admin.settings');
+
 require __DIR__.'/auth.php';

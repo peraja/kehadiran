@@ -2,6 +2,8 @@
 
 use Livewire\Volt\Component;
 use App\Models\Meeting;
+use App\Models\Opd;
+use App\Models\MeetingAttendance;
 use Carbon\Carbon;
 
 new class extends Component {
@@ -10,11 +12,16 @@ new class extends Component {
         $today = Carbon::today();
         $startOfWeek = Carbon::now()->startOfWeek();
         $endOfWeek = Carbon::now()->endOfWeek();
+        $startOfMonth = Carbon::now()->startOfMonth();
+        $endOfMonth = Carbon::now()->endOfMonth();
+        $startOfYear = Carbon::now()->startOfYear();
+        $endOfYear = Carbon::now()->endOfYear();
+        $isAdmin = auth()->user()->hasRole('admin');
 
         $query = Meeting::query();
         
         // Filter based on role
-        if (!auth()->user()->hasRole('admin')) {
+        if (!$isAdmin) {
             $query->whereHas('creator', function($q) {
                 $q->where('unit_name', auth()->user()->unit_name);
             });
@@ -22,24 +29,55 @@ new class extends Component {
 
         $meetingsToday = (clone $query)->whereDate('date', $today)->count();
         $meetingsThisWeek = (clone $query)->whereBetween('date', [$startOfWeek, $endOfWeek])->count();
-        $meetingsWithoutMinutes = (clone $query)->whereDoesntHave('minutes')->where('status', 'completed')->count();
+        $meetingsThisMonth = (clone $query)->whereBetween('date', [$startOfMonth, $endOfMonth])->count();
+        $meetingsThisYear = (clone $query)->whereBetween('date', [$startOfYear, $endOfYear])->count();
 
+        // Live Ongoing Meetings
+        $ongoingMeetings = (clone $query)
+            ->where('status', 'ongoing')
+            ->with(['creator', 'attendances'])
+            ->orderBy('date', 'desc')
+            ->orderBy('start_time', 'asc')
+            ->get();
+
+        // Upcoming Meetings (Next 5)
         $upcomingMeetings = (clone $query)
-            ->whereIn('status', ['scheduled', 'ongoing'])
-            ->whereDate('date', '>=', $today)
+            ->where(function($q) use ($today) {
+                $q->where('date', '>', $today)
+                  ->orWhere(function($sub) use ($today) {
+                      $sub->whereDate('date', $today)
+                          ->where('status', 'scheduled');
+                  });
+            })
+            ->with(['creator'])
             ->orderBy('date', 'asc')
             ->orderBy('start_time', 'asc')
-            ->limit(5)
+            ->take(5)
             ->get();
 
+        // Needs Action: Completed meetings missing notulen / dokumentasi
         $missingMinutesMeetings = (clone $query)
-            ->whereDoesntHave('minutes')
             ->where('status', 'completed')
+            ->where(function($q) {
+                $q->whereNull('notulen')
+                  ->orWhere('notulen', '')
+                  ->orDoesntHave('photos');
+            })
+            ->with(['creator'])
             ->orderBy('date', 'desc')
-            ->limit(5)
+            ->take(5)
             ->get();
 
-        return compact('meetingsToday', 'meetingsThisWeek', 'meetingsWithoutMinutes', 'upcomingMeetings', 'missingMinutesMeetings');
+        return compact(
+            'isAdmin',
+            'meetingsToday',
+            'meetingsThisWeek',
+            'meetingsThisMonth',
+            'meetingsThisYear',
+            'ongoingMeetings',
+            'upcomingMeetings',
+            'missingMinutesMeetings'
+        );
     }
 }; ?>
 
@@ -52,7 +90,7 @@ new class extends Component {
                 Dashboard
             </h1>
             <p class="text-sm font-medium text-slate-500">
-                {{ auth()->user()->hasRole('admin') ? 'Pemerintah Kabupaten Sinjai' : (auth()->user()->unit_name ?? 'Pemkab Sinjai') }}
+                {{ $isAdmin ? 'Pemerintah Kabupaten Sinjai' : (auth()->user()->unit_name ?? 'Pemkab Sinjai') }}
             </p>
         </div>
         <div class="relative z-10 flex items-center gap-3">
@@ -64,7 +102,7 @@ new class extends Component {
     </div>
 
     <!-- Stat Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         <!-- Rapat Hari Ini -->
         <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 flex items-center gap-5 relative overflow-hidden group hover:border-primary-300 transition-colors">
             <div class="absolute right-0 top-0 w-24 h-24 bg-gradient-to-br from-primary-50 to-primary-100 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
@@ -78,9 +116,9 @@ new class extends Component {
         </div>
 
         <!-- Rapat Minggu Ini -->
-        <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 flex items-center gap-5 relative overflow-hidden group hover:border-primary-300 transition-colors">
-            <div class="absolute right-0 top-0 w-24 h-24 bg-gradient-to-br from-primary-50 to-primary-100 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
-            <div class="w-14 h-14 rounded-2xl bg-primary-50 text-primary-600 flex items-center justify-center shrink-0 relative z-10">
+        <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 flex items-center gap-5 relative overflow-hidden group hover:border-sky-300 transition-colors">
+            <div class="absolute right-0 top-0 w-24 h-24 bg-gradient-to-br from-sky-50 to-sky-100 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
+            <div class="w-14 h-14 rounded-2xl bg-sky-50 text-sky-600 flex items-center justify-center shrink-0 relative z-10">
                 <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
             </div>
             <div class="relative z-10">
@@ -89,18 +127,66 @@ new class extends Component {
             </div>
         </div>
 
-        <!-- Menunggu Notulen -->
+        <!-- Rapat Bulan Ini -->
+        <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 flex items-center gap-5 relative overflow-hidden group hover:border-indigo-300 transition-colors">
+            <div class="absolute right-0 top-0 w-24 h-24 bg-gradient-to-br from-indigo-50 to-indigo-100 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
+            <div class="w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0 relative z-10">
+                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2zM9 15h.01M12 15h.01M15 15h.01M9 18h.01M12 18h.01M15 18h.01"></path></svg>
+            </div>
+            <div class="relative z-10">
+                <h3 class="text-xs font-extrabold text-slate-500 uppercase tracking-widest mb-1">Bulan Ini</h3>
+                <p class="text-3xl font-black text-slate-900 leading-none">{{ $meetingsThisMonth }}</p>
+            </div>
+        </div>
+
+        <!-- Rapat Tahun Ini -->
         <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 flex items-center gap-5 relative overflow-hidden group hover:border-amber-300 transition-colors">
             <div class="absolute right-0 top-0 w-24 h-24 bg-gradient-to-br from-amber-50 to-amber-100 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
             <div class="w-14 h-14 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0 relative z-10">
-                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
             </div>
             <div class="relative z-10">
-                <h3 class="text-xs font-extrabold text-slate-500 uppercase tracking-widest mb-1">Tanpa Notulen</h3>
-                <p class="text-3xl font-black text-slate-900 leading-none">{{ $meetingsWithoutMinutes }}</p>
+                <h3 class="text-xs font-extrabold text-slate-500 uppercase tracking-widest mb-1">Tahun Ini</h3>
+                <p class="text-3xl font-black text-slate-900 leading-none">{{ $meetingsThisYear }}</p>
             </div>
         </div>
     </div>
+
+    <!-- Live Ongoing Meetings Widget -->
+    @if($ongoingMeetings->isNotEmpty())
+    <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="px-6 py-5 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
+            <div class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-rose-500"></span>
+                <h3 class="font-extrabold text-slate-900 text-sm">Rapat Berlangsung</h3>
+            </div>
+        </div>
+        <div class="divide-y divide-slate-100">
+            @foreach($ongoingMeetings as $meeting)
+            <div class="p-5 hover:bg-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-colors group">
+                <div class="min-w-0 flex-1">
+                    <a href="{{ route('meetings.overview', $meeting->id) }}" wire:navigate class="font-extrabold text-sm text-slate-900 group-hover:text-primary-600 transition-colors truncate block">
+                        {{ $meeting->title }}
+                    </a>
+                    <div class="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs text-slate-500 mt-1.5 font-medium">
+                        <span>{{ $meeting->creator?->unit_name ?: 'Pemerintah Kabupaten Sinjai' }}</span>
+                        <span>&bull;</span>
+                        <span>{{ $meeting->location ?: 'Ruang Rapat' }}</span>
+                        <span>&bull;</span>
+                        <span class="text-rose-600 font-bold">{{ $meeting->attendances->count() }} Hadir</span>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2 shrink-0">
+                    <a href="{{ route('meetings.presensi', $meeting->id) }}" wire:navigate class="inline-flex items-center justify-center px-4 py-2 bg-primary-50 hover:bg-primary-100 border border-primary-200 active:scale-95 text-primary-700 rounded-xl font-bold text-xs transition-all shadow-xs">
+                        Presensi
+                    </a>
+                </div>
+            </div>
+            @endforeach
+        </div>
+    </div>
+    @endif
 
     <!-- Lists -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">

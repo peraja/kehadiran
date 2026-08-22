@@ -257,62 +257,6 @@ new #[Layout('layouts.app')] class extends Component {
     </x-alert>
     @endif
 
-    <!-- Metrics Cards -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-        <div class="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm hover:-translate-y-1 transition-transform duration-300">
-            <div class="flex justify-between items-start">
-                <div>
-                    <p class="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Pengguna</p>
-                    <h3 class="text-3xl font-black text-slate-900 mt-2">{{ $counts['total'] }}</h3>
-                </div>
-                <div class="p-3 bg-slate-100 rounded-xl text-slate-600">
-                    <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                    </svg>
-                </div>
-            </div>
-        </div>
-        <div class="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm hover:-translate-y-1 transition-transform duration-300">
-            <div class="flex justify-between items-start">
-                <div>
-                    <p class="text-xs font-bold text-slate-500 uppercase tracking-wider">Super Admin</p>
-                    <h3 class="text-3xl font-black text-slate-900 mt-2">{{ $counts['admin'] }}</h3>
-                </div>
-                <div class="p-3 bg-purple-50 rounded-xl text-purple-600">
-                    <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                    </svg>
-                </div>
-            </div>
-        </div>
-        <div class="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm hover:-translate-y-1 transition-transform duration-300">
-            <div class="flex justify-between items-start">
-                <div>
-                    <p class="text-xs font-bold text-slate-500 uppercase tracking-wider">Admin OPD</p>
-                    <h3 class="text-3xl font-black text-slate-900 mt-2">{{ $counts['admin_opd'] }}</h3>
-                </div>
-                <div class="p-3 bg-primary-50 rounded-xl text-primary-600">
-                    <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                    </svg>
-                </div>
-            </div>
-        </div>
-        <div class="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm hover:-translate-y-1 transition-transform duration-300">
-            <div class="flex justify-between items-start">
-                <div>
-                    <p class="text-xs font-bold text-slate-500 uppercase tracking-wider">Pegawai</p>
-                    <h3 class="text-3xl font-black text-slate-900 mt-2">{{ $counts['pegawai'] }}</h3>
-                </div>
-                <div class="p-3 bg-emerald-50 rounded-xl text-emerald-600">
-                    <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                    </svg>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- Main Table Container -->
     <div class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
         <!-- Toolbar -->
@@ -326,7 +270,7 @@ new #[Layout('layouts.app')] class extends Component {
                 </button>
                 <button wire:click="$set('roleFilter','admin')" 
                     class="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold transition-all {{ $roleFilter === 'admin' ? 'bg-purple-600 text-white shadow-sm' : 'bg-white border border-slate-200 text-slate-600 hover:border-purple-300 hover:bg-purple-50 hover:text-purple-700' }}">
-                    Admin
+                    Super Admin
                     <span class="inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-[10px] {{ $roleFilter === 'admin' ? 'bg-purple-700 text-purple-100' : 'bg-purple-100 text-purple-700' }}">{{ $counts['admin'] }}</span>
                 </button>
                 <button wire:click="$set('roleFilter','admin_opd')" 
@@ -335,9 +279,9 @@ new #[Layout('layouts.app')] class extends Component {
                     <span class="inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-[10px] {{ $roleFilter === 'admin_opd' ? 'bg-primary-700 text-primary-100' : 'bg-primary-100 text-primary-700' }}">{{ $counts['admin_opd'] }}</span>
                 </button>
                 <button wire:click="$set('roleFilter','pegawai')" 
-                    class="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold transition-all {{ $roleFilter === 'pegawai' ? 'bg-emerald-600 text-white shadow-sm' : 'bg-white border border-slate-200 text-slate-600 hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700' }}">
+                    class="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold transition-all {{ $roleFilter === 'pegawai' ? 'bg-slate-600 text-white shadow-sm' : 'bg-white border border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-700' }}">
                     Pegawai
-                    <span class="inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-[10px] {{ $roleFilter === 'pegawai' ? 'bg-emerald-700 text-emerald-100' : 'bg-emerald-100 text-emerald-700' }}">{{ $counts['pegawai'] }}</span>
+                    <span class="inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-[10px] {{ $roleFilter === 'pegawai' ? 'bg-slate-700 text-slate-100' : 'bg-slate-100 text-slate-700' }}">{{ $counts['pegawai'] }}</span>
                 </button>
             </div>
 
@@ -392,25 +336,7 @@ new #[Layout('layouts.app')] class extends Component {
 
                         <!-- Peran -->
                         <td class="py-4 px-6 text-left whitespace-nowrap">
-                            @php
-                            $roleName = $u->roles->first()?->name ?? 'pegawai';
-                            @endphp
-                            @if($roleName === 'admin')
-                            <span class="inline-flex items-center px-3 py-1 bg-purple-100 text-purple-700 border border-purple-200 rounded-full text-[11px] font-bold uppercase tracking-wider">
-                                <span class="w-1.5 h-1.5 rounded-full bg-purple-500 mr-1.5"></span>
-                                Super Admin
-                            </span>
-                            @elseif($roleName === 'admin_opd')
-                            <span class="inline-flex items-center px-3 py-1 bg-primary-100 text-primary-700 border border-primary-200 rounded-full text-[11px] font-bold uppercase tracking-wider">
-                                <span class="w-1.5 h-1.5 rounded-full bg-primary-500 mr-1.5"></span>
-                                Admin OPD
-                            </span>
-                            @else
-                            <span class="inline-flex items-center px-3 py-1 bg-slate-100 text-slate-600 border border-slate-200 rounded-full text-[11px] font-bold uppercase tracking-wider">
-                                <span class="w-1.5 h-1.5 rounded-full bg-slate-400 mr-1.5"></span>
-                                Pegawai
-                            </span>
-                            @endif
+                            <x-user-role-badge :role="$u->roles->first()?->name ?? 'pegawai'" />
                         </td>
 
                         <!-- OPD & Jabatan -->
@@ -501,7 +427,7 @@ new #[Layout('layouts.app')] class extends Component {
                 <div>
                     <label for="nip" class="block text-sm font-bold text-slate-700 mb-1">NIP</label>
                     <div class="flex items-center gap-3">
-                        <input wire:model="nip" wire:keydown.enter.prevent="checkNipFromApi" id="nip" type="text" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 font-mono focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Ketik 18 digit NIP" />
+                        <input wire:model="nip" wire:keydown.enter.prevent="checkNipFromApi" id="nip" type="text" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 font-mono focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Contoh: 198501012010011001" />
 
                         <button type="button" wire:click="checkNipFromApi" wire:loading.attr="disabled" class="shrink-0 flex items-center justify-center px-4 py-2.5 bg-slate-800 hover:bg-slate-900 text-white rounded-xl font-bold text-sm transition-colors shadow-sm">
                             <svg wire:loading.remove wire:target="checkNipFromApi" class="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -534,7 +460,7 @@ new #[Layout('layouts.app')] class extends Component {
                 <!-- Nama Lengkap -->
                 <div>
                     <label for="name" class="block text-sm font-bold text-slate-700 mb-1">Nama Lengkap</label>
-                    <input wire:model="name" id="name" type="text" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Nama lengkap pegawai / admin" required />
+                    <input wire:model="name" id="name" type="text" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Contoh: Ahmad Yani, S.Kom" required />
                     @error('name') <span class="text-xs text-red-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                 </div>
 
@@ -555,14 +481,14 @@ new #[Layout('layouts.app')] class extends Component {
                     <!-- OPD -->
                     <div>
                         <label for="unit_name" class="block text-sm font-bold text-slate-700 mb-1">OPD</label>
-                        <input wire:model="unit_name" id="unit_name" type="text" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Contoh: Dinas Kominfo" />
+                        <input wire:model="unit_name" id="unit_name" type="text" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Contoh: Dinas Komunikasi dan Informatika" />
                         @error('unit_name') <span class="text-xs text-red-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                     </div>
 
                     <!-- Jabatan -->
                     <div>
                         <label for="jabatan" class="block text-sm font-bold text-slate-700 mb-1">Jabatan</label>
-                        <input wire:model="jabatan" id="jabatan" type="text" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Contoh: Staf, Kepala Seksi" />
+                        <input wire:model="jabatan" id="jabatan" type="text" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Contoh: Pranata Komputer Ahli Muda" />
                         @error('jabatan') <span class="text-xs text-red-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                     </div>
                 </div>

@@ -219,7 +219,7 @@ new #[Layout('layouts.guest')] class extends Component {
                 <svg class="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
-                <span>{{ $meeting->date ? $meeting->date->translatedFormat('l, d M Y') : '-' }}</span>
+                <span>{{ $meeting->date ? $meeting->date->translatedFormat('l, d F Y') : '-' }}</span>
             </div>
             <span class="text-slate-300">&bull;</span>
             <div class="flex items-center gap-1.5">
@@ -254,7 +254,7 @@ new #[Layout('layouts.guest')] class extends Component {
                 <div class="flex-1 w-full">
                     <input wire:model="nip" id="nip" type="text"
                         class="block w-full py-3 px-4 rounded-xl border border-slate-300 text-sm font-mono focus:ring-primary-500 focus:border-primary-500 transition-colors {{ $nip_checked ? 'bg-slate-50 text-slate-500 opacity-70' : 'bg-white' }}"
-                        placeholder="Masukkan NIP"
+                        placeholder="Contoh: 198501012010011001"
                         :readonly="$nip_checked"
                         wire:keydown.enter.prevent="checkNip"
                         required autofocus />
@@ -301,17 +301,17 @@ new #[Layout('layouts.guest')] class extends Component {
         <div class="space-y-5 bg-slate-50 p-5 rounded-2xl border border-slate-200">
             <div>
                 <label for="guest_name" class="block text-sm font-bold text-slate-700 mb-1">Nama Lengkap</label>
-                <input wire:model="guest_name" id="guest_name" type="text" class="block w-full py-2.5 px-3 rounded-xl border border-slate-300 text-sm focus:ring-primary-500 focus:border-primary-500 transition-colors" placeholder="Masukkan nama lengkap Anda" required />
+                <input wire:model="guest_name" id="guest_name" type="text" class="block w-full py-2.5 px-3 rounded-xl border border-slate-300 text-sm focus:ring-primary-500 focus:border-primary-500 transition-colors" placeholder="Contoh: Ahmad Yani" required />
                 @error('guest_name') <span class="text-xs text-rose-600 mt-1 block font-bold">{{ $message }}</span> @enderror
             </div>
             <div>
                 <label for="guest_agency" class="block text-sm font-bold text-slate-700 mb-1">Instansi / Lembaga</label>
-                <input wire:model="guest_agency" id="guest_agency" type="text" class="block w-full py-2.5 px-3 rounded-xl border border-slate-300 text-sm focus:ring-primary-500 focus:border-primary-500 transition-colors" placeholder="Contoh: Polres Sinjai, Perusahaan ABC" required />
+                <input wire:model="guest_agency" id="guest_agency" type="text" class="block w-full py-2.5 px-3 rounded-xl border border-slate-300 text-sm focus:ring-primary-500 focus:border-primary-500 transition-colors" placeholder="Contoh: Polres Sinjai" required />
                 @error('guest_agency') <span class="text-xs text-rose-600 mt-1 block font-bold">{{ $message }}</span> @enderror
             </div>
             <div>
                 <label for="guest_position" class="block text-sm font-bold text-slate-700 mb-1">Jabatan (Opsional)</label>
-                <input wire:model="guest_position" id="guest_position" type="text" class="block w-full py-2.5 px-3 rounded-xl border border-slate-300 text-sm focus:ring-primary-500 focus:border-primary-500 transition-colors" placeholder="Contoh: Staf, Manajer, Perwakilan" />
+                <input wire:model="guest_position" id="guest_position" type="text" class="block w-full py-2.5 px-3 rounded-xl border border-slate-300 text-sm focus:ring-primary-500 focus:border-primary-500 transition-colors" placeholder="Contoh: Staf Humas" />
                 @error('guest_position') <span class="text-xs text-rose-600 mt-1 block font-bold">{{ $message }}</span> @enderror
             </div>
         </div>
@@ -360,37 +360,54 @@ new #[Layout('layouts.guest')] class extends Component {
     </form>
 
     @elseif($status === 'success')
-    <div class="text-center py-6">
-        <div class="w-20 h-20 bg-gradient-to-br from-emerald-400 to-emerald-600 text-white rounded-full flex items-center justify-center mx-auto shadow-sm shadow-emerald-100 mb-6 relative">
-            <div class="absolute inset-0 rounded-full border-4 border-emerald-100 scale-110 animate-ping opacity-20"></div>
-            <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path>
-            </svg>
+    <div class="text-center py-4 space-y-6">
+        <div>
+            <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path>
+                </svg>
+            </div>
+            <h3 class="text-xl sm:text-2xl font-extrabold text-slate-900">Presensi Berhasil!</h3>
         </div>
 
-        <h3 class="text-2xl font-extrabold text-slate-900 mb-2">Presensi Berhasil!</h3>
-        <p class="text-sm font-medium text-slate-500 mb-8">{{ $message }}</p>
-
         @if($employee_name)
-        <div class="bg-slate-50 rounded-2xl p-1 shadow-inner border border-slate-200">
-            <div class="bg-white rounded-xl p-5 text-left divide-y divide-slate-100">
-                <div class="py-3 flex justify-between items-start gap-4">
-                    <span class="text-slate-500 font-bold text-sm shrink-0">Nama Lengkap</span>
-                    <span class="font-extrabold text-slate-900 text-right leading-snug">{{ $employee_name }}</span>
-                </div>
-                @if($recorded_time)
-                <div class="py-3 flex justify-between items-center gap-4">
-                    <span class="text-slate-500 font-bold text-sm shrink-0">Waktu Tercatat</span>
-                    <span class="font-bold text-emerald-600 text-right">{{ $recorded_time }}</span>
-                </div>
-                @endif
+        <div class="bg-white border border-slate-200 rounded-2xl p-4 text-left divide-y divide-slate-100 shadow-2xs">
+            <div class="py-2.5 flex justify-between items-center gap-4">
+                <span class="text-slate-500 font-medium text-sm">Nama Lengkap</span>
+                <span class="font-bold text-slate-900 text-right">{{ $employee_name }}</span>
             </div>
+            @if($recorded_time)
+            <div class="py-2.5 flex justify-between items-center gap-4">
+                <span class="text-slate-500 font-medium text-sm">Waktu Presensi</span>
+                <span class="font-bold text-slate-900 font-mono text-right">{{ $recorded_time }}</span>
+            </div>
+            @endif
         </div>
         @endif
 
-        <div class="mt-8">
-            <a href="{{ route('meetings.check-in', $meeting->id) }}" wire:navigate class="inline-flex justify-center items-center px-6 py-3.5 bg-primary-50 text-primary-700 hover:bg-primary-100 active:scale-95 rounded-2xl font-bold text-sm transition-all shadow-sm border border-primary-200 w-full">
-                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        @php
+        $skmUrl = \App\Models\Setting::get('skm_url', 'https://skm.go.id/share/instansi/22748fb4-56a9-4101-9e6d-4145a727e0f5/1');
+        @endphp
+        @if($skmUrl)
+        <!-- Banner Survei Kepuasan Masyarakat (SKM) -->
+        <div class="p-5 bg-slate-50 border border-slate-200 rounded-2xl text-left space-y-3">
+            <div>
+                <h4 class="text-sm font-bold text-slate-900">Survei Kepuasan Masyarakat (SKM)</h4>
+                <p class="text-xs text-slate-500 mt-0.5">Bantu kami meningkatkan kualitas layanan melalui survei singkat.</p>
+            </div>
+
+            <a href="{{ $skmUrl }}" target="_blank" rel="noopener noreferrer" class="inline-flex justify-center items-center px-5 py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl font-bold text-sm transition-all shadow-sm w-full gap-2">
+                <span>Isi Survei SKM</span>
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+            </a>
+        </div>
+        @endif
+
+        <div>
+            <a href="{{ route('meetings.check-in', $meeting->id) }}" wire:navigate class="inline-flex justify-center items-center px-5 py-2.5 bg-white border border-slate-300 hover:bg-slate-50 active:scale-95 text-slate-700 rounded-xl font-bold text-sm transition-all shadow-xs w-full gap-2">
+                <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
                 </svg>
                 Isi Presensi Peserta Lain

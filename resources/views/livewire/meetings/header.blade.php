@@ -264,7 +264,7 @@ new class extends Component {
             <form wire:submit="updateMeeting" class="space-y-5">
                 <div>
                     <label for="edit_title" class="block text-sm font-bold text-slate-700 mb-1">Agenda</label>
-                    <input wire:model="title" id="edit_title" type="text" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Contoh: Rapat Koordinasi SPBE Tahunan" required />
+                    <input wire:model="title" id="edit_title" type="text" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Contoh: Rapat Koordinasi SPBE" required />
                     @error('title') <span class="text-xs text-red-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                 </div>
 
@@ -291,7 +291,7 @@ new class extends Component {
 
                 <div>
                     <label for="edit_location" class="block text-sm font-bold text-slate-700 mb-1">Lokasi</label>
-                    <input wire:model="location" id="edit_location" type="text" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Contoh: Ruang Pola Kantor Bupati Sinjai" required />
+                    <input wire:model="location" id="edit_location" type="text" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Contoh: Ruang Pola Kantor Bupati" required />
                     @error('location') <span class="text-xs text-red-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                 </div>
 

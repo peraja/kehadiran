@@ -36,7 +36,7 @@ new #[Layout('layouts.guest')] class extends Component
         <!-- NIP -->
         <div>
             <x-input-label for="nip" value="NIP" />
-            <x-text-input wire:model="form.nip" id="nip" class="block mt-1 w-full font-mono" type="text" name="nip" placeholder="Masukkan 18 digit NIP" required autofocus autocomplete="username" />
+            <x-text-input wire:model="form.nip" id="nip" class="block mt-1 w-full font-mono" type="text" name="nip" placeholder="Contoh: 198501012010011001" required autofocus autocomplete="username" />
             <x-input-error :messages="$errors->get('form.nip')" class="mt-1" />
         </div>
 

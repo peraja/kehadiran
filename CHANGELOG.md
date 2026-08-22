@@ -7,13 +7,21 @@ Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/
 ## [Unreleased] - 2026-08-22
 
 ### Ditambahkan
+- Modul Pengaturan Sistem (`Setting` model & migration, `admin/settings.blade.php`) untuk pengelolaan konfigurasi tautan Survei Kepuasan Masyarakat (SKM).
+- Integrasi ajakan pengisian Survei Kepuasan Masyarakat (SKM) secara instan pada layar sukses presensi (*check-in*).
+- Komponen lencana peran pengguna global `<x-user-role-badge>` untuk standardisasi tampilan *role* (Super Admin, Admin OPD, Pegawai).
 - Modul Manajemen OPD & Penandatangan Dokumen Rapat (`Opd`, `OpdSigner`) lengkap dengan manajemen Eselon dan sinkronisasi pimpinan OPD.
 - Komponen lencana status rapat global `<x-meeting-status-badge>`.
-- Tombol filter pill interaktif pada Daftar Rapat dan Master Pengguna dengan badge penghitung dinamis.
+- Tombol filter pill interaktif pada Daftar Rapat, Master Pengguna, dan Master OPD dengan badge penghitung dinamis.
 - Nomor urut otomatis (`#`) pada tabel daftar hadir presensi rapat.
 
 ### Diubah
-- Standardisasi seluruh *Page Header* dan *Modal Header* di semua modul (Daftar Rapat, Dashboard, Pengguna, OPD, dan Profil).
+- Standardisasi token warna lencana rapat: status *Live / Berlangsung* menggunakan warna merah menyala (`rose-50 / rose-700`) dengan animasi denyut (*pulsing dot*).
+- Pembaruan kartu statistik Dashboard menjadi 4 periode waktu kronologis (*Hari Ini, Minggu Ini, Bulan Ini, Tahun Ini*).
+- Penyederhanaan widget *Rapat Berlangsung* pada dashboard dengan pembersihan elemen berlebih.
+- Penghapusan kartu metrik statistik berlebih pada Master Pengguna dan Master OPD demi tata letak yang lebih ringkas dan fokus.
+- Standardisasi seluruh teks *placeholder* di semua formulir dan *field* pencarian menggunakan format contoh yang seragam.
+- Standardisasi seluruh *Page Header* dan *Modal Header* di semua modul (Daftar Rapat, Dashboard, Pengguna, OPD, Pengaturan, dan Profil).
 - Refaktor modal sistem (`components/modal.blade.php`) menggunakan `m-auto` untuk penyelarasan vertikal otomatis dan scroll mulus pada modal tinggi.
 - Relabeling *field* judul menjadi "Agenda" pada form Buat & Edit Rapat, serta pembersihan *field* ganda.
 - Penataan ulang kartu *Informasi Rapat* pada tab Ringkasan detail rapat agar menyatu langsung tanpa bingkai ganda (*card inside card*).

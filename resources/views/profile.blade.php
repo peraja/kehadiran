@@ -16,22 +16,7 @@
                 </p>
             </div>
             <div class="relative z-10">
-                @if($roleName === 'admin')
-                <span class="inline-flex items-center px-4 py-1.5 bg-purple-50 text-purple-700 border border-purple-200 rounded-full text-xs font-bold shadow-xs">
-                    <span class="w-2 h-2 rounded-full bg-purple-500 mr-2"></span>
-                    Super Admin
-                </span>
-                @elseif($roleName === 'admin_opd')
-                <span class="inline-flex items-center px-4 py-1.5 bg-primary-50 text-primary-700 border border-primary-200 rounded-full text-xs font-bold shadow-xs">
-                    <span class="w-2 h-2 rounded-full bg-primary-500 mr-2"></span>
-                    Admin OPD
-                </span>
-                @else
-                <span class="inline-flex items-center px-4 py-1.5 bg-slate-100 text-slate-700 border border-slate-200 rounded-full text-xs font-bold shadow-xs">
-                    <span class="w-2 h-2 rounded-full bg-slate-400 mr-2"></span>
-                    Pegawai
-                </span>
-                @endif
+                <x-user-role-badge :role="$roleName" />
             </div>
         </div>
 
