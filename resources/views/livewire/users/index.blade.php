@@ -15,10 +15,12 @@ new #[Layout('layouts.app')] class extends Component {
     public $roleFilter = '';
 
     // Form modal state
-    public $userId = null;
+    public $userId;
     public $name = '';
     public $nip = '';
+    public $nik = '';
     public $role = 'pegawai';
+    public $password = '';
     public $unit_name = '';
     public $jabatan = '';
 
@@ -54,7 +56,7 @@ new #[Layout('layouts.app')] class extends Component {
     public function openAddModal()
     {
         $this->resetValidation();
-        $this->reset(['userId', 'name', 'nip', 'unit_name', 'jabatan', 'apiSynced', 'apiStatusMessage']);
+        $this->reset(['userId', 'name', 'nip', 'nik', 'password', 'unit_name', 'jabatan', 'apiSynced', 'apiStatusMessage']);
         $this->role = 'pegawai';
 
         // If current user is admin_opd, prefill unit_name
@@ -74,10 +76,12 @@ new #[Layout('layouts.app')] class extends Component {
 
         $this->userId = $user->id;
         $this->name = $user->name;
-        $this->nip = $user->nip;
+        $this->nip = $user->nip ?? '';
+        $this->nik = $user->nik ?? '';
         $this->role = $user->roles->first()?->name ?? 'pegawai';
-        $this->unit_name = $user->unit_name;
-        $this->jabatan = $user->jabatan;
+        $this->unit_name = $user->unit_name ?? '';
+        $this->jabatan = $user->jabatan ?? '';
+        $this->password = '';
         $this->isEdit = true;
 
         $this->dispatch('open-modal', 'user-form-modal');
@@ -107,6 +111,11 @@ new #[Layout('layouts.app')] class extends Component {
                 $this->name = $pData['nama_pegawai'] ?? $pData['nama'] ?? $this->name;
                 $this->jabatan = $pData['jabatan_nama'] ?? $pData['jabatan'] ?? $this->jabatan;
 
+                $nik = trim((string)($pData['nik'] ?? ($pData['no_ktp'] ?? ($pData['ktp'] ?? ($pData['no_identitas'] ?? '')))));
+                if ($nik) {
+                    $this->nik = $nik;
+                }
+
                 $unit_id = $pData['unit_id'] ?? $pData['id_unit'] ?? null;
                 if ($unit_id) {
                     $unitResponse = Http::timeout(5)->get('http://apps.sinjaikab.go.id/api/pegawai/get_unit/', [
@@ -133,7 +142,8 @@ new #[Layout('layouts.app')] class extends Component {
             $rules = [
                 'name' => 'required|string|max:255',
                 'nip' => 'required|string|max:30|unique:users,nip,' . $this->userId,
-                'role' => 'required|in:admin,admin_opd,pegawai',
+                'nik' => 'nullable|string|max:16',
+                'role' => 'required|in:admin,admin_opd,pimpinan,pegawai',
                 'unit_name' => 'nullable|string|max:255',
                 'jabatan' => 'nullable|string|max:255',
             ];
@@ -157,6 +167,7 @@ new #[Layout('layouts.app')] class extends Component {
             $user->update([
                 'name' => $validated['name'],
                 'nip' => $validated['nip'],
+                'nik' => !empty($this->nik) ? trim($this->nik) : null,
                 'unit_name' => $validated['unit_name'],
                 'jabatan' => $validated['jabatan'],
             ]);
@@ -168,12 +179,13 @@ new #[Layout('layouts.app')] class extends Component {
             $rules = [
                 'name' => 'required|string|max:255',
                 'nip' => 'required|string|max:30|unique:users,nip',
-                'role' => 'required|in:admin,admin_opd,pegawai',
+                'nik' => 'nullable|string|max:16',
+                'role' => 'required|in:admin,admin_opd,pimpinan,pegawai',
                 'unit_name' => 'nullable|string|max:255',
                 'jabatan' => 'nullable|string|max:255',
             ];
 
-            // Prevent admin_opd from creating global admin
+            // Prevent admin_opd from elevating user to admin
             if (!auth()->user()->hasRole('admin') && $this->role === 'admin') {
                 $this->role = 'admin_opd';
             }
@@ -191,6 +203,8 @@ new #[Layout('layouts.app')] class extends Component {
             $user = User::create([
                 'name' => $validated['name'],
                 'nip' => $validated['nip'],
+                'nik' => !empty($this->nik) ? trim($this->nik) : null,
+                'password' => null,
                 'unit_name' => $validated['unit_name'],
                 'jabatan' => $validated['jabatan'],
             ]);
@@ -201,7 +215,7 @@ new #[Layout('layouts.app')] class extends Component {
         }
 
         $this->dispatch('close-modal', 'user-form-modal');
-        $this->reset(['userId', 'name', 'nip', 'unit_name', 'jabatan', 'apiSynced', 'apiStatusMessage']);
+        $this->reset(['userId', 'name', 'nip', 'unit_name', 'jabatan', 'password', 'apiSynced', 'apiStatusMessage']);
     }
 
     public function deleteUser($id)
@@ -218,25 +232,32 @@ new #[Layout('layouts.app')] class extends Component {
 
     public function with(): array
     {
-        $query = User::with('roles')
-            ->when($this->search, function ($q) {
-                $q->where(function ($sub) {
-                    $sub->where('name', 'like', '%' . $this->search . '%')
-                        ->orWhere('nip', 'like', '%' . $this->search . '%')
-                        ->orWhere('unit_name', 'like', '%' . $this->search . '%');
-                });
-            })
-            ->when($this->roleFilter, function ($q) {
-                $q->role($this->roleFilter);
-            })
-            ->latest();
+        $query = User::with('roles');
 
-        $users = $query->paginate(10);
+        if (!auth()->user()->hasRole('admin')) {
+            $query->where('unit_name', auth()->user()->unit_name);
+        }
+
+        if (!empty($this->search)) {
+            $query->where(function ($q) {
+                $q->where('name', 'like', '%' . $this->search . '%')
+                    ->orWhere('nip', 'like', '%' . $this->search . '%')
+                    ->orWhere('unit_name', 'like', '%' . $this->search . '%')
+                    ->orWhere('jabatan', 'like', '%' . $this->search . '%');
+            });
+        }
+
+        if (!empty($this->roleFilter)) {
+            $query->role($this->roleFilter);
+        }
+
+        $users = $query->orderBy('name', 'asc')->paginate(15);
 
         $counts = [
             'total' => User::count(),
             'admin' => User::role('admin')->count(),
             'admin_opd' => User::role('admin_opd')->count(),
+            'pimpinan' => User::role('pimpinan')->count(),
             'pegawai' => User::role('pegawai')->count(),
         ];
 
@@ -261,7 +282,7 @@ new #[Layout('layouts.app')] class extends Component {
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
             </svg>
-            Tambah Pengguna Baru
+            Tambah Pengguna
         </button>
     </div>
 
@@ -283,26 +304,35 @@ new #[Layout('layouts.app')] class extends Component {
         <!-- Toolbar -->
         <div class="p-4 border-b border-slate-100 flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-slate-50/50">
             <!-- Filter Pills -->
-            <div class="flex flex-wrap items-center gap-2">
+            <div class="flex flex-wrap items-center gap-1.5 sm:gap-2">
                 <button wire:click="$set('roleFilter','')" 
-                    class="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold transition-all {{ $roleFilter === '' ? 'bg-slate-800 text-white shadow-sm' : 'bg-white border border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900' }}">
-                    Semua Role
-                    <span class="inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-[10px] {{ $roleFilter === '' ? 'bg-slate-700 text-slate-300' : 'bg-slate-100 text-slate-500' }}">{{ $counts['total'] }}</span>
+                    class="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all {{ $roleFilter === '' ? 'bg-slate-900 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900' }}">
+                    Semua
+                    <span class="inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-[10px] {{ $roleFilter === '' ? 'bg-slate-800 text-slate-300' : 'bg-slate-100 text-slate-500' }}">{{ $counts['total'] }}</span>
                 </button>
                 <button wire:click="$set('roleFilter','admin')" 
-                    class="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold transition-all {{ $roleFilter === 'admin' ? 'bg-purple-600 text-white shadow-sm' : 'bg-white border border-slate-200 text-slate-600 hover:border-purple-300 hover:bg-purple-50 hover:text-purple-700' }}">
+                    class="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all {{ $roleFilter === 'admin' ? 'bg-purple-600 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-purple-300 hover:bg-purple-50 hover:text-purple-700' }}">
+                    <span class="w-1.5 h-1.5 rounded-full {{ $roleFilter === 'admin' ? 'bg-purple-200' : 'bg-purple-500' }}"></span>
                     Super Admin
                     <span class="inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-[10px] {{ $roleFilter === 'admin' ? 'bg-purple-700 text-purple-100' : 'bg-purple-100 text-purple-700' }}">{{ $counts['admin'] }}</span>
                 </button>
+                <button wire:click="$set('roleFilter','pimpinan')" 
+                    class="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all {{ $roleFilter === 'pimpinan' ? 'bg-indigo-600 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700' }}">
+                    <span class="w-1.5 h-1.5 rounded-full {{ $roleFilter === 'pimpinan' ? 'bg-indigo-200' : 'bg-indigo-500' }}"></span>
+                    Pimpinan
+                    <span class="inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-[10px] {{ $roleFilter === 'pimpinan' ? 'bg-indigo-700 text-indigo-100' : 'bg-indigo-100 text-indigo-700' }}">{{ $counts['pimpinan'] }}</span>
+                </button>
                 <button wire:click="$set('roleFilter','admin_opd')" 
-                    class="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold transition-all {{ $roleFilter === 'admin_opd' ? 'bg-primary-600 text-white shadow-sm' : 'bg-white border border-slate-200 text-slate-600 hover:border-primary-300 hover:bg-primary-50 hover:text-primary-700' }}">
+                    class="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all {{ $roleFilter === 'admin_opd' ? 'bg-primary-600 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-primary-300 hover:bg-primary-50 hover:text-primary-700' }}">
+                    <span class="w-1.5 h-1.5 rounded-full {{ $roleFilter === 'admin_opd' ? 'bg-primary-200' : 'bg-primary-500' }}"></span>
                     Admin OPD
                     <span class="inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-[10px] {{ $roleFilter === 'admin_opd' ? 'bg-primary-700 text-primary-100' : 'bg-primary-100 text-primary-700' }}">{{ $counts['admin_opd'] }}</span>
                 </button>
                 <button wire:click="$set('roleFilter','pegawai')" 
-                    class="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold transition-all {{ $roleFilter === 'pegawai' ? 'bg-slate-600 text-white shadow-sm' : 'bg-white border border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-700' }}">
+                    class="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all {{ $roleFilter === 'pegawai' ? 'bg-slate-700 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-700' }}">
+                    <span class="w-1.5 h-1.5 rounded-full {{ $roleFilter === 'pegawai' ? 'bg-slate-300' : 'bg-slate-400' }}"></span>
                     Pegawai
-                    <span class="inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-[10px] {{ $roleFilter === 'pegawai' ? 'bg-slate-700 text-slate-100' : 'bg-slate-100 text-slate-700' }}">{{ $counts['pegawai'] }}</span>
+                    <span class="inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-[10px] {{ $roleFilter === 'pegawai' ? 'bg-slate-800 text-slate-100' : 'bg-slate-100 text-slate-700' }}">{{ $counts['pegawai'] }}</span>
                 </button>
             </div>
 
@@ -411,7 +441,7 @@ new #[Layout('layouts.app')] class extends Component {
                                     <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
                                     </svg>
-                                    Tambah Pengguna Baru
+                                    Tambah Pengguna
                                 </button>
                                 @endif
                             </div>
@@ -422,19 +452,15 @@ new #[Layout('layouts.app')] class extends Component {
             </table>
         </div>
 
-        @if($users->hasPages())
-        <div class="p-4 sm:px-6 sm:py-4 border-t border-slate-100 bg-slate-50/50">
-            {{ $users->links() }}
-        </div>
-        @endif
+        <x-pagination :paginator="$users" />
     </div>
 
     <!-- Modal Form Tambah / Edit Pengguna -->
-    <x-modal name="user-form-modal" maxWidth="lg">
+    <x-modal name="user-form-modal" maxWidth="2xl">
         <div class="p-6 sm:p-8">
             <div class="flex justify-between items-center pb-4 mb-6 border-b border-slate-100">
                 <h2 class="text-xl font-extrabold text-slate-900">
-                    {{ $isEdit ? 'Edit Data Pengguna' : 'Tambah Pengguna Baru' }}
+                    {{ $isEdit ? 'Edit Pengguna' : 'Tambah Pengguna' }}
                 </h2>
                 <button type="button" x-on:click="$dispatch('close')" class="p-2 bg-slate-50 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-colors">
                     <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -444,26 +470,36 @@ new #[Layout('layouts.app')] class extends Component {
             </div>
 
             <form wire:submit="saveUser" class="space-y-5">
-                <!-- NIP -->
-                <div>
-                    <label for="nip" class="block text-sm font-bold text-slate-700 mb-1">NIP</label>
-                    <div class="flex items-center gap-3">
-                        <input wire:model="nip" wire:keydown.enter.prevent="checkNipFromApi" id="nip" type="text" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 font-mono focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Contoh: 198501012010011001" />
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <!-- NIP -->
+                    <div>
+                        <label for="nip" class="block text-sm font-bold text-slate-700 mb-1">NIP</label>
+                        <div class="flex items-center gap-2">
+                            <input wire:model="nip" wire:keydown.enter.prevent="checkNipFromApi" id="nip" type="text" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 font-mono focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="18 digit NIP" />
 
-                        <button type="button" wire:click="checkNipFromApi" wire:loading.attr="disabled" class="shrink-0 flex items-center justify-center px-4 py-2.5 bg-slate-800 hover:bg-slate-900 text-white rounded-xl font-bold text-sm transition-colors shadow-sm">
-                            <svg wire:loading.remove wire:target="checkNipFromApi" class="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                            </svg>
-                            <svg wire:loading wire:target="checkNipFromApi" class="animate-spin w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
-                            </svg>
-                            <span wire:loading.remove wire:target="checkNipFromApi">Cek NIP</span>
-                        </button>
+                            <button type="button" wire:click="checkNipFromApi" wire:loading.attr="disabled" class="shrink-0 flex items-center justify-center px-3 py-2.5 bg-slate-800 hover:bg-slate-900 text-white rounded-xl font-bold text-xs transition-colors shadow-sm gap-1.5" title="Tarik dari SIMPEG">
+                                <svg wire:loading.remove wire:target="checkNipFromApi" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                                </svg>
+                                <svg wire:loading wire:target="checkNipFromApi" class="animate-spin w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                                </svg>
+                                <span>Cek</span>
+                            </button>
+                        </div>
+                        @error('nip') <span class="text-xs text-red-600 mt-1.5 block font-medium">{{ $message }}</span> @enderror
                     </div>
-                    @error('nip') <span class="text-xs text-red-600 mt-1.5 block font-medium">{{ $message }}</span> @enderror
 
-                    @if($apiSynced)
+                    <!-- NIK (KTP untuk TTE BSrE) -->
+                    <div>
+                        <label for="nik" class="block text-sm font-bold text-slate-700 mb-1">NIK (KTP untuk TTE BSrE)</label>
+                        <input wire:model="nik" id="nik" type="text" maxlength="16" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 font-mono focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="16 digit NIK" />
+                        @error('nik') <span class="text-xs text-red-600 mt-1.5 block font-medium">{{ $message }}</span> @enderror
+                    </div>
+                </div>
+
+                @if($apiSynced)
                     <div class="mt-3 p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center justify-between gap-3 animate-in fade-in slide-in-from-top-2">
                         <div class="min-w-0">
                             <p class="text-sm font-bold text-emerald-900 truncate">{{ $name }}</p>
@@ -485,25 +521,19 @@ new #[Layout('layouts.app')] class extends Component {
                     @error('name') <span class="text-xs text-red-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                 </div>
 
-                <!-- Peran (Role) -->
-                <div>
-                    <label for="role" class="block text-sm font-bold text-slate-700 mb-1">Role</label>
-                    <select wire:model="role" id="role" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors appearance-none">
-                        <option value="pegawai">Pegawai</option>
-                        <option value="admin_opd">Admin OPD</option>
-                        @if(auth()->user()->hasRole('admin'))
-                        <option value="admin">Super Admin</option>
-                        @endif
-                    </select>
-                    @error('role') <span class="text-xs text-red-600 mt-1 block font-medium">{{ $message }}</span> @enderror
-                </div>
-
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                    <!-- OPD -->
+                    <!-- Peran (Role) -->
                     <div>
-                        <label for="unit_name" class="block text-sm font-bold text-slate-700 mb-1">OPD</label>
-                        <input wire:model="unit_name" id="unit_name" type="text" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Contoh: Dinas Komunikasi dan Informatika" />
-                        @error('unit_name') <span class="text-xs text-red-600 mt-1 block font-medium">{{ $message }}</span> @enderror
+                        <label for="role" class="block text-sm font-bold text-slate-700 mb-1">Role</label>
+                        <select wire:model="role" id="role" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors appearance-none">
+                            <option value="pegawai">Pegawai</option>
+                            <option value="pimpinan">Pimpinan</option>
+                            <option value="admin_opd">Admin OPD</option>
+                            @if(auth()->user()->hasRole('admin'))
+                            <option value="admin">Super Admin</option>
+                            @endif
+                        </select>
+                        @error('role') <span class="text-xs text-red-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                     </div>
 
                     <!-- Jabatan -->
@@ -514,24 +544,26 @@ new #[Layout('layouts.app')] class extends Component {
                     </div>
                 </div>
 
+                <!-- OPD -->
+                <div>
+                    <label for="unit_name" class="block text-sm font-bold text-slate-700 mb-1">OPD</label>
+                    <input wire:model="unit_name" id="unit_name" type="text" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Contoh: Dinas Komunikasi dan Informatika" />
+                    @error('unit_name') <span class="text-xs text-red-600 mt-1 block font-medium">{{ $message }}</span> @enderror
+                </div>
+
                 <div class="mt-8 pt-6 border-t border-slate-100 flex justify-end gap-3">
-                    <button type="button" x-on:click="$dispatch('close')" class="px-5 py-2.5 bg-white border border-slate-300 hover:bg-slate-50 active:scale-95 text-slate-700 rounded-xl font-bold text-sm transition-all shadow-sm">
+                    <button type="button" x-on:click="$dispatch('close-modal', 'user-form-modal')" class="px-5 py-2.5 bg-white border border-slate-300 hover:bg-slate-50 active:scale-95 text-slate-700 rounded-xl font-bold text-sm transition-all shadow-sm">
                         Batal
                     </button>
-                    <button type="submit" class="px-5 py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl font-bold text-sm transition-all shadow-sm">
-                        <span wire:loading.remove wire:target="saveUser" class="flex items-center gap-2">
-                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                            </svg>
-                            {{ $isEdit ? 'Simpan Perubahan' : 'Tambah Pengguna' }}
-                        </span>
-                        <span wire:loading wire:target="saveUser" class="flex items-center gap-2">
-                            <svg class="animate-spin w-4 h-4 text-white" fill="none" viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
-                            </svg>
-                            Menyimpan...
-                        </span>
+                    <button type="submit" wire:loading.attr="disabled" wire:target="saveUser" class="inline-flex items-center justify-center px-5 py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl font-bold text-sm transition-all shadow-sm gap-2">
+                        <svg wire:loading.remove wire:target="saveUser" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                        </svg>
+                        <svg wire:loading wire:target="saveUser" class="animate-spin w-4 h-4 text-white" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                        </svg>
+                        <span>{{ $isEdit ? 'Simpan Perubahan' : 'Tambah Pengguna' }}</span>
                     </button>
                 </div>
             </form>

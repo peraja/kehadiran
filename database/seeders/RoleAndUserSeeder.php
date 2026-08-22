@@ -16,6 +16,7 @@ class RoleAndUserSeeder extends Seeder
         // Buat Roles dasar
         Role::firstOrCreate(['name' => 'admin']);
         Role::firstOrCreate(['name' => 'admin_opd']);
+        Role::firstOrCreate(['name' => 'pimpinan']);
         Role::firstOrCreate(['name' => 'pegawai']);
 
         // Assign default Super Admin
@@ -29,4 +30,5 @@ class RoleAndUserSeeder extends Seeder
         $admin->syncRoles(['admin']);
     }
 }
+
 

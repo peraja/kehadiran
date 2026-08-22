@@ -4,7 +4,22 @@ Semua perubahan penting pada proyek ini dicatat dalam berkas ini.
 
 Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/1.0.0/), dan proyek ini mematuhi [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] - 2026-08-22
+## [Unreleased] - 2026-08-23
+
+### Ditambahkan
+- Seeder modular Master OPD ([`OpdSeeder.php`](database/seeders/OpdSeeder.php)) yang memuat 42 Perangkat Daerah se-Kabupaten Sinjai lengkap dengan `unit_id` resmi SIMPEG.
+- Kolom `nik` (16 digit) pada tabel `users`, `opds` (`leader_nik`), dan `opd_signers` (`nik`) untuk kesiapan integrasi TTE BSrE (BSSN).
+- Fitur **Cek NIP SIMPEG** otomatis pada modal form penandatangan di Pengaturan OPD dan Master Pengguna.
+- Komponen paginasi kustom minimalis berikon (`<x-pagination>`) untuk penyajian data tabel yang rapi.
+
+### Diubah
+- Konsolidasi seluruh migrasi database menjadi 11 berkas atomik bersih siap pasang di server cPanel / produksi.
+- Penggabungan tampilan Kepala OPD ke dalam tabel Pejabat Penandatangan pada halaman Pengaturan OPD dengan dukungan modal edit dinamis (Eselon, Pangkat, Jabatan, NIK, dan Unit Kerja).
+- Penghapusan input manual password pada form pembuatan pengguna karena otentikasi login terhubung langsung ke Gateway ENIKDA / SIMPEG Sinjai.
+- Penyelarasan tata letak formulir penandatangan: Eselon dan Pangkat dalam 2 kolom, Jabatan lebar penuh, dan label "Unit Kerja".
+- Pembersihan berkas-berkas pengujian dan migrasi yang tidak terpakai.
+
+## [1.1.0] - 2026-08-22
 
 ### Ditambahkan
 - Relasi `opd_id` pada model `Meeting` dan migrasi basis data untuk pemilihan OPD langsung saat Super Admin membuat rapat.

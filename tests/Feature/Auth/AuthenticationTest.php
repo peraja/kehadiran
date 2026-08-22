@@ -22,10 +22,13 @@ class AuthenticationTest extends TestCase
 
     public function test_users_can_authenticate_using_the_login_screen(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->create([
+            'nip' => '198501012010011001',
+            'password' => bcrypt('password'),
+        ]);
 
         $component = Volt::test('pages.auth.login')
-            ->set('form.email', $user->email)
+            ->set('form.nip', $user->nip)
             ->set('form.password', 'password');
 
         $component->call('login');
@@ -39,10 +42,13 @@ class AuthenticationTest extends TestCase
 
     public function test_users_can_not_authenticate_with_invalid_password(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->create([
+            'nip' => '198501012010011001',
+            'password' => bcrypt('password'),
+        ]);
 
         $component = Volt::test('pages.auth.login')
-            ->set('form.email', $user->email)
+            ->set('form.nip', $user->nip)
             ->set('form.password', 'wrong-password');
 
         $component->call('login');

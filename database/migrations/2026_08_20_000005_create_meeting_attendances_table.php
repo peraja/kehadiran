@@ -10,16 +10,16 @@ return new class extends Migration
     {
         Schema::create('meeting_attendances', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('meeting_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('user_id')->nullable()->constrained()->cascadeOnDelete();
+            $table->foreignId('meeting_id')->constrained('meetings')->cascadeOnDelete();
+            $table->foreignId('user_id')->nullable()->constrained('users')->cascadeOnDelete();
             
             // Guest Fields
             $table->string('guest_name')->nullable();
             $table->string('guest_agency')->nullable();
+            $table->string('guest_position')->nullable();
             
-            // Signature
-            $table->text('signature')->nullable();
-            
+            // Signature & Device Tracking
+            $table->longText('signature')->nullable();
             $table->timestamp('check_in')->nullable();
             $table->string('method')->default('qr'); // qr, manual, system
             $table->string('device_info')->nullable();

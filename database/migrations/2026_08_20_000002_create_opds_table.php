@@ -6,28 +6,26 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('opds', function (Blueprint $table) {
             $table->id();
             $table->string('unit_id')->nullable()->unique();
             $table->string('name');
-            $table->string('short_name')->nullable();
             $table->text('address')->nullable();
             $table->string('phone')->nullable();
             $table->string('email')->nullable();
-            $table->unsignedInteger('employee_count')->default(0);
+            $table->string('leader_title')->nullable();
+            $table->string('leader_name')->nullable();
+            $table->string('leader_nip')->nullable();
+            $table->string('leader_nik', 16)->nullable();
+            $table->string('leader_rank')->nullable();
+            $table->string('leader_eselon')->nullable();
             $table->boolean('is_active')->default(true);
             $table->timestamps();
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('opds');

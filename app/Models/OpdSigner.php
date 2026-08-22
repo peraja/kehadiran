@@ -14,6 +14,7 @@ class OpdSigner extends Model
         'title',
         'name',
         'nip',
+        'nik',
         'rank',
         'eselon',
         'is_active',

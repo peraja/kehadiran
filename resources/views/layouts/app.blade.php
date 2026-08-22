@@ -56,6 +56,7 @@
                     $roleLabel = match($roleName) {
                     'admin' => 'Super Admin',
                     'admin_opd' => 'Admin OPD',
+                    'pimpinan' => 'Pimpinan',
                     default => 'Pegawai'
                     };
                     @endphp
@@ -63,8 +64,8 @@
                     <!-- User Quick Profile / Dropdown -->
                     <x-dropdown align="right" width="w-56">
                         <x-slot name="trigger">
-                            <button class="flex items-center gap-3 py-1.5 px-2.5 sm:py-2 sm:px-3.5 rounded-2xl bg-slate-50/80 hover:bg-slate-100 border border-slate-200/80 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all shadow-2xs">
-                                <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-primary-600 to-indigo-700 text-white font-extrabold text-sm flex items-center justify-center shadow-sm shrink-0">
+                            <button type="button" class="flex items-center gap-3 py-1.5 px-2.5 sm:py-2 sm:px-3.5 rounded-2xl bg-slate-50/80 hover:bg-slate-100/80 border border-slate-200/80 outline-none focus:outline-none focus-visible:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/25 active:scale-[0.99] transition-all shadow-2xs select-none cursor-pointer">
+                                <div class="w-9 h-9 rounded-xl bg-primary-600 text-white font-extrabold text-sm flex items-center justify-center shadow-xs shrink-0">
                                     {{ strtoupper(substr(auth()->user()->name, 0, 2)) }}
                                 </div>
                                 <div class="text-left pr-1">

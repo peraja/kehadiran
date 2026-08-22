@@ -123,6 +123,31 @@
                     @endforeach
                 </div>
             </div>
+            @else
+            <div class="mt-14 bg-white/60 backdrop-blur-sm rounded-3xl border border-slate-200 shadow-sm max-w-2xl mx-auto overflow-hidden p-8 text-center">
+                <div class="inline-flex items-center gap-2 px-3 py-1 bg-white border border-slate-200 text-slate-600 rounded-full text-xs font-bold shadow-2xs mb-4">
+                    <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+                    {{ \Carbon\Carbon::now()->translatedFormat('l, d F Y') }}
+                </div>
+                <div class="w-12 h-12 bg-slate-100 text-slate-400 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                    <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                </div>
+                <h3 class="font-extrabold text-slate-900 text-base">
+                    Tidak Ada Rapat Hari Ini
+                </h3>
+                @auth
+                <div class="mt-5">
+                    <a href="{{ route('meetings.index') }}" wire:navigate class="inline-flex items-center justify-center px-4 py-2 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl text-xs font-bold transition-all shadow-sm gap-2">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                        </svg>
+                        Buat Rapat
+                    </a>
+                </div>
+                @endauth
+            </div>
             @endif
 
             <!-- 3 Core Feature Highlights -->

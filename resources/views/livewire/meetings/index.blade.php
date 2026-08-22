@@ -162,7 +162,7 @@ new #[Layout('layouts.app')] class extends Component {
             }
         }
 
-        $opdSigners = $targetOpd ? $targetOpd->signers()->where('is_active', true)->orderByRaw("CASE eselon WHEN 'II.a' THEN 1 WHEN 'II.b' THEN 2 WHEN 'III.a' THEN 3 WHEN 'III.b' THEN 4 WHEN 'IV.a' THEN 5 WHEN 'IV.b' THEN 6 ELSE 7 END, id ASC")->get() : collect();
+        $opdSigners = $targetOpd ? $targetOpd->signers()->where('is_active', true)->orderByRaw("CASE eselon WHEN 'II.a' THEN 1 WHEN 'II.b' THEN 2 WHEN 'III.a' THEN 3 WHEN 'III.b' THEN 4 ELSE 5 END, id ASC")->get() : collect();
 
         $baseCountQuery = Meeting::query();
         if (!auth()->user()->hasRole('admin')) {
@@ -213,7 +213,7 @@ new #[Layout('layouts.app')] class extends Component {
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                 </svg>
-                Buat Rapat Baru
+                Buat Rapat
             </button>
         </div>
     </div>
@@ -342,7 +342,7 @@ new #[Layout('layouts.app')] class extends Component {
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
                                     </svg>
-                                    Buat Rapat Baru
+                                    Buat Rapat
                                 </button>
                                 @endif
                             </div>
@@ -353,17 +353,15 @@ new #[Layout('layouts.app')] class extends Component {
             </table>
         </div>
 
-        <div class="p-4 border-t border-slate-100 bg-white">
-            {{ $meetings->links() }}
-        </div>
+        <x-pagination :paginator="$meetings" />
     </div>
 
-    <!-- Modal Buat Rapat Baru -->
+    <!-- Modal Buat Rapat -->
     <x-modal name="add-meeting-modal" maxWidth="3xl" :show="$errors->isNotEmpty()" x-on:meeting-saved.window="show = false">
         <div class="p-6 sm:p-8">
             <div class="flex justify-between items-center pb-4 mb-6 border-b border-slate-100">
                 <h2 class="text-xl font-extrabold text-slate-900">
-                    Buat Rapat Baru
+                    Buat Rapat
                 </h2>
                 <button type="button" x-on:click="$dispatch('close')" class="p-2 bg-slate-50 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-colors">
                     <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -420,14 +418,16 @@ new #[Layout('layouts.app')] class extends Component {
                 @endif
 
                 <!-- Penandatangan -->
-                <div class="pt-4 border-t border-slate-100">
+                <div>
                     <label for="selected_signer_id" class="block text-sm font-bold text-slate-700 mb-1">Penandatangan</label>
                     <select wire:model.live="selected_signer_id" id="selected_signer_id" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" {{ $isAdmin && empty($selected_opd_id) ? 'disabled' : '' }}>
                         <option value="">
                             @if($isAdmin && empty($selected_opd_id))
                                 -- Pilih OPD terlebih dahulu --
+                            @elseif(!empty($opd?->leader_name))
+                                {{ $opd->leader_title ?: 'Kepala OPD' }} — {{ $opd->leader_name }} (Default)
                             @else
-                                {{ $opd?->leader_title ?: 'Kepala OPD' }}{{ !empty($opd?->leader_name) ? ' — ' . $opd->leader_name : ' (Default)' }}
+                                -- Pilih Penandatangan --
                             @endif
                         </option>
                         @foreach($opdSigners as $s)
@@ -441,20 +441,15 @@ new #[Layout('layouts.app')] class extends Component {
                         Batal
                     </button>
 
-                    <button type="submit" class="px-5 py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl font-bold text-sm transition-all shadow-sm">
-                        <span wire:loading.remove wire:target="saveMeeting" class="flex items-center gap-2">
-                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                            </svg>
-                            Simpan Rapat
-                        </span>
-                        <span wire:loading wire:target="saveMeeting" class="flex items-center gap-2">
-                            <svg class="animate-spin w-4 h-4 text-white" fill="none" viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
-                            </svg>
-                            Menyimpan...
-                        </span>
+                    <button type="submit" wire:loading.attr="disabled" wire:target="saveMeeting" class="inline-flex items-center justify-center px-5 py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl font-bold text-sm transition-all shadow-sm gap-2">
+                        <svg wire:loading.remove wire:target="saveMeeting" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                        </svg>
+                        <svg wire:loading wire:target="saveMeeting" class="animate-spin w-4 h-4 text-white" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                        </svg>
+                        <span>Simpan Rapat</span>
                     </button>
                 </div>
             </form>

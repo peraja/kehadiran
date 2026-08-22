@@ -42,6 +42,16 @@
                 </div>
             </div>
 
+            <!-- NIK (KTP untuk TTE) -->
+            <div class="flex flex-col sm:flex-row sm:items-center py-4 px-6 gap-2 sm:gap-6 hover:bg-slate-50/50 transition-colors">
+                <div class="sm:w-1/4 text-slate-500 font-bold text-sm">
+                    NIK (KTP)
+                </div>
+                <div class="sm:w-3/4 text-slate-800 font-mono text-sm font-semibold">
+                    {{ auth()->user()->nik ?? '-' }}
+                </div>
+            </div>
+
             <!-- Jabatan -->
             <div class="flex flex-col sm:flex-row sm:items-center py-4 px-6 gap-2 sm:gap-6 hover:bg-slate-50/50 transition-colors">
                 <div class="sm:w-1/4 text-slate-500 font-bold text-sm">

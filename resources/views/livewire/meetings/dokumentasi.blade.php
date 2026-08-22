@@ -201,19 +201,14 @@ new #[Layout('layouts.app')] class extends Component {
 
                     <div class="flex justify-end pt-2">
                         <button type="submit" wire:loading.attr="disabled" wire:target="photos, savePhotos" class="inline-flex items-center justify-center px-5 py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl font-bold text-sm transition-all shadow-sm gap-2">
-                            <span wire:loading.remove wire:target="savePhotos" class="flex items-center gap-2">
-                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                                </svg>
-                                Unggah Foto
-                            </span>
-                            <span wire:loading wire:target="savePhotos" class="flex items-center gap-2">
-                                <svg class="animate-spin w-4 h-4 text-white" fill="none" viewBox="0 0 24 24">
-                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
-                                </svg>
-                                Memproses...
-                            </span>
+                            <svg wire:loading.remove wire:target="savePhotos" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                            </svg>
+                            <svg wire:loading wire:target="savePhotos" class="animate-spin w-4 h-4 text-white" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                            </svg>
+                            <span>Unggah Foto</span>
                         </button>
                     </div>
                 </form>

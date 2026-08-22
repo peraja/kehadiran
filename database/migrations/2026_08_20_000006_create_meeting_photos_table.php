@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('meeting_photos', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('meeting_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('meeting_id')->constrained('meetings')->cascadeOnDelete();
             $table->string('file');
             $table->text('caption')->nullable();
             $table->foreignId('uploaded_by')->nullable()->constrained('users')->nullOnDelete();

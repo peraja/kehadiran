@@ -20,7 +20,9 @@ class Opd extends Model
         'leader_name',
         'leader_rank',
         'leader_nip',
+        'leader_nik',
         'leader_title',
+        'leader_eselon',
         'is_active',
     ];
 
@@ -198,53 +200,140 @@ class Opd extends Model
     }
 
     /**
+     * Resolve unit_id and clean info from SIMPEG API by OPD name if missing.
+     */
+    public function resolveUnitIdFromApi(): bool
+    {
+        if (!empty($this->unit_id)) {
+            return true;
+        }
+
+        try {
+            $response = \Illuminate\Support\Facades\Http::timeout(10)->get('http://apps.sinjaikab.go.id/api/pegawai/get_unit');
+            if ($response->successful()) {
+                $units = $response->json();
+                $unitList = isset($units['data']) && is_array($units['data']) ? $units['data'] : (is_array($units) ? $units : []);
+
+                $cleanCurrent = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $this->name));
+                foreach ($unitList as $u) {
+                    $rawName = $u['unit_nama'] ?? '';
+                    $cleanApi = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $rawName));
+                    if ($cleanApi === $cleanCurrent || str_contains($cleanApi, $cleanCurrent) || str_contains($cleanCurrent, $cleanApi)) {
+                        $cleaned = self::cleanAndFormatData($u);
+                        $this->update([
+                            'unit_id' => $cleaned['unit_id'] ?? $u['unit_id'] ?? null,
+                            'address' => $this->address ?: ($cleaned['address'] ?? null),
+                            'phone' => $this->phone ?: ($cleaned['phone'] ?? null),
+                            'email' => $this->email ?: ($cleaned['email'] ?? null),
+                        ]);
+                        $this->refresh();
+                        return !empty($this->unit_id);
+                    }
+                }
+            }
+        } catch (\Throwable $e) {
+            // Ignore connection error
+        }
+
+        return false;
+    }
+
+    /**
      * Synchronize officials (pejabat bereselon) from SIMPEG API.
      */
     public function syncSignersFromApi(): int
     {
-        if (!$this->unit_id) {
+        if (empty($this->unit_id)) {
+            $this->resolveUnitIdFromApi();
+        }
+
+        if (empty($this->unit_id)) {
             return 0;
         }
 
         try {
-            $response = \Illuminate\Support\Facades\Http::timeout(8)->get('http://apps.sinjaikab.go.id/api/pegawai/get_pegawai/', [
-                'unit_id' => $this->unit_id,
-            ]);
+            $pegawaiList = null;
+            for ($attempt = 1; $attempt <= 3; $attempt++) {
+                $response = \Illuminate\Support\Facades\Http::timeout(12)->get('http://apps.sinjaikab.go.id/api/pegawai/get_pegawai/', [
+                    'unit_id' => $this->unit_id,
+                ]);
 
-            if (!$response->successful()) {
-                return 0;
+                if ($response->successful()) {
+                    $data = $response->json();
+                    if (is_array($data) && !isset($data['error'])) {
+                        $pegawaiList = isset($data['data']) && is_array($data['data']) ? $data['data'] : (is_array($data) ? $data : []);
+                        break;
+                    }
+                    if (isset($data['error']) && str_contains(strtolower((string)$data['error']), 'too many requests')) {
+                        sleep(2);
+                        continue;
+                    }
+                }
+                if ($attempt < 3) {
+                    sleep(1);
+                }
             }
 
-            $pegawaiList = $response->json();
-            if (!is_array($pegawaiList)) {
+            if (!$pegawaiList || !is_array($pegawaiList)) {
                 return 0;
             }
 
             // Sync Kepala OPD (check peran_khusus === 'KEPALA' or detect head title patterns)
+            $headFound = false;
             foreach ($pegawaiList as $p) {
                 $isHeadRole = ($p['peran_khusus'] ?? '') === 'KEPALA';
                 $jobTitle = trim($p['jabatan_nama'] ?? '');
                 $eselon = strtoupper(trim((string)($p['jabatan_jenis_eselon'] ?? '')));
 
-                $isHeadTitle = preg_match('/^(?:Plt\.\s+)?(?:Kepala\s+(?:Dinas|Badan|Satuan|Kantor|Pelaksana)|Camat|Inspektur|Sekretaris\s+Daerah|Direktur)\b/i', $jobTitle)
-                    || (in_array($eselon, ['II.A', 'II.B'], true) && preg_match('/^(?:Plt\.\s+)?(?:Kepala|Pj\.|Pjs\.)\b/i', $jobTitle));
+                $isHeadTitle = preg_match('/^(?:Plt\.\s+|Pj\.\s+|Pjs\.\s+)?(?:Kepala\s+(?:Dinas|Badan|Satuan|Kantor|Pelaksana|UPTD)|Camat|Inspektur|Sekretaris\s+(?:Daerah|DPRD|Dewan)|Direktur)\b/i', $jobTitle)
+                    || (in_array($eselon, ['II.A', 'II.B'], true) && !preg_match('/(?:Asisten|Staf\s+Ahli)/i', $jobTitle));
 
                 if ($isHeadRole || $isHeadTitle) {
                     $pangkat = trim((string)($p['pangkat_nama'] ?? ''));
+                    $eselonRaw = trim((string)($p['jabatan_jenis_eselon'] ?? ($p['eselon'] ?? '')));
+                    $nik = trim((string)($p['nik'] ?? ($p['no_ktp'] ?? ($p['ktp'] ?? ($p['no_identitas'] ?? '')))));
                     $this->update([
                         'leader_name' => $p['nama'],
                         'leader_nip' => $p['nip'],
+                        'leader_nik' => $nik ?: $this->leader_nik,
                         'leader_title' => $jobTitle ?: $this->leader_title,
                         'leader_rank' => $pangkat ?: null,
+                        'leader_eselon' => $eselonRaw ?: ($eselon ?: 'II.a'),
                     ]);
+
+                    // Sync Kepala OPD as User with role: pimpinan
+                    if (!empty($p['nip'])) {
+                        $leaderUser = User::where('nip', $p['nip'])->first();
+                        if (!$leaderUser) {
+                            $leaderUser = User::create([
+                                'nip' => $p['nip'],
+                                'nik' => $nik ?: null,
+                                'name' => trim($p['nama'] ?? $p['nip']),
+                                'unit_name' => $this->name,
+                                'jabatan' => $jobTitle ?: $this->leader_title,
+                                'password' => null,
+                            ]);
+                        } else {
+                            $leaderUser->update([
+                                'name' => trim($p['nama'] ?? $leaderUser->name),
+                                'nik' => $nik ?: $leaderUser->nik,
+                                'unit_name' => $this->name,
+                                'jabatan' => $jobTitle ?: $leaderUser->jabatan,
+                            ]);
+                        }
+                        if (!$leaderUser->hasRole('admin')) {
+                            $leaderUser->syncRoles(['pimpinan']);
+                        }
+                    }
+                    $headFound = true;
                     break;
                 }
             }
 
-            $allowedEselons = ['II.A', 'II.B', 'III.A', 'III.B', 'IV.A'];
+            $allowedEselons = ['II.A', 'II.B', 'III.A', 'III.B'];
 
-            // Delete any existing signers below Eselon IV.a (e.g. IV.b) for this OPD
-            $this->signers()->whereNotIn('eselon', ['II.a', 'II.b', 'III.a', 'III.b', 'IV.a'])->delete();
+            // Delete any existing signers below Eselon III.b (e.g. IV.a, IV.b) for this OPD
+            $this->signers()->whereNotIn('eselon', ['II.a', 'II.b', 'III.a', 'III.b'])->delete();
 
             $syncedCount = 0;
             foreach ($pegawaiList as $p) {
@@ -253,7 +342,7 @@ class Opd extends Model
                     continue;
                 }
 
-                // Filter up to Eselon IV.a only (exclude IV.b, V, etc.)
+                // Filter up to Eselon III.b only (exclude IV.a, IV.b, V, etc.)
                 if (!in_array(strtoupper($eselon), $allowedEselons, true)) {
                     continue;
                 }
@@ -270,6 +359,7 @@ class Opd extends Model
 
                 $bidangName = self::cleanBidangName($title);
                 $pangkat = trim((string)($p['pangkat_nama'] ?? ''));
+                $signerNik = trim((string)($p['nik'] ?? ($p['no_ktp'] ?? ($p['ktp'] ?? ($p['no_identitas'] ?? '')))));
 
                 OpdSigner::updateOrCreate(
                     [
@@ -280,12 +370,88 @@ class Opd extends Model
                         'bidang_name' => $bidangName,
                         'name' => trim($p['nama'] ?? ''),
                         'nip' => !empty($p['nip']) ? trim($p['nip']) : null,
+                        'nik' => $signerNik ?: null,
                         'rank' => $pangkat ?: null,
                         'eselon' => $eselon,
                         'is_active' => true,
                     ]
                 );
+
+                // Sync Signer as User with role: pimpinan
+                if (!empty($p['nip'])) {
+                    $signerUser = User::where('nip', trim($p['nip']))->first();
+                    if (!$signerUser) {
+                        $signerUser = User::create([
+                            'nip' => trim($p['nip']),
+                            'nik' => $signerNik ?: null,
+                            'name' => trim($p['nama'] ?? $p['nip']),
+                            'unit_name' => $this->name,
+                            'jabatan' => $title,
+                            'password' => null,
+                        ]);
+                    } else {
+                        $signerUser->update([
+                            'name' => trim($p['nama'] ?? $signerUser->name),
+                            'nik' => $signerNik ?: $signerUser->nik,
+                            'unit_name' => $this->name,
+                            'jabatan' => $title,
+                        ]);
+                    }
+                    if (!$signerUser->hasRole('admin')) {
+                        $signerUser->syncRoles(['pimpinan']);
+                    }
+                }
+
                 $syncedCount++;
+            }
+
+            // Sync Admin OPD (Kasubag Kepegawaian / Kasubag Umum dan Kepegawaian / Kasubag TU & Kepegawaian)
+            $adminOpdCandidate = null;
+
+            // Prioritas 1: Jabatan Kasubag yang mengandung kata 'Kepegawaian'
+            foreach ($pegawaiList as $p) {
+                $jab = trim($p['jabatan_nama'] ?? '');
+                if (preg_match('/(?:Kasubag|Kepala\s+Sub\s*\.?\s*Bagian)\s+.*kepegawaian/i', $jab)
+                    && !preg_match('/(?:RSUD|Puskesmas|SDN|SMPN|Kelurahan|Pustu)/i', $jab)) {
+                    $adminOpdCandidate = $p;
+                    break;
+                }
+            }
+
+            // Prioritas 2: Jabatan Kasubag Umum / TU jika tidak ada kata kepegawaian eksplisit
+            if (!$adminOpdCandidate) {
+                foreach ($pegawaiList as $p) {
+                    $jab = trim($p['jabatan_nama'] ?? '');
+                    if (preg_match('/(?:Kasubag|Kepala\s+Sub\s*\.?\s*Bagian)\s+.*(?:umum|tata\s+usaha)/i', $jab)
+                        && !preg_match('/(?:RSUD|Puskesmas|SDN|SMPN|Kelurahan|Pustu)/i', $jab)) {
+                        $adminOpdCandidate = $p;
+                        break;
+                    }
+                }
+            }
+
+            if ($adminOpdCandidate && !empty($adminOpdCandidate['nip'])) {
+                $nip = trim($adminOpdCandidate['nip']);
+                $adminUser = User::where('nip', $nip)->first();
+                if (!$adminUser) {
+                    $adminUser = User::create([
+                        'nip' => $nip,
+                        'name' => trim($adminOpdCandidate['nama'] ?? $nip),
+                        'unit_name' => $this->name,
+                        'jabatan' => trim($adminOpdCandidate['jabatan_nama'] ?? ''),
+                        'password' => bcrypt($nip),
+                    ]);
+                } else {
+                    $adminUser->update([
+                        'name' => trim($adminOpdCandidate['nama'] ?? $adminUser->name),
+                        'unit_name' => $this->name,
+                        'jabatan' => trim($adminOpdCandidate['jabatan_nama'] ?? $adminUser->jabatan),
+                    ]);
+                }
+
+                if (!$adminUser->hasRole('admin')) {
+                    $adminUser->syncRoles(['admin_opd']);
+                }
             }
 
             return $syncedCount;

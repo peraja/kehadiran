@@ -29,6 +29,12 @@ new #[Layout('layouts.app')] class extends Component {
     public string $leader_title = '';
     public bool $is_active = true;
 
+    public bool $isSyncing = false;
+    public int $syncTotal = 0;
+    public int $syncCurrent = 0;
+    public string $syncCurrentName = '';
+    public array $syncQueue = [];
+
     public function mount(): void
     {
         if (!auth()->user()->hasRole('admin')) {
@@ -66,8 +72,8 @@ new #[Layout('layouts.app')] class extends Component {
         $opd = Opd::findOrFail($id);
 
         $this->opdId = $opd->id;
-        $this->unit_id = $opd->unit_id ?? '';
-        $this->name = $opd->name;
+        $this->unit_id = (string)($opd->unit_id ?? '');
+        $this->name = $opd->name ?? '';
         $this->address = $opd->address ?? '';
         $this->phone = $opd->phone ?? '';
         $this->email = $opd->email ?? '';
@@ -75,21 +81,17 @@ new #[Layout('layouts.app')] class extends Component {
         $this->leader_rank = $opd->leader_rank ?? '';
         $this->leader_nip = $opd->leader_nip ?? '';
         $this->leader_title = $opd->leader_title ?? '';
-        $this->is_active = (bool) $opd->is_active;
+        $this->is_active = (bool)$opd->is_active;
 
         $this->dispatch('open-modal', 'opd-form-modal');
     }
 
     public function saveOpd(): void
     {
-        if (!$this->opdId) {
-            return;
-        }
-
-        $this->validate([
-            'unit_id' => 'nullable|string|max:50|unique:opds,unit_id,' . $this->opdId . ',id',
+        $rules = [
             'name' => 'required|string|max:255',
-            'address' => 'nullable|string',
+            'unit_id' => 'nullable|string|max:50|unique:opds,unit_id,' . ($this->opdId ?: 'NULL'),
+            'address' => 'nullable|string|max:500',
             'phone' => 'nullable|string|max:50',
             'email' => 'nullable|email|max:100',
             'leader_name' => 'nullable|string|max:255',
@@ -97,36 +99,42 @@ new #[Layout('layouts.app')] class extends Component {
             'leader_nip' => 'nullable|string|max:50',
             'leader_title' => 'nullable|string|max:255',
             'is_active' => 'boolean',
-        ], [
-            'name.required' => 'Nama OPD wajib diisi.',
-            'unit_id.unique' => 'Kode Unit sudah terdaftar.',
-            'email.email' => 'Format email tidak valid.',
-        ]);
+        ];
 
-        $opd = Opd::findOrFail($this->opdId);
-        $opd->update([
-            'unit_id' => $this->unit_id ?: null,
-            'name' => trim($this->name),
-            'address' => $this->address ? trim($this->address) : null,
-            'phone' => $this->phone ? trim($this->phone) : null,
-            'email' => $this->email ? trim($this->email) : null,
-            'leader_name' => $this->leader_name ? trim($this->leader_name) : null,
-            'leader_rank' => $this->leader_rank ? trim($this->leader_rank) : null,
-            'leader_nip' => $this->leader_nip ? trim($this->leader_nip) : null,
-            'leader_title' => $this->leader_title ? trim($this->leader_title) : null,
-            'is_active' => $this->is_active,
-        ]);
+        $messages = [
+            'name.required' => 'Nama OPD wajib diisi.',
+            'unit_id.unique' => 'Kode Unit ID sudah digunakan oleh OPD lain.',
+            'email.email' => 'Format email tidak valid.',
+        ];
+
+        $validated = $this->validate($rules, $messages);
+
+        if ($this->opdId) {
+            $opd = Opd::findOrFail($this->opdId);
+            $opd->update([
+                'name' => trim($validated['name']),
+                'unit_id' => $validated['unit_id'] ? trim($validated['unit_id']) : null,
+                'address' => $validated['address'] ? trim($validated['address']) : null,
+                'phone' => $validated['phone'] ? trim($validated['phone']) : null,
+                'email' => $validated['email'] ? trim($validated['email']) : null,
+                'leader_name' => $validated['leader_name'] ? trim($validated['leader_name']) : null,
+                'leader_rank' => $validated['leader_rank'] ? trim($validated['leader_rank']) : null,
+                'leader_nip' => $validated['leader_nip'] ? trim($validated['leader_nip']) : null,
+                'leader_title' => $validated['leader_title'] ? trim($validated['leader_title']) : null,
+                'is_active' => (bool)$validated['is_active'],
+            ]);
+
+            session()->flash('message', 'Data OPD berhasil diperbarui.');
+        }
 
         $this->dispatch('close-modal', 'opd-form-modal');
-        session()->flash('message', 'OPD berhasil diperbarui.');
         $this->resetForm();
     }
 
     public function toggleStatus(int $id): void
     {
         $opd = Opd::findOrFail($id);
-        $opd->is_active = !$opd->is_active;
-        $opd->save();
+        $opd->update(['is_active' => !$opd->is_active]);
 
         session()->flash('message', 'Status OPD berhasil diubah.');
     }
@@ -139,38 +147,90 @@ new #[Layout('layouts.app')] class extends Component {
         session()->flash('message', 'OPD berhasil dihapus.');
     }
 
-    public function syncFromApi(): void
+    public function startSync(): void
     {
+        if ($this->isSyncing) {
+            return;
+        }
+
         try {
-            $response = Http::timeout(15)->get('http://apps.sinjaikab.go.id/api/pegawai/get_unit');
-
-            if ($response->successful()) {
-                $units = $response->json();
-                $count = 0;
-
-                if (is_array($units)) {
-                    foreach ($units as $unit) {
-                        $cleaned = Opd::cleanAndFormatData($unit);
-                        if (!empty($cleaned['name'])) {
-                            $opd = Opd::updateOrCreate(
-                                ['unit_id' => $cleaned['unit_id'] ?? null],
-                                $cleaned
-                            );
-                            if ($opd->unit_id) {
-                                $opd->syncSignersFromApi();
-                            }
-                            $count++;
-                        }
+            $units = null;
+            for ($attempt = 1; $attempt <= 3; $attempt++) {
+                $response = Http::timeout(15)->get('http://apps.sinjaikab.go.id/api/pegawai/get_unit');
+                if ($response->successful()) {
+                    $data = $response->json();
+                    if (is_array($data) && !isset($data['error'])) {
+                        $units = $data;
+                        break;
                     }
-
-                    session()->flash('message', "{$count} data OPD berhasil disinkronkan.");
-                    return;
+                }
+                if ($attempt < 3) {
+                    sleep(2);
                 }
             }
 
-            session()->flash('error', 'Gagal menyinkronkan data SIMPEG.');
+            if (!is_array($units)) {
+                session()->flash('error', 'Gagal menghubungi API SIMPEG.');
+                return;
+            }
+
+            $queue = [];
+            foreach ($units as $unit) {
+                $cleaned = Opd::cleanAndFormatData($unit);
+                if (!empty($cleaned['name'])) {
+                    $opd = Opd::updateOrCreate(
+                        ['unit_id' => $cleaned['unit_id'] ?? null],
+                        $cleaned
+                    );
+                    if ($opd->unit_id && $opd->unit_id !== '7307') {
+                        $queue[] = [
+                            'id' => $opd->id,
+                            'unit_id' => $opd->unit_id,
+                            'name' => $opd->name,
+                        ];
+                    }
+                }
+            }
+
+            $this->syncQueue = $queue;
+            $this->syncTotal = count($queue);
+            $this->syncCurrent = 0;
+            $this->syncCurrentName = 'Menyiapkan...';
+            $this->isSyncing = true;
+
+            $this->dispatch('open-modal', 'sync-progress-modal');
+            $this->dispatch('trigger-next-sync');
         } catch (\Throwable $e) {
-            session()->flash('error', 'Gagal menghubungi API SIMPEG.');
+            $this->dispatch('close-modal', 'sync-progress-modal');
+            session()->flash('error', 'Gagal memulai sinkronisasi.');
+        }
+    }
+
+    public function syncNextUnit(): void
+    {
+        if (!$this->isSyncing || empty($this->syncQueue)) {
+            $this->isSyncing = false;
+            $this->syncQueue = [];
+            session()->flash('message', 'Data OPD berhasil disinkronkan.');
+            $this->redirect(route('opd.index'), navigate: true);
+            return;
+        }
+
+        $item = array_shift($this->syncQueue);
+        $this->syncCurrentName = $item['name'];
+        $this->syncCurrent++;
+
+        $opd = Opd::find($item['id']);
+        if ($opd) {
+            $opd->syncSignersFromApi();
+        }
+
+        if (!empty($this->syncQueue)) {
+            $this->dispatch('trigger-next-sync');
+        } else {
+            $this->isSyncing = false;
+            session()->flash('message', 'Data OPD berhasil disinkronkan.');
+            $this->redirect(route('opd.index'), navigate: true);
         }
     }
 
@@ -210,7 +270,7 @@ new #[Layout('layouts.app')] class extends Component {
     }
 }; ?>
 
-<div class="space-y-6 pb-10">
+<div x-data x-on:trigger-next-sync.window="setTimeout(() => { $wire.syncNextUnit() }, 300)" class="space-y-6 pb-10">
     <!-- Header Section -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-slate-200 shadow-sm relative overflow-hidden">
         <div class="absolute right-0 top-0 -mt-10 -mr-10 w-40 h-40 bg-gradient-to-br from-primary-50 to-primary-100 rounded-full blur-3xl pointer-events-none opacity-60"></div>
@@ -224,16 +284,15 @@ new #[Layout('layouts.app')] class extends Component {
         </div>
 
         <div class="relative z-10 flex items-center gap-3">
-            <button wire:click="syncFromApi" wire:loading.attr="disabled" class="inline-flex justify-center items-center px-5 py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl font-bold text-sm transition-all shadow-sm gap-2">
-                <svg wire:loading.remove wire:target="syncFromApi" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <button wire:click="startSync" wire:loading.attr="disabled" :disabled="$wire.isSyncing" class="inline-flex justify-center items-center px-5 py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl font-bold text-sm transition-all shadow-sm gap-2">
+                <svg wire:loading.remove wire:target="startSync" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                 </svg>
-                <svg wire:loading wire:target="syncFromApi" class="animate-spin w-4 h-4 text-white" fill="none" viewBox="0 0 24 24">
+                <svg wire:loading wire:target="startSync" class="animate-spin w-4 h-4 text-white" fill="none" viewBox="0 0 24 24">
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
                 </svg>
-                <span wire:loading.remove wire:target="syncFromApi">Sinkron SIMPEG</span>
-                <span wire:loading wire:target="syncFromApi">Menyinkronkan...</span>
+                <span>Sinkron SIMPEG</span>
             </button>
         </div>
     </div>
@@ -256,19 +315,21 @@ new #[Layout('layouts.app')] class extends Component {
         <!-- Toolbar -->
         <div class="p-4 border-b border-slate-100 flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-slate-50/50">
             <!-- Filter Pills -->
-            <div class="flex flex-wrap items-center gap-2">
+            <div class="flex flex-wrap items-center gap-1.5 sm:gap-2">
                 <button wire:click="$set('statusFilter', '')"
-                    class="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold transition-all {{ $statusFilter === '' ? 'bg-slate-800 text-white shadow-sm' : 'bg-white border border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900' }}">
+                    class="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all {{ $statusFilter === '' ? 'bg-slate-900 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900' }}">
                     Semua
-                    <span class="inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-[10px] {{ $statusFilter === '' ? 'bg-slate-700 text-slate-300' : 'bg-slate-100 text-slate-500' }}">{{ $counts['total'] }}</span>
+                    <span class="inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-[10px] {{ $statusFilter === '' ? 'bg-slate-800 text-slate-300' : 'bg-slate-100 text-slate-500' }}">{{ $counts['total'] }}</span>
                 </button>
                 <button wire:click="$set('statusFilter', 'active')"
-                    class="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold transition-all {{ $statusFilter === 'active' ? 'bg-emerald-600 text-white shadow-sm' : 'bg-white border border-slate-200 text-slate-600 hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700' }}">
+                    class="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all {{ $statusFilter === 'active' ? 'bg-primary-600 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-primary-300 hover:bg-primary-50 hover:text-primary-700' }}">
+                    <span class="w-1.5 h-1.5 rounded-full {{ $statusFilter === 'active' ? 'bg-primary-200' : 'bg-primary-500' }}"></span>
                     Aktif
-                    <span class="inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-[10px] {{ $statusFilter === 'active' ? 'bg-emerald-700 text-emerald-100' : 'bg-emerald-100 text-emerald-700' }}">{{ $counts['active'] }}</span>
+                    <span class="inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-[10px] {{ $statusFilter === 'active' ? 'bg-primary-700 text-primary-100' : 'bg-primary-100 text-primary-700' }}">{{ $counts['active'] }}</span>
                 </button>
                 <button wire:click="$set('statusFilter', 'inactive')"
-                    class="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold transition-all {{ $statusFilter === 'inactive' ? 'bg-rose-600 text-white shadow-sm' : 'bg-white border border-slate-200 text-slate-600 hover:border-rose-300 hover:bg-rose-50 hover:text-rose-700' }}">
+                    class="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all {{ $statusFilter === 'inactive' ? 'bg-rose-600 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-rose-300 hover:bg-rose-50 hover:text-rose-700' }}">
+                    <span class="w-1.5 h-1.5 rounded-full {{ $statusFilter === 'inactive' ? 'bg-rose-200' : 'bg-rose-500' }}"></span>
                     Nonaktif
                     <span class="inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-[10px] {{ $statusFilter === 'inactive' ? 'bg-rose-700 text-rose-100' : 'bg-rose-100 text-rose-700' }}">{{ $counts['total'] - $counts['active'] }}</span>
                 </button>
@@ -389,12 +450,15 @@ new #[Layout('layouts.app')] class extends Component {
                                     Reset Filter
                                 </button>
                                 @else
-                                <button wire:click="syncFromApi" wire:loading.attr="disabled" class="mt-3 inline-flex items-center px-4 py-2 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white text-xs font-bold rounded-xl transition-all shadow-sm gap-2">
-                                    <svg wire:loading.remove wire:target="syncFromApi" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <button wire:click="startSync" wire:loading.attr="disabled" :disabled="$wire.isSyncing" class="mt-3 inline-flex items-center px-4 py-2 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white text-xs font-bold rounded-xl transition-all shadow-sm gap-2">
+                                    <svg wire:loading.remove wire:target="startSync" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                                     </svg>
-                                    <span wire:loading.remove wire:target="syncFromApi">Sinkron SIMPEG</span>
-                                    <span wire:loading wire:target="syncFromApi">Menyinkronkan...</span>
+                                    <svg wire:loading wire:target="startSync" class="animate-spin w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                                    </svg>
+                                    <span>Sinkron SIMPEG</span>
                                 </button>
                                 @endif
                             </div>
@@ -405,11 +469,7 @@ new #[Layout('layouts.app')] class extends Component {
             </table>
         </div>
 
-        @if($opds->hasPages())
-        <div class="p-4 sm:px-6 sm:py-4 border-t border-slate-100 bg-slate-50/50">
-            {{ $opds->links() }}
-        </div>
-        @endif
+        <x-pagination :paginator="$opds" />
     </div>
 
     <!-- Modal Edit OPD -->
@@ -417,7 +477,7 @@ new #[Layout('layouts.app')] class extends Component {
         <div class="p-6 sm:p-8">
             <div class="flex justify-between items-center pb-4 mb-6 border-b border-slate-100">
                 <h2 class="text-xl font-extrabold text-slate-900">
-                    Edit Data OPD
+                    Edit OPD
                 </h2>
                 <button type="button" x-on:click="$dispatch('close')" class="p-2 bg-slate-50 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-colors">
                     <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -511,23 +571,62 @@ new #[Layout('layouts.app')] class extends Component {
                     <button type="button" x-on:click="$dispatch('close')" class="px-5 py-2.5 bg-white border border-slate-300 hover:bg-slate-50 active:scale-95 text-slate-700 rounded-xl font-bold text-sm transition-all shadow-sm">
                         Batal
                     </button>
-                    <button type="submit" class="px-5 py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl font-bold text-sm transition-all shadow-sm">
-                        <span wire:loading.remove wire:target="saveOpd" class="flex items-center gap-2">
-                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                            </svg>
-                            Simpan Perubahan
-                        </span>
-                        <span wire:loading wire:target="saveOpd" class="flex items-center gap-2">
-                            <svg class="animate-spin w-4 h-4 text-white" fill="none" viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
-                            </svg>
-                            Menyimpan...
-                        </span>
+                    <button type="submit" wire:loading.attr="disabled" wire:target="saveOpd" class="inline-flex items-center justify-center px-5 py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl font-bold text-sm transition-all shadow-sm gap-2">
+                        <svg wire:loading.remove wire:target="saveOpd" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                        </svg>
+                        <svg wire:loading wire:target="saveOpd" class="animate-spin w-4 h-4 text-white" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                        </svg>
+                        <span>Simpan Perubahan</span>
                     </button>
                 </div>
             </form>
         </div>
     </x-modal>
+
+    <!-- Progress Modal Saat Sinkronisasi -->
+    @if($isSyncing)
+    <div class="fixed inset-0 z-[150] overflow-hidden" role="dialog" aria-modal="true">
+        <!-- Modal Backdrop -->
+        <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity animate-in fade-in duration-200"></div>
+
+        <!-- Centering & Viewport Boundary Wrapper -->
+        <div class="fixed inset-0 z-10 flex items-center justify-center p-4 sm:p-6 text-center">
+            <!-- Modal Content Card with Internal Scroll -->
+            <div class="relative w-full max-w-md transform overflow-hidden rounded-3xl bg-white text-left shadow-2xl border border-slate-200/80 transition-all p-6 sm:p-8 text-center space-y-5 animate-in zoom-in-95 duration-150">
+                <div class="w-14 h-14 bg-primary-50 text-primary-600 rounded-2xl flex items-center justify-center mx-auto shadow-inner">
+                    <svg class="animate-spin w-7 h-7 text-primary-600" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                    </svg>
+                </div>
+
+                <div>
+                    <h3 class="text-base font-extrabold text-slate-900 mb-1">
+                        Sinkronisasi SIMPEG
+                    </h3>
+                    <p class="text-xs font-semibold text-primary-600 truncate px-4">
+                        {{ $syncCurrentName }}
+                    </p>
+                </div>
+
+                <!-- Progress Bar -->
+                @php
+                    $pct = $syncTotal > 0 ? min(100, round(($syncCurrent / $syncTotal) * 100)) : 0;
+                @endphp
+                <div class="space-y-2">
+                    <div class="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden p-0.5 border border-slate-200">
+                        <div class="bg-primary-600 h-1.5 rounded-full transition-all duration-300 ease-out" style="width: {{ $pct }}%"></div>
+                    </div>
+                    <div class="flex items-center justify-between text-xs font-bold text-slate-500 px-1">
+                        <span>{{ $syncCurrent }} / {{ $syncTotal }}</span>
+                        <span class="text-primary-700 font-extrabold">{{ $pct }}%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
 </div>

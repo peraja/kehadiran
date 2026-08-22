@@ -10,11 +10,10 @@ return new class extends Migration
     {
         Schema::create('meeting_minutes', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('meeting_id')->constrained()->cascadeOnDelete();
-            $table->longText('summary')->nullable();
-            $table->longText('discussion')->nullable();
-            $table->longText('decisions')->nullable();
+            $table->foreignId('meeting_id')->constrained('meetings')->cascadeOnDelete();
+            $table->longText('content')->nullable();
             $table->boolean('ai_generated')->default(false);
+            $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
         });
     }

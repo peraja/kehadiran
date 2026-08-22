@@ -88,19 +88,14 @@ new #[Layout('layouts.app')] class extends Component {
         <!-- Global Save Button -->
         <div class="flex justify-end pt-2">
             <button type="submit" wire:loading.attr="disabled" wire:target="saveSettings" class="inline-flex items-center justify-center px-6 py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white font-bold text-sm rounded-xl shadow-sm transition-all gap-2">
-                <span wire:loading.remove wire:target="saveSettings" class="flex items-center gap-2">
-                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                    </svg>
-                    Simpan Pengaturan
-                </span>
-                <span wire:loading wire:target="saveSettings" class="flex items-center gap-2">
-                    <svg class="animate-spin w-4 h-4 text-white" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
-                    </svg>
-                    Menyimpan...
-                </span>
+                <svg wire:loading.remove wire:target="saveSettings" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+                <svg wire:loading wire:target="saveSettings" class="animate-spin w-4 h-4 text-white" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                </svg>
+                <span>Simpan Pengaturan</span>
             </button>
         </div>
     </form>

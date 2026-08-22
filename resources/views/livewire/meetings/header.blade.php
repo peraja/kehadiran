@@ -47,7 +47,7 @@ new class extends Component {
             }
         }
         $this->opd = $opd;
-        $this->opdSigners = $opd ? $opd->signers()->where('is_active', true)->orderByRaw("CASE eselon WHEN 'II.a' THEN 1 WHEN 'II.b' THEN 2 WHEN 'III.a' THEN 3 WHEN 'III.b' THEN 4 WHEN 'IV.a' THEN 5 WHEN 'IV.b' THEN 6 ELSE 7 END, id ASC")->get() : collect();
+        $this->opdSigners = $opd ? $opd->signers()->where('is_active', true)->orderByRaw("CASE eselon WHEN 'II.a' THEN 1 WHEN 'II.b' THEN 2 WHEN 'III.a' THEN 3 WHEN 'III.b' THEN 4 ELSE 5 END, id ASC")->get() : collect();
 
         $matchedSigner = $this->opdSigners->first(function ($s) {
             return $s->name === $this->meeting->signer_name || $s->title === $this->meeting->signer_title;
@@ -60,7 +60,7 @@ new class extends Component {
         $this->selected_signer_id = '';
         $opd = !empty($val) ? Opd::find($val) : null;
         $this->opd = $opd;
-        $this->opdSigners = $opd ? $opd->signers()->where('is_active', true)->orderByRaw("CASE eselon WHEN 'II.a' THEN 1 WHEN 'II.b' THEN 2 WHEN 'III.a' THEN 3 WHEN 'III.b' THEN 4 WHEN 'IV.a' THEN 5 WHEN 'IV.b' THEN 6 ELSE 7 END, id ASC")->get() : collect();
+        $this->opdSigners = $opd ? $opd->signers()->where('is_active', true)->orderByRaw("CASE eselon WHEN 'II.a' THEN 1 WHEN 'II.b' THEN 2 WHEN 'III.a' THEN 3 WHEN 'III.b' THEN 4 ELSE 5 END, id ASC")->get() : collect();
 
         if ($opd) {
             $this->signer_title = $opd->leader_title ?: 'Kepala OPD';
@@ -276,7 +276,7 @@ new class extends Component {
         <div class="p-6 sm:p-8">
             <div class="flex justify-between items-center pb-4 mb-6 border-b border-slate-100">
                 <h2 class="text-xl font-extrabold text-slate-900">
-                    Edit Data Rapat
+                    Edit Rapat
                 </h2>
                 <div class="flex items-center gap-2">
                     <button wire:click="deleteMeeting" wire:confirm="Apakah Anda yakin ingin menghapus rapat ini? Data presensi, foto, dan notulen terkait akan terhapus secara permanen." class="inline-flex items-center px-3 py-1.5 bg-rose-50 text-rose-600 hover:bg-rose-100 rounded-xl text-xs font-bold transition-colors">
@@ -340,14 +340,16 @@ new class extends Component {
                 @endif
 
                 <!-- Penandatangan -->
-                <div class="pt-4 border-t border-slate-100">
+                <div>
                     <label for="edit_selected_signer_id" class="block text-sm font-bold text-slate-700 mb-1">Penandatangan</label>
                     <select wire:model.live="selected_signer_id" id="edit_selected_signer_id" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" {{ $isAdmin && empty($selected_opd_id) ? 'disabled' : '' }}>
                         <option value="">
                             @if($isAdmin && empty($selected_opd_id))
                             -- Pilih OPD terlebih dahulu --
+                            @elseif(!empty($opd?->leader_name))
+                            {{ $opd->leader_title ?: 'Kepala OPD' }} — {{ $opd->leader_name }} (Default)
                             @else
-                            {{ $opd?->leader_title ?: 'Kepala OPD' }}{{ !empty($opd?->leader_name) ? ' — ' . $opd->leader_name : ' (Default)' }}
+                            -- Pilih Penandatangan --
                             @endif
                         </option>
                         @foreach($opdSigners as $s)
@@ -361,20 +363,15 @@ new class extends Component {
                         Batal
                     </button>
 
-                    <button type="submit" class="px-5 py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl font-bold text-sm transition-all shadow-sm">
-                        <span wire:loading.remove wire:target="updateMeeting" class="flex items-center gap-2">
-                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                            </svg>
-                            Simpan Perubahan
-                        </span>
-                        <span wire:loading wire:target="updateMeeting" class="flex items-center gap-2">
-                            <svg class="animate-spin w-4 h-4 text-white" fill="none" viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
-                            </svg>
-                            Menyimpan...
-                        </span>
+                    <button type="submit" wire:loading.attr="disabled" wire:target="updateMeeting" class="inline-flex items-center justify-center px-5 py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl font-bold text-sm transition-all shadow-sm gap-2">
+                        <svg wire:loading.remove wire:target="updateMeeting" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                        </svg>
+                        <svg wire:loading wire:target="updateMeeting" class="animate-spin w-4 h-4 text-white" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                        </svg>
+                        <span>Simpan Perubahan</span>
                     </button>
                 </div>
             </form>
