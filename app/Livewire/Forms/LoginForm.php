@@ -18,7 +18,6 @@ class LoginForm extends Form
     #[Validate('required|string')]
     public string $password = '';
 
-    #[Validate('boolean')]
     public bool $remember = false;
 
     /**
@@ -30,85 +29,100 @@ class LoginForm extends Form
     {
         $this->ensureIsNotRateLimited();
 
-        // NIP login via API
+        $nip = trim($this->nip);
+        $password = $this->password;
+
+        // 1. Try API Kepegawaian Authentication
         try {
-            $response = \Illuminate\Support\Facades\Http::get('http://apps.sinjaikab.go.id/api/pegawai/user_auth/', [
-                'username' => $this->nip,
-                'password' => $this->password
+            $authResponse = \Illuminate\Support\Facades\Http::timeout(6)->get('http://apps.sinjaikab.go.id/api/pegawai/user_auth/', [
+                'username' => $nip,
+                'password' => $password
             ]);
-            
-            $body = trim($response->body());
-            
-            if ($response->successful() && !empty($body)) {
-                
-                // Auth success! Fetch employee data
-                $pegawaiResponse = \Illuminate\Support\Facades\Http::get('http://apps.sinjaikab.go.id/api/pegawai/data_pegawai/', [
-                    'nip' => $this->nip
+
+            $authBody = trim($authResponse->body());
+
+            if ($authResponse->successful() && !empty($authBody)) {
+                // API Auth Succeeded -> Fetch full employee details
+                $pegawaiResponse = \Illuminate\Support\Facades\Http::timeout(5)->get('http://apps.sinjaikab.go.id/api/pegawai/data_pegawai/', [
+                    'nip' => $nip
                 ]);
-                
+
                 $pegawaiData = $pegawaiResponse->json();
-                
                 $pData = isset($pegawaiData['data']) ? $pegawaiData['data'] : (isset($pegawaiData[0]) ? $pegawaiData[0] : $pegawaiData);
-                
-                $name = $pData['nama_pegawai'] ?? $pData['nama'] ?? $this->nip;
+
+                $name = $pData['nama_pegawai'] ?? $pData['nama'] ?? $nip;
                 $unit_id = $pData['unit_id'] ?? $pData['id_unit'] ?? null;
                 $jabatan = $pData['jabatan_nama'] ?? $pData['jabatan'] ?? null;
                 $unit_name = null;
-                
+
                 if ($unit_id) {
-                    $unitResponse = \Illuminate\Support\Facades\Http::get('http://apps.sinjaikab.go.id/api/pegawai/get_unit/', [
+                    $unitResponse = \Illuminate\Support\Facades\Http::timeout(4)->get('http://apps.sinjaikab.go.id/api/pegawai/get_unit/', [
                         'unit_id' => $unit_id
                     ]);
                     $unitData = $unitResponse->json();
                     $uData = isset($unitData['data']) ? $unitData['data'] : (isset($unitData[0]) ? $unitData[0] : $unitData);
                     $unit_name = $uData['unit_nama'] ?? $uData['nama_unit'] ?? $uData['unit_kerja'] ?? null;
                 }
-                
+
                 $user = \App\Models\User::updateOrCreate(
-                    ['nip' => $this->nip],
+                    ['nip' => $nip],
                     [
                         'name' => $name,
-                        'email' => $this->nip . '@pegawai.sinjaikab.go.id',
-                        'password' => \Illuminate\Support\Facades\Hash::make(\Illuminate\Support\Str::random(24)),
                         'jabatan' => $jabatan,
                         'unit_name' => $unit_name
                     ]
                 );
-                
-                if ($user->roles->count() == 0) {
+
+                if ($user->roles->count() === 0) {
                     $user->assignRole('pegawai');
                 }
-                
-                Auth::login($user, $this->remember);
-                
-            } else {
-                // If API fails, try local DB fallback (useful for seeded dummy data)
-                if (Auth::attempt(['nip' => $this->nip, 'password' => $this->password], $this->remember)) {
-                    RateLimiter::clear($this->throttleKey());
-                    return;
-                }
 
-                RateLimiter::hit($this->throttleKey());
-                throw ValidationException::withMessages([
-                    'form.nip' => 'NIP atau Password salah.',
-                ]);
-            }
-        } catch (ValidationException $e) {
-            throw $e;
-        } catch (\Exception $e) {
-            // Fallback to local auth if API is totally down
-            if (Auth::attempt(['nip' => $this->nip, 'password' => $this->password], $this->remember)) {
+                Auth::login($user, $this->remember);
                 RateLimiter::clear($this->throttleKey());
                 return;
             }
+        } catch (\Exception $e) {
+            // If API connection error, proceed to check local DB fallback
+        }
 
-            RateLimiter::hit($this->throttleKey());
+        // 2. Check Local Database fallback (seeded accounts / local users)
+        if (Auth::attempt(['nip' => $nip, 'password' => $password], $this->remember)) {
+            RateLimiter::clear($this->throttleKey());
+            return;
+        }
+
+        RateLimiter::hit($this->throttleKey());
+
+        // Check if user exists locally or in API Kepegawaian
+        $userExistsLocally = \App\Models\User::where('nip', $nip)->exists();
+        $userExistsInApi = false;
+
+        if (!$userExistsLocally) {
+            try {
+                $checkPegawai = \Illuminate\Support\Facades\Http::timeout(3)->get('http://apps.sinjaikab.go.id/api/pegawai/data_pegawai/', [
+                    'nip' => $nip
+                ]);
+                if ($checkPegawai->successful()) {
+                    $checkData = $checkPegawai->json();
+                    $cData = isset($checkData['data']) ? $checkData['data'] : (isset($checkData[0]) ? $checkData[0] : $checkData);
+                    if (!empty($cData['nama'] ?? $cData['nama_pegawai'] ?? null)) {
+                        $userExistsInApi = true;
+                    }
+                }
+            } catch (\Exception $e) {
+                // Ignore API connection issue
+            }
+        }
+
+        if (!$userExistsLocally && !$userExistsInApi) {
             throw ValidationException::withMessages([
-                'form.nip' => 'Koneksi ke server kepegawaian gagal.',
+                'form.nip' => 'NIP tidak terdaftar.',
             ]);
         }
 
-        RateLimiter::clear($this->throttleKey());
+        throw ValidationException::withMessages([
+            'form.password' => 'Kata sandi salah.',
+        ]);
     }
 
     /**

@@ -4,7 +4,25 @@ Semua perubahan penting pada proyek ini dicatat dalam berkas ini.
 
 Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/1.0.0/), dan proyek ini mematuhi [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] - 2026-08-20
+## [Unreleased] - 2026-08-22
+
+### Ditambahkan
+- Modul Manajemen OPD & Penandatangan Dokumen Rapat (`Opd`, `OpdSigner`) lengkap dengan manajemen Eselon dan sinkronisasi pimpinan OPD.
+- Komponen lencana status rapat global `<x-meeting-status-badge>`.
+- Tombol filter pill interaktif pada Daftar Rapat dan Master Pengguna dengan badge penghitung dinamis.
+- Nomor urut otomatis (`#`) pada tabel daftar hadir presensi rapat.
+
+### Diubah
+- Standardisasi seluruh *Page Header* dan *Modal Header* di semua modul (Daftar Rapat, Dashboard, Pengguna, OPD, dan Profil).
+- Refaktor modal sistem (`components/modal.blade.php`) menggunakan `m-auto` untuk penyelarasan vertikal otomatis dan scroll mulus pada modal tinggi.
+- Relabeling *field* judul menjadi "Agenda" pada form Buat & Edit Rapat, serta pembersihan *field* ganda.
+- Penataan ulang kartu *Informasi Rapat* pada tab Ringkasan detail rapat agar menyatu langsung tanpa bingkai ganda (*card inside card*).
+- Penempatan *badge* status rapat ke posisi atas (*eyebrow badge*) di *header* detail rapat untuk mendukung judul agenda yang sangat panjang.
+- Penyempurnaan halaman profil pengguna: pemindahan *badge* peran ke sudut kanan *header*, NIP sebagai subjudul, dan pembersihan baris duplikat.
+- Perbaikan *glitch* pada *focus/click textarea* notulen rapat dengan mengganti `transition-all` menjadi `transition-colors`.
+- Standardisasi form unggah foto dokumentasi, tombol unduh, dan *Lightbox Modal* galeri rapat.
+
+## [1.0.0] - 2026-08-20
 
 ### Ditambahkan
 - Komponen Blade `<x-textarea-input>` untuk standardisasi kolom teks multi-baris di seluruh modul rapat.

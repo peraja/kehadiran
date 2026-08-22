@@ -36,6 +36,11 @@ class Meeting extends Model
         return $this->hasMany(MeetingPhoto::class);
     }
 
+    public function documentations(): HasMany
+    {
+        return $this->photos();
+    }
+
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');

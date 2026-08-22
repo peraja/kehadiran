@@ -32,4 +32,16 @@ Route::view('profile', 'profile')
     ->middleware(['auth'])
     ->name('profile');
 
+Volt::route('users', 'users.index')
+    ->middleware(['auth', 'verified'])
+    ->name('users.index');
+
+Volt::route('opd', 'opd.index')
+    ->middleware(['auth', 'verified'])
+    ->name('opd.index');
+
+Volt::route('opd/settings', 'opd.settings')
+    ->middleware(['auth', 'verified'])
+    ->name('opd.settings');
+
 require __DIR__.'/auth.php';

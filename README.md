@@ -1,20 +1,20 @@
-# 🏛️ RapatPro - Sistem Manajemen Rapat Terpadu Pemerintah Kabupaten Sinjai
+# eRapat - Sistem Manajemen Rapat Terpadu Pemkab Sinjai
 
-Aplikasi digitalisasi tata kelola administrasi rapat resmi untuk lingkungan Pemerintah Kabupaten Sinjai. Memfasilitasi penjadwalan rapat, presensi mandiri berbasis QR Code dan tanda tangan digital (untuk ASN maupun tamu eksternal), pencatatan notulen resmi, galeri dokumentasi terkompresi otomatis, hingga ekspor dokumen PDF dengan kop dinas resmi.
-
----
-
-## 🚀 Fitur Utama
-
-- **📅 Manajemen Agenda Rapat:** Penjadwalan, pengaturan status rapat (*Dijadwalkan*, *Berlangsung*, *Selesai*), lokasi, serta batas akses OPD.
-- **📱 Presensi Mandiri QR & Tanda Tangan Digital:** Integrasi data ASN via API Kepegawaian (NIP) dan dukungan peserta eksternal dilengkapi *signature pad* canvas HTML5.
-- **📝 Notulen Rapat & Ekspor PDF:** Pencatatan ringkasan pembahasan serta cetak otomatis ke PDF resmi bertata letak kop dinas (DomPDF).
-- **📸 Dokumentasi Terintegrasi & ZIP Archive:** Unggah multi-foto dengan kompresi otomatis (Intervention Image) serta unduh galeri dalam format berkas ZIP.
-- **🎨 Desain UI Responsif Berbasis Tailwind CSS:** Mematuhi panduan desain pada `DESIGN.md` dengan pendekatan *Mobile First*, interaksi mikro 6 kondisi, dan aksesibilitas ramah pengguna.
+Aplikasi digitalisasi tata kelola administrasi rapat resmi untuk lingkungan Pemkab Sinjai. Memfasilitasi penjadwalan rapat, presensi mandiri berbasis QR Code dan tanda tangan digital (untuk ASN maupun tamu eksternal), pencatatan notulen resmi, galeri dokumentasi terkompresi otomatis, hingga ekspor dokumen PDF dengan kop dinas resmi.
 
 ---
 
-## 🛠️ Tumpukan Teknologi (Tech Stack)
+## Fitur Utama
+
+- **Manajemen Agenda Rapat:** Penjadwalan, pengaturan status rapat (*Dijadwalkan*, *Berlangsung*, *Selesai*), lokasi, serta batas akses OPD.
+- **Presensi Mandiri QR & Tanda Tangan Digital:** Integrasi data ASN via API Kepegawaian (NIP) dan dukungan peserta eksternal dilengkapi *signature pad* canvas HTML5.
+- **Notulen Rapat & Ekspor PDF:** Pencatatan ringkasan pembahasan serta cetak otomatis ke PDF resmi bertata letak kop dinas (DomPDF).
+- **Dokumentasi Terintegrasi & ZIP Archive:** Unggah multi-foto dengan kompresi otomatis (Intervention Image) serta unduh galeri dalam format berkas ZIP.
+- **Desain UI Responsif Berbasis Tailwind CSS:** Mematuhi panduan desain pada `DESIGN.md` dengan pendekatan *Mobile First*, interaksi mikro 6 kondisi, dan aksesibilitas ramah pengguna.
+
+---
+
+## Tumpukan Teknologi (Tech Stack)
 
 - **Backend:** Laravel 12.x, PHP 8.2+
 - **Frontend / Reaktivitas:** Laravel Livewire 3 (Volt), Alpine.js, Tailwind CSS
@@ -24,7 +24,7 @@ Aplikasi digitalisasi tata kelola administrasi rapat resmi untuk lingkungan Peme
 
 ---
 
-## 📦 Panduan Instalasi & Menjalankan Aplikasi
+## Panduan Instalasi & Menjalankan Aplikasi
 
 1. **Klon Repositori:**
    ```bash

@@ -14,36 +14,73 @@ new #[Layout('layouts.app')] class extends Component {
 }; ?>
 
 <x-meeting-layout :meeting="$meeting" activeTab="overview">
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <div>
-            <h3 class="text-lg font-medium text-gray-900 mb-4">Agenda</h3>
-            <div class="prose max-w-none text-gray-600 bg-gray-50 p-4 rounded-xl min-h-[150px]">
-                {!! nl2br(e($meeting->agenda ?: 'Tidak ada deskripsi agenda.')) !!}
+    <div class="space-y-6">
+        <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+            <div>
+                <h3 class="text-lg font-extrabold text-slate-900 tracking-tight">Informasi Rapat</h3>
             </div>
         </div>
-        
-        <div>
-            <h3 class="text-lg font-medium text-gray-900 mb-4">Informasi Rapat</h3>
-            <ul class="space-y-3">
-                <li class="flex flex-col">
-                    <span class="text-sm font-medium text-gray-500">Penyelenggara / Dibuat Oleh</span>
-                    <span class="text-base text-gray-900">{{ $meeting->creator->name ?? 'Admin' }} ({{ $meeting->creator->unit_name ?? 'Pemerintah Daerah' }})</span>
-                </li>
-                <li class="flex flex-col mt-4">
-                    <span class="text-sm font-medium text-gray-500 mb-1">Status Rapat</span>
-                    <div>
-                        @if($meeting->status == 'scheduled')
-                            <span class="inline-flex px-2.5 py-1 bg-gray-100 text-gray-800 rounded-full text-xs font-semibold tracking-wide">DIJADWALKAN</span>
-                        @elseif($meeting->status == 'ongoing')
-                            <span class="inline-flex px-2.5 py-1 bg-amber-100 text-amber-800 rounded-full text-xs font-semibold tracking-wide animate-pulse">BERLANGSUNG</span>
-                        @elseif($meeting->status == 'completed')
-                            <span class="inline-flex px-2.5 py-1 bg-primary-100 text-primary-800 rounded-full text-xs font-semibold tracking-wide">SELESAI</span>
-                        @endif
-                    </div>
-                </li>
-            </ul>
+
+        <div class="divide-y divide-slate-100 text-sm">
+            <!-- Agenda -->
+            <div class="flex flex-col sm:flex-row sm:items-start py-4 px-2 gap-2 sm:gap-6 hover:bg-slate-50/50 rounded-xl transition-colors">
+                <div class="sm:w-1/4 text-slate-500 font-bold text-sm shrink-0 pt-0.5">
+                    Agenda
+                </div>
+                <div class="sm:w-3/4 text-slate-900 font-extrabold text-base leading-relaxed break-words">{{ trim($meeting->title) }}</div>
+            </div>
+
+            <!-- Tanggal & Waktu -->
+            <div class="flex flex-col sm:flex-row sm:items-center py-4 px-2 gap-2 sm:gap-6 hover:bg-slate-50/50 rounded-xl transition-colors">
+                <div class="sm:w-1/4 text-slate-500 font-bold text-sm shrink-0">
+                    Tanggal & Waktu
+                </div>
+                <div class="sm:w-3/4 flex flex-wrap items-center gap-2">
+                    <span class="font-semibold text-slate-900">{{ $meeting->date ? $meeting->date->translatedFormat('l, d F Y') : '-' }}</span>
+                    <span class="text-slate-300">•</span>
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200 font-mono">{{ $meeting->start_time ? $meeting->start_time->format('H:i') : '' }} - {{ $meeting->end_time ? $meeting->end_time->format('H:i') : 'Selesai' }} WITA</span>
+                </div>
+            </div>
+
+            <!-- Lokasi -->
+            <div class="flex flex-col sm:flex-row sm:items-center py-4 px-2 gap-2 sm:gap-6 hover:bg-slate-50/50 rounded-xl transition-colors">
+                <div class="sm:w-1/4 text-slate-500 font-bold text-sm shrink-0">
+                    Lokasi
+                </div>
+                <div class="sm:w-3/4 text-slate-800 font-semibold text-sm">{{ trim($meeting->location ?? '-') }}</div>
+            </div>
+
+            <!-- Penandatangan Dokumen -->
+            @if($meeting->signer_name || $meeting->signer_title)
+            <div class="flex flex-col sm:flex-row sm:items-center py-4 px-2 gap-2 sm:gap-6 hover:bg-slate-50/50 rounded-xl transition-colors">
+                <div class="sm:w-1/4 text-slate-500 font-bold text-sm shrink-0">
+                    Penandatangan
+                </div>
+                <div class="sm:w-3/4">
+                    <div class="text-slate-900 font-bold text-sm">{{ trim($meeting->signer_name ?: '-') }}</div>
+                    <div class="text-slate-500 font-medium text-xs mt-0.5">{{ trim($meeting->signer_title ?: 'Kepala OPD') }}</div>
+                </div>
+            </div>
+            @endif
+
+            <!-- Dibuat Oleh -->
+            <div class="flex flex-col sm:flex-row sm:items-center py-4 px-2 gap-2 sm:gap-6 hover:bg-slate-50/50 rounded-xl transition-colors">
+                <div class="sm:w-1/4 text-slate-500 font-bold text-sm shrink-0">
+                    Dibuat Oleh
+                </div>
+                <div class="sm:w-3/4">
+                    <div class="text-slate-900 font-bold text-sm">{{ trim($meeting->creator->name ?? 'Administrator') }}</div>
+                    <div class="text-slate-500 font-medium text-xs mt-0.5">{{ trim($meeting->creator->unit_name ?? 'Pemkab Sinjai') }}</div>
+                </div>
+            </div>
+
+            <!-- Waktu Dibuat -->
+            <div class="flex flex-col sm:flex-row sm:items-center py-4 px-2 gap-2 sm:gap-6 hover:bg-slate-50/50 rounded-xl transition-colors">
+                <div class="sm:w-1/4 text-slate-500 font-bold text-sm shrink-0">
+                    Waktu Dibuat
+                </div>
+                <div class="sm:w-3/4 text-slate-700 font-semibold text-sm">{{ $meeting->created_at ? $meeting->created_at->translatedFormat('d F Y, H:i') . ' WITA' : '-' }}</div>
+            </div>
         </div>
     </div>
 </x-meeting-layout>
-
-
