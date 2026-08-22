@@ -28,7 +28,7 @@ new #[Layout('layouts.app')] class extends Component {
     public function saveMinutes()
     {
         if (!$this->canEdit) {
-            return;
+            abort(403, 'Akses tidak diizinkan.');
         }
 
         $this->validate([
@@ -49,31 +49,21 @@ new #[Layout('layouts.app')] class extends Component {
 
 <x-meeting-layout :meeting="$meeting" activeTab="notulen">
     @if (session()->has('message'))
-    <div class="mb-5 p-4 rounded-xl bg-emerald-50 border border-emerald-200 flex items-start gap-3">
-        <div class="shrink-0">
-            <svg class="w-5 h-5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-        </div>
-        <div>
-            <h3 class="text-sm font-semibold text-emerald-800">Berhasil</h3>
-            <p class="text-sm text-emerald-700 mt-0.5">{{ session('message') }}</p>
-        </div>
-    </div>
+    <x-alert type="success" class="mb-5">
+        <p class="font-bold">{{ session('message') }}</p>
+    </x-alert>
     @endif
 
     <div class="space-y-6">
         <!-- Toolbar Header -->
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
-            <div class="flex items-center gap-3">
-                <div>
-                    <h3 class="text-lg font-extrabold text-slate-900 tracking-tight">Notulen Rapat</h3>
-                </div>
+            <div>
+                <h3 class="text-lg font-extrabold text-slate-900 tracking-tight">Notulen Rapat</h3>
             </div>
 
             @if($minutes && !empty($minutes->content))
-            <div class="flex flex-wrap items-center gap-3 self-start sm:self-auto">
-                <a href="{{ route('meetings.export.minutes', $meeting->id) }}" target="_blank" class="inline-flex justify-center items-center px-4 py-2.5 bg-white hover:bg-slate-50 border border-slate-300 hover:border-slate-400 active:scale-95 text-slate-700 rounded-xl font-bold text-sm transition-all shadow-sm gap-2">
+            <div class="flex flex-wrap items-center gap-3">
+                <a href="{{ route('meetings.export.minutes', $meeting->id) }}" target="_blank" class="inline-flex justify-center items-center px-4 py-2 bg-white hover:bg-slate-50 border border-slate-300 hover:border-slate-400 active:scale-95 text-slate-700 rounded-xl font-bold text-sm transition-all shadow-sm gap-2">
                     <svg class="w-4 h-4 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
@@ -83,33 +73,17 @@ new #[Layout('layouts.app')] class extends Component {
             @endif
         </div>
 
+        @if($canEdit)
+        <!-- Editor Mode (Penyelenggara / Admin) -->
         <form wire:submit="saveMinutes" @keydown.window.prevent.ctrl.s="$wire.saveMinutes()" @keydown.window.prevent.cmd.s="$wire.saveMinutes()" class="space-y-4">
             <div class="relative">
-                <textarea wire:model="content" id="content" rows="20"
-                    class="block w-full p-4 sm:p-5 rounded-2xl border border-slate-200 font-normal leading-relaxed text-slate-800 text-sm shadow-xs transition-colors duration-150 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 focus:outline-none resize-y min-h-[380px] {{ !$canEdit ? 'bg-slate-50 text-slate-500 cursor-not-allowed' : 'bg-white' }}"
-                    placeholder="Tuliskan poin pembahasan dan hasil keputusan rapat di sini:
-
-1. Pembahasan Utama:
-- 
-
-2. Kesepakatan / Keputusan:
-- 
-
-3. Tindak Lanjut:
-- "
-                    @disabled(!$canEdit) @readonly(!$canEdit)></textarea>
+                <textarea wire:model="content" id="content" rows="18"
+                    class="block w-full p-4 sm:p-5 rounded-2xl border border-slate-200 font-normal leading-relaxed text-slate-800 text-sm shadow-xs transition-colors duration-150 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 focus:outline-none resize-y min-h-[360px] bg-white"
+                    placeholder="Tuliskan notulen rapat di sini..."></textarea>
             </div>
-            @error('content') <span class="text-xs text-red-600 mt-1 block font-medium">{{ $message }}</span> @enderror
+            @error('content') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
 
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-2">
-                @if($canEdit)
-                <div class="flex items-center gap-2 text-slate-400">
-                    <svg class="w-4 h-4 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <span class="text-xs font-medium text-slate-500">Gunakan <kbd class="px-1.5 py-0.5 rounded-lg bg-slate-100 border border-slate-200 font-mono text-[10px] font-bold text-slate-700 shadow-2xs">Ctrl+S</kbd> / <kbd class="px-1.5 py-0.5 rounded-lg bg-slate-100 border border-slate-200 font-mono text-[10px] font-bold text-slate-700 shadow-2xs">Cmd+S</kbd> untuk menyimpan cepat.</span>
-                </div>
-
+            <div class="flex justify-end pt-2">
                 <button type="submit" wire:loading.attr="disabled" wire:target="saveMinutes" class="inline-flex justify-center items-center px-6 py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl font-bold text-sm transition-all shadow-sm gap-2">
                     <span wire:loading.remove wire:target="saveMinutes" class="flex items-center gap-2">
                         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -125,18 +99,26 @@ new #[Layout('layouts.app')] class extends Component {
                         Menyimpan...
                     </span>
                 </button>
-                @else
-                <div class="w-full p-4 bg-amber-50 rounded-2xl border border-amber-200 flex items-start gap-3">
-                    <svg class="w-5 h-5 text-amber-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                    </svg>
-                    <div>
-                        <p class="font-bold text-amber-800 text-sm">Mode Baca Saja</p>
-                        <p class="text-xs font-medium text-amber-700 mt-0.5">Hanya penyelenggara rapat atau administrator yang dapat menyunting notulen ini.</p>
-                    </div>
-                </div>
-                @endif
             </div>
         </form>
+        @else
+        <!-- Read-Only Mode (Pegawai / Non-Penyelenggara) -->
+        @if(!empty($content))
+        <div class="bg-slate-50/70 rounded-2xl border border-slate-200 p-6 sm:p-8">
+            <div class="prose prose-slate max-w-none text-sm text-slate-800 leading-relaxed whitespace-pre-wrap">
+                {{ $content }}
+            </div>
+        </div>
+        @else
+        <div class="py-14 px-6 text-center flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50/50">
+            <div class="w-12 h-12 bg-slate-100 text-slate-400 rounded-2xl flex items-center justify-center mb-2.5">
+                <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+            </div>
+            <p class="text-sm font-extrabold text-slate-800">Notulen Belum Diisi</p>
+        </div>
+        @endif
+        @endif
     </div>
 </x-meeting-layout>

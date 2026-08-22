@@ -44,6 +44,13 @@ new #[Layout('layouts.app')] class extends Component {
         $this->resetPage();
     }
 
+    public function resetFilters(): void
+    {
+        $this->search = '';
+        $this->roleFilter = '';
+        $this->resetPage();
+    }
+
     public function openAddModal()
     {
         $this->resetValidation();
@@ -136,7 +143,15 @@ new #[Layout('layouts.app')] class extends Component {
                 $this->role = 'admin_opd';
             }
 
-            $validated = $this->validate($rules);
+            $messages = [
+                'name.required' => 'Nama lengkap pengguna wajib diisi.',
+                'nip.required' => 'NIP wajib diisi.',
+                'nip.unique' => 'NIP sudah terdaftar di sistem.',
+                'role.required' => 'Peran pengguna wajib dipilih.',
+                'role.in' => 'Pilihan peran tidak valid.',
+            ];
+
+            $validated = $this->validate($rules, $messages);
 
             $user = User::findOrFail($this->userId);
             $user->update([
@@ -163,7 +178,15 @@ new #[Layout('layouts.app')] class extends Component {
                 $this->role = 'admin_opd';
             }
 
-            $validated = $this->validate($rules);
+            $messages = [
+                'name.required' => 'Nama lengkap pengguna wajib diisi.',
+                'nip.required' => 'NIP wajib diisi.',
+                'nip.unique' => 'NIP sudah terdaftar di sistem.',
+                'role.required' => 'Peran pengguna wajib dipilih.',
+                'role.in' => 'Pilihan peran tidak valid.',
+            ];
+
+            $validated = $this->validate($rules, $messages);
 
             $user = User::create([
                 'name' => $validated['name'],
@@ -374,23 +397,23 @@ new #[Layout('layouts.app')] class extends Component {
                     @empty
                     <tr>
                         <td colspan="4" class="py-16 px-6 text-center">
-                            <div class="flex flex-col items-center justify-center">
-                                <div class="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mb-4">
-                                    <svg class="w-10 h-10 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                            <div class="flex flex-col items-center justify-center max-w-sm mx-auto">
+                                <div class="w-14 h-14 bg-slate-100 rounded-2xl flex items-center justify-center mb-3 text-slate-400">
+                                    <svg class="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                                     </svg>
                                 </div>
-                                <h3 class="text-lg font-bold text-slate-900 mb-1">Pengguna Tidak Ditemukan</h3>
-                                <p class="text-sm text-slate-500 max-w-sm mx-auto">
-                                    @if($search || $roleFilter)
-                                    Pencarian Anda tidak menemukan hasil. Coba ubah kata kunci atau hapus filter.
-                                    @else
-                                    Belum ada data pengguna tambahan.
-                                    @endif
-                                </p>
+                                <h3 class="text-base font-extrabold text-slate-900">Tidak Ada Data Pengguna</h3>
                                 @if($search || $roleFilter)
-                                <button wire:click="$set('search', ''); $set('roleFilter', '')" class="mt-4 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-sm font-semibold transition-colors">
-                                    Reset Pencarian
+                                <button type="button" wire:click="resetFilters" class="mt-3 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors">
+                                    Reset Filter
+                                </button>
+                                @else
+                                <button x-data="" x-on:click.prevent="$dispatch('open-modal', 'user-form-modal'); $wire.openAddModal()" class="mt-3 inline-flex items-center px-4 py-2 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white text-xs font-bold rounded-xl transition-all shadow-sm gap-2">
+                                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                                    </svg>
+                                    Tambah Pengguna Baru
                                 </button>
                                 @endif
                             </div>

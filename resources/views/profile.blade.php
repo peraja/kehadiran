@@ -11,8 +11,8 @@
                 <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 mb-1">
                     Profil Pengguna
                 </h1>
-                <p class="text-sm font-medium text-slate-500 font-mono">
-                    NIP. {{ auth()->user()->nip ?? '-' }}
+                <p class="text-sm font-medium text-slate-500">
+                    {{ auth()->user()->name }}
                 </p>
             </div>
             <div class="relative z-10">

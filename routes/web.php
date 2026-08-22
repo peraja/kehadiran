@@ -6,14 +6,14 @@ use Livewire\Volt\Volt;
 Route::view('/', 'welcome');
 
 Route::view('dashboard', 'dashboard')
-    ->middleware(['auth', 'verified'])
+    ->middleware(['auth'])
     ->name('dashboard');
 
 Volt::route('meetings', 'meetings.index')
-    ->middleware(['auth', 'verified'])
+    ->middleware(['auth'])
     ->name('meetings.index');
 
-Route::middleware(['auth', 'verified'])->group(function () {
+Route::middleware(['auth'])->group(function () {
     Volt::route('meetings/{meeting}/overview', 'meetings.overview')->name('meetings.overview');
     Volt::route('meetings/{meeting}/presensi', 'meetings.presensi')->name('meetings.presensi');
     Volt::route('meetings/{meeting}/dokumentasi', 'meetings.dokumentasi')->name('meetings.dokumentasi');
@@ -33,19 +33,19 @@ Route::view('profile', 'profile')
     ->name('profile');
 
 Volt::route('users', 'users.index')
-    ->middleware(['auth', 'verified'])
+    ->middleware(['auth'])
     ->name('users.index');
 
 Volt::route('opd', 'opd.index')
-    ->middleware(['auth', 'verified'])
+    ->middleware(['auth'])
     ->name('opd.index');
 
 Volt::route('opd/settings', 'opd.settings')
-    ->middleware(['auth', 'verified'])
+    ->middleware(['auth'])
     ->name('opd.settings');
 
 Volt::route('settings', 'admin.settings')
-    ->middleware(['auth', 'verified'])
+    ->middleware(['auth'])
     ->name('admin.settings');
 
 require __DIR__.'/auth.php';

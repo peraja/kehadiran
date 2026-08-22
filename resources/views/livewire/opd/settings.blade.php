@@ -120,18 +120,18 @@ new #[Layout('layouts.app')] class extends Component {
 }; ?>
 
 <div class="space-y-6 pb-10">
-    <!-- Header -->
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm relative overflow-hidden">
+    <!-- Header Section -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-slate-200 shadow-sm relative overflow-hidden">
         <div class="absolute right-0 top-0 -mt-10 -mr-10 w-40 h-40 bg-gradient-to-br from-primary-50 to-primary-100 rounded-full blur-3xl pointer-events-none opacity-60"></div>
         <div class="relative z-10">
-            <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
+            <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 mb-1">
                 Pengaturan OPD
             </h1>
-            <p class="text-sm font-medium text-slate-500 mt-2">
+            <p class="text-sm font-medium text-slate-500">
                 {{ $name }}
             </p>
         </div>
-        <div class="relative z-10">
+        <div class="relative z-10 flex items-center gap-3">
             <button type="button" wire:click="syncFromSimpeg" wire:loading.attr="disabled" class="inline-flex justify-center items-center px-5 py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl font-bold text-sm transition-all shadow-sm shrink-0 gap-2">
                 <svg wire:loading.remove wire:target="syncFromSimpeg" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -148,36 +148,22 @@ new #[Layout('layouts.app')] class extends Component {
 
     <!-- Alert Notifications -->
     @if (session()->has('message'))
-    <div class="p-4 rounded-xl bg-emerald-50 border border-emerald-200 flex items-start gap-3">
-        <div class="shrink-0">
-            <svg class="w-5 h-5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-        </div>
-        <div>
-            <h3 class="text-sm font-semibold text-emerald-800">Berhasil</h3>
-            <p class="text-sm text-emerald-700 mt-0.5">{{ session('message') }}</p>
-        </div>
-    </div>
+    <x-alert type="success">
+        <h3 class="font-semibold text-emerald-800">Berhasil</h3>
+        <p class="text-emerald-700 mt-0.5">{{ session('message') }}</p>
+    </x-alert>
     @endif
 
     @if (session()->has('error'))
-    <div class="p-4 rounded-xl bg-rose-50 border border-rose-200 flex items-start gap-3">
-        <div class="shrink-0">
-            <svg class="w-5 h-5 text-rose-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-            </svg>
-        </div>
-        <div>
-            <h3 class="text-sm font-semibold text-rose-800">Perhatian</h3>
-            <p class="text-sm text-rose-700 mt-0.5">{{ session('error') }}</p>
-        </div>
-    </div>
+    <x-alert type="danger">
+        <h3 class="font-semibold text-rose-800">Perhatian</h3>
+        <p class="text-rose-700 mt-0.5">{{ session('error') }}</p>
+    </x-alert>
     @endif
 
     <form wire:submit="saveSettings" class="space-y-6">
         <!-- Card 1: Informasi OPD -->
-        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-8 space-y-5">
+        <div class="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 sm:p-8 space-y-5">
             <div class="border-b border-slate-100 pb-3">
                 <h2 class="text-base font-bold text-slate-900">
                     Informasi OPD
@@ -211,7 +197,7 @@ new #[Layout('layouts.app')] class extends Component {
         </div>
 
         <!-- Card 2: Kepala OPD -->
-        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-8 space-y-5">
+        <div class="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 sm:p-8 space-y-5">
             <div class="border-b border-slate-100 pb-3">
                 <h2 class="text-base font-bold text-slate-900">
                     Kepala OPD
@@ -248,7 +234,7 @@ new #[Layout('layouts.app')] class extends Component {
         </div>
 
         <!-- Card 3: Daftar Pejabat / Bidang -->
-        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
             <div class="p-6 sm:p-8 border-b border-slate-100 bg-white">
                 <h2 class="text-lg font-bold text-slate-900">
                     Pejabat Penandatangan
@@ -256,9 +242,13 @@ new #[Layout('layouts.app')] class extends Component {
             </div>
 
             @if($signers->isEmpty())
-            <div class="text-center py-12 bg-slate-50/50">
-                <p class="text-sm font-semibold text-slate-500">Belum ada data pejabat.</p>
-                <p class="text-xs text-slate-400 mt-1">Silakan klik tombol sinkronisasi di atas.</p>
+            <div class="py-14 px-6 text-center flex flex-col items-center justify-center bg-white">
+                <div class="w-12 h-12 bg-slate-100 text-slate-400 rounded-2xl flex items-center justify-center mb-2.5">
+                    <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                </div>
+                <p class="text-sm font-extrabold text-slate-900">Belum Ada Data Pejabat</p>
             </div>
             @else
             <div class="overflow-x-auto">

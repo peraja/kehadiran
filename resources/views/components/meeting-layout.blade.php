@@ -21,8 +21,6 @@
         <!-- Premium Tabs (Pills) -->
         <nav class="flex items-center gap-2 mt-8 overflow-x-auto pb-2 scrollbar-hide relative z-10">
             @php
-                $hasMinutes = $meeting->minutes()->exists();
-                
                 $tabs = [
                     'overview' => [
                         'label' => 'Ringkasan',
@@ -34,15 +32,15 @@
                         'icon' => '<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>',
                         'count' => $meeting->attendances()->count()
                     ],
-                    'notulen' => [
-                        'label' => 'Notulen',
-                        'icon' => '<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>',
-                        'count' => $hasMinutes ? 1 : 0
-                    ],
                     'dokumentasi' => [
                         'label' => 'Dokumentasi',
                         'icon' => '<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>',
                         'count' => $meeting->photos()->count()
+                    ],
+                    'notulen' => [
+                        'label' => 'Notulen',
+                        'icon' => '<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>',
+                        'count' => null
                     ]
                 ];
             @endphp
@@ -54,7 +52,7 @@
                     {!! $tab['icon'] !!}
                     <span>{{ $tab['label'] }}</span>
                     @if($tab['count'] !== null)
-                        <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold {{ $activeTab === $key ? 'bg-slate-700 text-slate-300' : ($key === 'notulen' && !$hasMinutes ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-500') }}">
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold {{ $activeTab === $key ? 'bg-slate-700 text-slate-300' : 'bg-slate-100 text-slate-500' }}">
                             {{ $tab['count'] }}
                         </span>
                     @endif

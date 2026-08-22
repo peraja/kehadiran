@@ -46,6 +46,13 @@ new #[Layout('layouts.app')] class extends Component {
         $this->resetPage();
     }
 
+    public function resetFilters(): void
+    {
+        $this->search = '';
+        $this->statusFilter = '';
+        $this->resetPage();
+    }
+
     public function resetForm(): void
     {
         $this->reset(['opdId', 'unit_id', 'name', 'address', 'phone', 'email', 'leader_name', 'leader_rank', 'leader_nip', 'leader_title', 'is_active']);
@@ -376,23 +383,24 @@ new #[Layout('layouts.app')] class extends Component {
                     @empty
                     <tr>
                         <td colspan="5" class="py-16 px-6 text-center">
-                            <div class="flex flex-col items-center justify-center">
-                                <div class="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mb-4">
-                                    <svg class="w-10 h-10 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                            <div class="flex flex-col items-center justify-center max-w-sm mx-auto">
+                                <div class="w-14 h-14 bg-slate-100 rounded-2xl flex items-center justify-center mb-3 text-slate-400">
+                                    <svg class="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                                     </svg>
                                 </div>
-                                <h3 class="text-lg font-bold text-slate-900 mb-1">Tidak Ada Data OPD</h3>
-                                <p class="text-sm text-slate-500 max-w-sm mx-auto">
-                                    @if($search || $statusFilter)
-                                    Pencarian Anda tidak menemukan hasil. Coba ubah kata kunci atau hapus filter.
-                                    @else
-                                    Belum ada data Instansi/OPD di database. Silakan klik tombol "Tarik API SIMPEG" untuk mengunduh data secara otomatis.
-                                    @endif
-                                </p>
+                                <h3 class="text-base font-extrabold text-slate-900">Tidak Ada Data OPD</h3>
                                 @if($search || $statusFilter)
-                                <button wire:click="$set('search', ''); $set('statusFilter', '')" class="mt-4 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-sm font-semibold transition-colors">
-                                    Reset Pencarian
+                                <button type="button" wire:click="resetFilters" class="mt-3 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors">
+                                    Reset Filter
+                                </button>
+                                @else
+                                <button wire:click="syncFromApi" wire:loading.attr="disabled" class="mt-3 inline-flex items-center px-4 py-2 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white text-xs font-bold rounded-xl transition-all shadow-sm gap-2">
+                                    <svg wire:loading.remove wire:target="syncFromApi" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                    </svg>
+                                    <span wire:loading.remove wire:target="syncFromApi">Sinkron SIMPEG</span>
+                                    <span wire:loading wire:target="syncFromApi">Menyinkronkan...</span>
                                 </button>
                                 @endif
                             </div>

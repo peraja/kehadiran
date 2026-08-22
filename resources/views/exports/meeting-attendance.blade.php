@@ -34,8 +34,8 @@
             if (file_exists($logoPath)) {
                 $logoBase64 = 'data:image/png;base64,' . base64_encode(file_get_contents($logoPath));
             }
-            $unitName = $meeting->creator?->unit_name ?? 'Sekretariat Daerah';
-            $opd = \App\Models\Opd::where('name', $unitName)->first();
+            $opd = $meeting->opd;
+            $unitName = $opd?->name ?? $meeting->creator?->unit_name ?? 'Sekretariat Daerah';
             if (!$opd && $unitName) {
                 $cleanUnit = str_replace([',', '.', '-'], '', $unitName);
                 $opd = \App\Models\Opd::whereRaw("REPLACE(REPLACE(REPLACE(name, ',', ''), '.', ''), '-', '') LIKE ?", ['%' . $cleanUnit . '%'])->first();

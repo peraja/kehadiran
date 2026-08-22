@@ -13,6 +13,7 @@ new #[Layout('layouts.app')] class extends Component {
 
     // Form fields
     public $title, $date, $start_time, $end_time, $location;
+    public $selected_opd_id = '';
     public $selected_signer_id = '';
 
     public function updatingSearch()
@@ -25,21 +26,53 @@ new #[Layout('layouts.app')] class extends Component {
         $this->resetPage();
     }
 
+    public function updatedSelectedOpdId($val)
+    {
+        $this->selected_signer_id = '';
+    }
+
+    public function resetFilters(): void
+    {
+        $this->search = '';
+        $this->statusFilter = '';
+        $this->resetPage();
+    }
+
     public function rules()
     {
-        return [
+        $rules = [
             'title' => 'required|string|max:255',
             'date' => 'required|date',
             'start_time' => 'required|date_format:H:i',
             'end_time' => 'required|date_format:H:i|after:start_time',
             'location' => 'required|string|max:255',
         ];
+
+        if (auth()->user()->hasRole('admin')) {
+            $rules['selected_opd_id'] = 'required|exists:opds,id';
+        }
+
+        return $rules;
+    }
+
+    public function messages()
+    {
+        return [
+            'title.required' => 'Agenda rapat wajib diisi.',
+            'date.required' => 'Tanggal pelaksanaan rapat wajib diisi.',
+            'start_time.required' => 'Waktu mulai rapat wajib diisi.',
+            'end_time.required' => 'Waktu selesai rapat wajib diisi.',
+            'end_time.after' => 'Waktu selesai harus lebih lambat dari waktu mulai.',
+            'location.required' => 'Lokasi rapat wajib diisi.',
+            'selected_opd_id.required' => 'Pilih OPD terlebih dahulu.',
+            'selected_opd_id.exists' => 'OPD yang dipilih tidak valid.',
+        ];
     }
 
     public function openModal()
     {
         $this->resetValidation();
-        $this->reset(['title', 'date', 'start_time', 'end_time', 'location', 'selected_signer_id']);
+        $this->reset(['title', 'date', 'start_time', 'end_time', 'location', 'selected_signer_id', 'selected_opd_id']);
     }
 
     public function closeModal()
@@ -54,9 +87,19 @@ new #[Layout('layouts.app')] class extends Component {
         $validated['created_by'] = auth()->id();
         $validated['status'] = 'scheduled';
 
-        // Signer logic
-        $opd = \App\Models\Opd::where('name', auth()->user()->unit_name)->orWhere('name', auth()->user()->unit_name)->first(); // Fallback if name differs
-        if (!$opd) $opd = \App\Models\Opd::where('name', 'like', '%' . auth()->user()->unit_name . '%')->first();
+        $opd = null;
+        if (auth()->user()->hasRole('admin') && $this->selected_opd_id) {
+            $opd = \App\Models\Opd::find($this->selected_opd_id);
+            $validated['opd_id'] = $this->selected_opd_id;
+        } else {
+            $opd = \App\Models\Opd::where('name', auth()->user()->unit_name)->first();
+            if (!$opd && auth()->user()->unit_name) {
+                $opd = \App\Models\Opd::where('name', 'like', '%' . auth()->user()->unit_name . '%')->first();
+            }
+            if ($opd) {
+                $validated['opd_id'] = $opd->id;
+            }
+        }
 
         if ($this->selected_signer_id) {
             $signer = \App\Models\OpdSigner::find($this->selected_signer_id);
@@ -73,9 +116,11 @@ new #[Layout('layouts.app')] class extends Component {
             $validated['signer_rank'] = $opd->leader_rank;
         }
 
+        unset($validated['selected_opd_id']);
+
         Meeting::create($validated);
 
-        $this->reset(['title', 'date', 'start_time', 'end_time', 'location', 'selected_signer_id']);
+        $this->reset(['title', 'date', 'start_time', 'end_time', 'location', 'selected_signer_id', 'selected_opd_id']);
         $this->dispatch('close-modal', 'add-meeting-modal');
         $this->dispatch('meeting-saved');
         session()->flash('message', 'Rapat berhasil dibuat.');
@@ -83,7 +128,7 @@ new #[Layout('layouts.app')] class extends Component {
 
     public function with(): array
     {
-        $query = Meeting::query()->where(function ($q) {
+        $query = Meeting::query()->with(['opd', 'creator'])->where(function ($q) {
             $q->where('title', 'like', '%' . $this->search . '%')
                 ->orWhere('location', 'like', '%' . $this->search . '%');
         });
@@ -93,21 +138,40 @@ new #[Layout('layouts.app')] class extends Component {
         }
 
         if (!auth()->user()->hasRole('admin')) {
-            // Admin OPD and Pegawai only see meetings created by someone in their own unit
-            $query->whereHas('creator', function ($q) {
-                $q->where('unit_name', auth()->user()->unit_name);
+            // Admin OPD and Pegawai only see meetings created by someone in their own unit or assigned to their OPD
+            $query->where(function ($q) {
+                $q->whereHas('creator', function ($cq) {
+                    $cq->where('unit_name', auth()->user()->unit_name);
+                })->orWhereHas('opd', function ($oq) {
+                    $oq->where('name', auth()->user()->unit_name);
+                });
             });
         }
 
-        $opd = \App\Models\Opd::where('name', auth()->user()->unit_name)->first();
-        if (!$opd) $opd = \App\Models\Opd::where('name', 'like', '%' . auth()->user()->unit_name . '%')->first();
+        $allOpds = auth()->user()->hasRole('admin') ? \App\Models\Opd::where('is_active', true)->orderBy('name')->get() : collect();
 
-        $opdSigners = $opd ? $opd->signers()->where('is_active', true)->orderByRaw("CASE eselon WHEN 'II.a' THEN 1 WHEN 'II.b' THEN 2 WHEN 'III.a' THEN 3 WHEN 'III.b' THEN 4 WHEN 'IV.a' THEN 5 WHEN 'IV.b' THEN 6 ELSE 7 END, id ASC")->get() : collect();
+        $targetOpd = null;
+        if (auth()->user()->hasRole('admin')) {
+            if ($this->selected_opd_id) {
+                $targetOpd = \App\Models\Opd::find($this->selected_opd_id);
+            }
+        } else {
+            $targetOpd = \App\Models\Opd::where('name', auth()->user()->unit_name)->first();
+            if (!$targetOpd && auth()->user()->unit_name) {
+                $targetOpd = \App\Models\Opd::where('name', 'like', '%' . auth()->user()->unit_name . '%')->first();
+            }
+        }
+
+        $opdSigners = $targetOpd ? $targetOpd->signers()->where('is_active', true)->orderByRaw("CASE eselon WHEN 'II.a' THEN 1 WHEN 'II.b' THEN 2 WHEN 'III.a' THEN 3 WHEN 'III.b' THEN 4 WHEN 'IV.a' THEN 5 WHEN 'IV.b' THEN 6 ELSE 7 END, id ASC")->get() : collect();
 
         $baseCountQuery = Meeting::query();
         if (!auth()->user()->hasRole('admin')) {
-            $baseCountQuery->whereHas('creator', function ($q) {
-                $q->where('unit_name', auth()->user()->unit_name);
+            $baseCountQuery->where(function ($q) {
+                $q->whereHas('creator', function ($cq) {
+                    $cq->where('unit_name', auth()->user()->unit_name);
+                })->orWhereHas('opd', function ($oq) {
+                    $oq->where('name', auth()->user()->unit_name);
+                });
             });
         }
         $counts = [
@@ -121,7 +185,14 @@ new #[Layout('layouts.app')] class extends Component {
             ->orderBy('start_time', 'desc')
             ->paginate(10);
 
-        return compact('meetings', 'opdSigners', 'opd', 'counts');
+        return [
+            'meetings' => $meetings,
+            'counts' => $counts,
+            'opd' => $targetOpd,
+            'opdSigners' => $opdSigners,
+            'allOpds' => $allOpds,
+            'isAdmin' => auth()->user()->hasRole('admin'),
+        ];
     }
 }; ?>
 
@@ -223,7 +294,7 @@ new #[Layout('layouts.app')] class extends Component {
                                 {{ $meeting->title }}
                             </a>
                             <div class="text-xs text-slate-500 font-medium mt-1">
-                                Lokasi: {{ $meeting->location ?? 'Online' }}
+                                <span>{{ $meeting->location ?: 'Ruang Rapat' }}</span>
                             </div>
                         </td>
 
@@ -253,25 +324,27 @@ new #[Layout('layouts.app')] class extends Component {
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="4" class="py-12 px-6 text-center text-slate-500">
-                            <div class="w-12 h-12 bg-slate-50 text-slate-300 rounded-2xl flex items-center justify-center mx-auto mb-3">
-                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                                </svg>
-                            </div>
-                            @if($search || $statusFilter)
-                            <p class="font-bold text-slate-500 text-sm">Tidak ada data rapat yang sesuai pencarian.</p>
-                            <button wire:click="$set('search', ''); $set('statusFilter', '')" class="mt-3 inline-flex items-center px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-colors">
-                                Reset Pencarian
-                            </button>
-                            @else
-                            <p class="font-bold text-slate-500 text-sm">Belum ada data agenda rapat.</p>
-                            <div class="mt-3">
-                                <button x-data="" x-on:click.prevent="$dispatch('open-modal', 'add-meeting-modal'); $wire.openModal()" class="inline-flex items-center px-4 py-2 bg-primary-50 hover:bg-primary-100 text-primary-700 text-xs font-bold rounded-xl transition-colors border border-primary-200 shadow-sm">
-                                    + Tambah Rapat Baru
+                        <td colspan="4" class="py-16 px-6 text-center">
+                            <div class="flex flex-col items-center justify-center max-w-sm mx-auto">
+                                <div class="w-14 h-14 bg-slate-100 rounded-2xl flex items-center justify-center mb-3 text-slate-400">
+                                    <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                    </svg>
+                                </div>
+                                <h3 class="text-base font-extrabold text-slate-900">Tidak Ada Data Rapat</h3>
+                                @if($search || $statusFilter)
+                                <button type="button" wire:click="resetFilters" class="mt-3 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors">
+                                    Reset Filter
                                 </button>
+                                @else
+                                <button x-data="" x-on:click.prevent="$dispatch('open-modal', 'add-meeting-modal'); $wire.openModal()" class="mt-3 inline-flex items-center px-4 py-2 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white text-xs font-bold rounded-xl transition-all shadow-sm gap-2">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                                    </svg>
+                                    Buat Rapat Baru
+                                </button>
+                                @endif
                             </div>
-                            @endif
                         </td>
                     </tr>
                     @endforelse
@@ -284,12 +357,12 @@ new #[Layout('layouts.app')] class extends Component {
         </div>
     </div>
 
-    <!-- Modal Tambah Rapat -->
+    <!-- Modal Buat Rapat Baru -->
     <x-modal name="add-meeting-modal" maxWidth="3xl" :show="$errors->isNotEmpty()" x-on:meeting-saved.window="show = false">
         <div class="p-6 sm:p-8">
             <div class="flex justify-between items-center pb-4 mb-6 border-b border-slate-100">
                 <h2 class="text-xl font-extrabold text-slate-900">
-                    Tambah Rapat Baru
+                    Buat Rapat Baru
                 </h2>
                 <button type="button" x-on:click="$dispatch('close')" class="p-2 bg-slate-50 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-colors">
                     <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -332,12 +405,29 @@ new #[Layout('layouts.app')] class extends Component {
                     @error('location') <span class="text-xs text-red-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                 </div>
 
+                @if($isAdmin)
+                <div>
+                    <label for="selected_opd_id" class="block text-sm font-bold text-slate-700 mb-1">OPD</label>
+                    <select wire:model.live="selected_opd_id" id="selected_opd_id" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" required>
+                        <option value="">-- Pilih OPD --</option>
+                        @foreach($allOpds as $opdItem)
+                        <option value="{{ $opdItem->id }}">{{ $opdItem->name }}</option>
+                        @endforeach
+                    </select>
+                    @error('selected_opd_id') <span class="text-xs text-red-600 mt-1 block font-medium">{{ $message }}</span> @enderror
+                </div>
+                @endif
+
                 <!-- Penandatangan -->
                 <div class="pt-4 border-t border-slate-100">
                     <label for="selected_signer_id" class="block text-sm font-bold text-slate-700 mb-1">Penandatangan Dokumen</label>
-                    <select wire:model.live="selected_signer_id" id="selected_signer_id" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors">
+                    <select wire:model.live="selected_signer_id" id="selected_signer_id" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" {{ $isAdmin && empty($selected_opd_id) ? 'disabled' : '' }}>
                         <option value="">
-                            {{ $opd?->leader_title ?: 'Kepala OPD' }}{{ !empty($opd?->leader_name) ? ' — ' . $opd->leader_name : ' (Default)' }}
+                            @if($isAdmin && empty($selected_opd_id))
+                                -- Pilih OPD terlebih dahulu --
+                            @else
+                                {{ $opd?->leader_title ?: 'Kepala OPD' }}{{ !empty($opd?->leader_name) ? ' — ' . $opd->leader_name : ' (Default)' }}
+                            @endif
                         </option>
                         @foreach($opdSigners as $s)
                         <option value="{{ $s->id }}">{{ $s->title }} — {{ $s->name }}</option>

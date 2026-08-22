@@ -70,7 +70,7 @@ new #[Layout('layouts.app')] class extends Component {
                 </div>
                 <div class="sm:w-3/4">
                     <div class="text-slate-900 font-bold text-sm">{{ trim($meeting->creator->name ?? 'Administrator') }}</div>
-                    <div class="text-slate-500 font-medium text-xs mt-0.5">{{ trim($meeting->creator->unit_name ?? 'Pemkab Sinjai') }}</div>
+                    <div class="text-slate-500 font-medium text-xs mt-0.5">{{ trim($meeting->creator->unit_name ?? 'Pemerintah Kabupaten Sinjai') }}</div>
                 </div>
             </div>
 

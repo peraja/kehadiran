@@ -105,13 +105,12 @@ new #[Layout('layouts.app')] class extends Component {
                     <tr>
                         <td colspan="6" class="py-16 px-6 text-center">
                             <div class="flex flex-col items-center justify-center max-w-sm mx-auto">
-                                <div class="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mb-3 text-slate-400">
-                                    <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <div class="w-14 h-14 bg-slate-100 rounded-2xl flex items-center justify-center mb-3 text-slate-400">
+                                    <svg class="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                                     </svg>
                                 </div>
-                                <h3 class="text-base font-extrabold text-slate-900 mb-1">Belum Ada Data Presensi</h3>
-                                <p class="text-xs text-slate-500 font-medium">Peserta yang melakukan presensi melalui tautan atau pemindaian QR Code akan otomatis tampil di sini.</p>
+                                <h3 class="text-base font-extrabold text-slate-900">Belum Ada Data Presensi</h3>
                             </div>
                         </td>
                     </tr>

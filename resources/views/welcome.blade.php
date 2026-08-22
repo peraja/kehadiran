@@ -71,60 +71,48 @@
 
             <!-- Today's Open Meetings Widget -->
             @php
-            $todayMeetings = \App\Models\Meeting::whereDate('date', today())->orderBy('start_time')->get();
+            $todayMeetings = \App\Models\Meeting::with(['opd', 'creator'])->whereDate('date', today())->orderBy('start_time')->get();
             @endphp
 
             @if($todayMeetings->count() > 0)
-            <div class="mt-16 text-left bg-white rounded-3xl border border-slate-200 shadow-xl shadow-slate-200/50 p-6 max-w-2xl mx-auto relative overflow-hidden">
-                <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary-400 via-primary-600 to-indigo-500"></div>
-
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100 mb-4">
-                    <div class="flex items-center gap-2.5">
-                        <div class="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center relative">
-                            <span class="absolute inset-0 rounded-xl border-2 border-emerald-400 animate-ping opacity-20"></span>
-                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div class="mt-14 text-left bg-white/60 backdrop-blur-sm rounded-3xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow max-w-2xl mx-auto overflow-hidden">
+                <!-- Header -->
+                <div class="p-6 pb-4 border-b border-slate-200/80 flex items-center justify-between gap-4">
+                    <div class="flex items-center gap-3.5">
+                        <div class="w-11 h-11 bg-emerald-100 text-emerald-600 rounded-2xl flex items-center justify-center shrink-0">
+                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                             </svg>
                         </div>
                         <div>
-                            <h2 class="font-extrabold text-slate-900 text-base">Rapat Hari Ini</h2>
-                            <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">{{ \Carbon\Carbon::now()->translatedFormat('l, d F Y') }}</p>
+                            <h2 class="font-extrabold text-slate-900 text-base leading-tight">Rapat Hari Ini</h2>
+                            <p class="text-xs font-medium text-slate-500 mt-0.5">{{ \Carbon\Carbon::now()->translatedFormat('l, d F Y') }}</p>
                         </div>
                     </div>
-                    <span class="inline-flex px-3 py-1 bg-slate-100 text-slate-600 rounded-lg text-xs font-extrabold">{{ $todayMeetings->count() }} Rapat</span>
+                    <span class="inline-flex items-center px-3 py-1 bg-white border border-slate-200 text-slate-700 rounded-full text-xs font-bold shadow-2xs">{{ $todayMeetings->count() }} Rapat</span>
                 </div>
 
-                <div class="divide-y divide-slate-100">
+                <!-- Body -->
+                <div class="p-6 pt-2 divide-y divide-slate-200/60">
                     @foreach($todayMeetings as $m)
-                    <div class="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 first:pt-2 last:pb-2 group">
+                    <div class="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 group">
                         <div class="min-w-0 flex-1">
-                            <div class="font-extrabold text-slate-900 text-sm group-hover:text-primary-600 transition-colors">{{ $m->title }}</div>
-                            <div class="text-slate-500 mt-1 flex flex-wrap items-center gap-2 text-xs font-medium">
-                                <div class="flex items-center gap-1">
-                                    <svg class="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                    </svg>
-                                    {{ $m->start_time ? $m->start_time->format('H:i') : '' }} WITA
-                                </div>
+                            <div class="font-bold text-slate-900 text-sm group-hover:text-primary-600 transition-colors leading-snug">{{ $m->title }}</div>
+                            <div class="text-xs text-slate-500 font-normal mt-1 flex flex-wrap items-center gap-1.5">
+                                <span class="font-semibold text-slate-700">{{ $m->start_time ? $m->start_time->format('H:i') . ' WITA' : '' }}</span>
                                 <span class="text-slate-300">&bull;</span>
-                                <div class="flex items-center gap-1 truncate">
-                                    <svg class="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                                    </svg>
-                                    {{ $m->location }}
-                                </div>
+                                <span class="truncate text-slate-500">{{ $m->location ?: 'Ruang Rapat' }}</span>
                             </div>
                         </div>
                         <div class="shrink-0 self-start sm:self-auto">
                             @if($m->status === 'ongoing')
-                            <a href="{{ route('meetings.check-in', $m->id) }}" class="inline-flex items-center justify-center px-4 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-xl text-xs font-bold transition-all active:scale-95 shadow-sm">
-                                Isi Presensi &rarr;
+                            <a href="{{ route('meetings.check-in', $m->id) }}" class="inline-flex items-center justify-center px-4 py-2 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-xl text-xs font-bold transition-all shadow-sm">
+                                Presensi &rarr;
                             </a>
                             @elseif($m->status === 'scheduled')
-                            <span class="inline-flex px-3 py-1.5 bg-slate-100 border border-slate-200 text-slate-600 rounded-xl text-xs font-bold shadow-sm">Dijadwalkan</span>
+                            <span class="inline-flex px-3 py-1.5 bg-slate-100 text-slate-600 rounded-xl text-xs font-bold">Dijadwalkan</span>
                             @else
-                            <span class="inline-flex px-3 py-1.5 bg-white border border-slate-200 text-slate-500 rounded-xl text-xs font-bold shadow-sm">Selesai</span>
+                            <span class="inline-flex px-3 py-1.5 bg-white border border-slate-200 text-slate-400 rounded-xl text-xs font-bold">Selesai</span>
                             @endif
                         </div>
                     </div>

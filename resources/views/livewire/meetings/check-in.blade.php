@@ -35,11 +35,11 @@ new #[Layout('layouts.guest')] class extends Component {
         if ($this->meeting->status !== 'ongoing') {
             $this->status = 'not_available';
             if ($this->meeting->status === 'scheduled') {
-                $this->message = 'Sesi presensi belum dibuka. Sesi akan otomatis aktif setelah penyelenggara memulai rapat.';
+                $this->message = 'Presensi belum dibuka, silakan tunggu hingga rapat dimulai.';
             } elseif ($this->meeting->status === 'completed') {
-                $this->message = 'Sesi presensi telah ditutup karena pelaksanaan rapat telah selesai.';
+                $this->message = 'Presensi telah ditutup karena rapat telah selesai.';
             } else {
-                $this->message = 'Sesi presensi untuk rapat ini tidak tersedia.';
+                $this->message = 'Presensi untuk rapat ini tidak tersedia.';
             }
         }
     }
@@ -145,7 +145,7 @@ new #[Layout('layouts.guest')] class extends Component {
     {
         if ($this->meeting->status !== 'ongoing') {
             $this->status = 'not_available';
-            $this->message = 'Presensi tidak dapat dikirim karena sesi rapat belum dibuka atau telah selesai.';
+            $this->message = 'Presensi tidak dapat dikirim karena rapat belum dimulai atau telah selesai.';
             return;
         }
 
@@ -422,7 +422,7 @@ new #[Layout('layouts.guest')] class extends Component {
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
             </svg>
         </div>
-        <h3 class="text-xl font-extrabold text-slate-900 mb-3">Presensi Belum Tersedia</h3>
+        <h3 class="text-xl font-extrabold text-slate-900 mb-3">Presensi Tidak Tersedia</h3>
         <p class="text-sm font-medium text-slate-600 max-w-sm mx-auto leading-relaxed mb-8">{{ $message }}</p>
 
         <a href="{{ url('/') }}" class="inline-flex justify-center items-center px-6 py-3 bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-700 rounded-xl font-bold text-sm transition-all shadow-sm">

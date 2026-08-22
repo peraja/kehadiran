@@ -1,50 +1,139 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8">
     <title>Notulen Rapat - {{ $meeting->title }}</title>
     <style>
-        @page { size: a4 portrait; margin: 8mm 10mm; }
-        body { font-family: 'Helvetica', 'Arial', sans-serif; font-size: 10pt; line-height: 1.4; color: #333; }
-        .kop-surat { width: 100%; border-bottom: 2.5px solid #000; padding-bottom: 8px; margin-bottom: 16px; position: relative; }
-        .kop-surat .logo { position: absolute; left: 0; top: 0; width: 65px; }
-        .kop-surat .text { text-align: center; margin-left: 75px; }
-        .kop-surat h1 { font-size: 13pt; margin: 0; text-transform: uppercase; font-weight: bold; line-height: 1.2; }
-        .kop-surat h2 { font-size: 11.5pt; margin: 3px 0; text-transform: uppercase; font-weight: bold; line-height: 1.2; }
-        .kop-surat p { font-size: 8.5pt; margin: 0; font-style: italic; line-height: 1.3; }
-        .doc-title { text-align: center; margin: 16px 0 12px 0; font-size: 12pt; font-weight: bold; text-decoration: underline; text-transform: uppercase; }
-        
-        .info-table { width: 100%; margin-bottom: 12px; border-collapse: collapse; font-size: 9pt; }
-        .info-table td { padding: 2.5px 4px; vertical-align: top; }
-        .info-table .label { font-weight: bold; width: 130px; }
-        .section-title { font-size: 10.5pt; font-weight: bold; margin-top: 12px; margin-bottom: 6px; border-bottom: 1px solid #ccc; padding-bottom: 3px; }
-        .content { font-size: 9pt; text-align: justify; white-space: pre-line; padding-left: 5px; line-height: 1.5; }
-        .clearfix::after { content: ""; clear: both; display: table; }
+        @page {
+            size: a4 portrait;
+            margin: 8mm 10mm;
+        }
+
+        body {
+            font-family: 'Helvetica', 'Arial', sans-serif;
+            font-size: 10pt;
+            line-height: 1.4;
+            color: #333;
+        }
+
+        .kop-surat {
+            width: 100%;
+            border-bottom: 2.5px solid #000;
+            padding-bottom: 8px;
+            margin-bottom: 16px;
+            position: relative;
+        }
+
+        .kop-surat .logo {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 65px;
+        }
+
+        .kop-surat .text {
+            text-align: center;
+            margin-left: 75px;
+        }
+
+        .kop-surat h1 {
+            font-size: 13pt;
+            margin: 0;
+            text-transform: uppercase;
+            font-weight: bold;
+            line-height: 1.2;
+        }
+
+        .kop-surat h2 {
+            font-size: 11.5pt;
+            margin: 3px 0;
+            text-transform: uppercase;
+            font-weight: bold;
+            line-height: 1.2;
+        }
+
+        .kop-surat p {
+            font-size: 8.5pt;
+            margin: 0;
+            font-style: italic;
+            line-height: 1.3;
+        }
+
+        .doc-title {
+            text-align: center;
+            margin: 16px 0 12px 0;
+            font-size: 12pt;
+            font-weight: bold;
+            text-decoration: underline;
+            text-transform: uppercase;
+        }
+
+        .info-table {
+            width: 100%;
+            margin-bottom: 12px;
+            border-collapse: collapse;
+            font-size: 9pt;
+        }
+
+        .info-table td {
+            padding: 2.5px 4px;
+            vertical-align: top;
+        }
+
+        .info-table .label {
+            font-weight: bold;
+            width: 130px;
+        }
+
+        .section-title {
+            font-size: 10.5pt;
+            font-weight: bold;
+            margin-top: 12px;
+            margin-bottom: 6px;
+            border-bottom: 1px solid #ccc;
+            padding-bottom: 3px;
+        }
+
+        .content {
+            font-size: 9pt;
+            text-align: justify;
+            white-space: pre-line;
+            padding-left: 5px;
+            line-height: 1.5;
+        }
+
+        .clearfix::after {
+            content: "";
+            clear: both;
+            display: table;
+        }
     </style>
 </head>
+
 <body>
 
     <div class="kop-surat">
         <?php
-            $logoPath = public_path('img/logo.png');
-            $logoBase64 = '';
-            if (file_exists($logoPath)) {
-                $logoBase64 = 'data:image/png;base64,' . base64_encode(file_get_contents($logoPath));
-            }
-            $unitName = $meeting->creator?->unit_name ?? 'Sekretariat Daerah';
-            $opd = \App\Models\Opd::where('name', $unitName)->first();
-            if (!$opd && $unitName) {
-                $cleanUnit = str_replace([',', '.', '-'], '', $unitName);
-                $opd = \App\Models\Opd::whereRaw("REPLACE(REPLACE(REPLACE(name, ',', ''), '.', ''), '-', '') LIKE ?", ['%' . $cleanUnit . '%'])->first();
-            }
-            $opdAddress = $opd?->address ?: 'Tanassang, Kel. Alehanuae, Kec. Sinjai Utara, Kab. Sinjai 92611';
-            $opdPhone = $opd?->phone;
-            $opdEmail = $opd?->email;
+        $logoPath = public_path('img/logo.png');
+        $logoBase64 = '';
+        if (file_exists($logoPath)) {
+            $logoBase64 = 'data:image/png;base64,' . base64_encode(file_get_contents($logoPath));
+        }
+        $opd = $meeting->opd;
+        $unitName = $opd?->name ?? $meeting->creator?->unit_name ?? 'Sekretariat Daerah';
+        if (!$opd && $unitName) {
+            $cleanUnit = str_replace([',', '.', '-'], '', $unitName);
+            $opd = \App\Models\Opd::whereRaw("REPLACE(REPLACE(REPLACE(name, ',', ''), '.', ''), '-', '') LIKE ?", ['%' . $cleanUnit . '%'])->first();
+        }
+        $opdAddress = $opd?->address ?: 'Tanassang, Kel. Alehanuae, Kec. Sinjai Utara, Kab. Sinjai 92611';
+        $opdPhone = $opd?->phone;
+        $opdEmail = $opd?->email;
         ?>
         @if($logoBase64)
-            <img src="{{ $logoBase64 }}" class="logo" alt="Logo">
+        <img src="{{ $logoBase64 }}" class="logo" alt="Logo">
         @endif
-        
+
         <div class="text">
             <h1>PEMERINTAH KABUPATEN SINJAI</h1>
             <h2>{{ strtoupper($unitName) }}</h2>
@@ -77,7 +166,7 @@
         </tr>
         <tr>
             <td class="label">Dibuat oleh</td>
-            <td>: {{ $meeting->creator->name ?? 'Administrator' }} - {{ $meeting->creator->unit_name ?? 'Pemkab Sinjai' }}</td>
+            <td>: {{ $meeting->creator->name ?? 'Administrator' }} - {{ $meeting->creator->unit_name ?? 'Pemerintah Kabupaten Sinjai' }}</td>
         </tr>
     </table>
 
@@ -85,10 +174,10 @@
     <div class="content">{{ $meeting->minutes->content ?? 'Tidak ada catatan notulen.' }}</div>
 
     <?php
-        $signerTitle = $meeting->signer_title ?: ($opd?->leader_title ?: ('Kepala ' . $unitName));
-        $signerName = $meeting->signer_name ?: ($opd?->leader_name ?: '..................................................');
-        $signerNip = $meeting->signer_nip ?: ($opd?->leader_nip ?: '..................................................');
-        $signerRank = $meeting->signer_rank ?: ($opd?->leader_rank ?: null);
+    $signerTitle = $meeting->signer_title ?: ($opd?->leader_title ?: ('Kepala ' . $unitName));
+    $signerName = $meeting->signer_name ?: ($opd?->leader_name ?: '..................................................');
+    $signerNip = $meeting->signer_nip ?: ($opd?->leader_nip ?: '..................................................');
+    $signerRank = $meeting->signer_rank ?: ($opd?->leader_rank ?: null);
     ?>
 
     <div style="margin-top: 30px; width: 100%; font-size: 9.5pt; line-height: 1.4; page-break-inside: avoid;">
@@ -107,9 +196,9 @@
                         NIP. {{ $signerNip }}
                     </p>
                     @if($signerRank)
-                        <p style="margin: 0; font-size: 9pt; color: #333;">
-                            Pangkat: {{ $signerRank }}
-                        </p>
+                    <p style="margin: 0; font-size: 9pt; color: #333;">
+                        Pangkat: {{ $signerRank }}
+                    </p>
                     @endif
                 </td>
                 <td style="width: 50%; text-align: left; vertical-align: top; border: none; padding: 0 0 0 15px;">
@@ -130,4 +219,5 @@
     </div>
 
 </body>
+
 </html>

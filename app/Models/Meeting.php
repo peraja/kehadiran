@@ -45,4 +45,9 @@ class Meeting extends Model
     {
         return $this->belongsTo(User::class, 'created_by');
     }
+
+    public function opd(): BelongsTo
+    {
+        return $this->belongsTo(Opd::class);
+    }
 }

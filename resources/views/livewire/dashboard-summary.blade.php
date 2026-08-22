@@ -22,8 +22,14 @@ new class extends Component {
         
         // Filter based on role
         if (!$isAdmin) {
-            $query->whereHas('creator', function($q) {
-                $q->where('unit_name', auth()->user()->unit_name);
+            $unitName = auth()->user()->unit_name;
+            $query->where(function ($q) use ($unitName) {
+                $q->whereHas('creator', function ($cq) use ($unitName) {
+                    $cq->where('unit_name', $unitName);
+                })->orWhereHas('opd', function ($oq) use ($unitName) {
+                    $oq->where('name', $unitName)
+                       ->orWhere('name', 'like', '%' . $unitName . '%');
+                });
             });
         }
 
@@ -35,7 +41,7 @@ new class extends Component {
         // Live Ongoing Meetings
         $ongoingMeetings = (clone $query)
             ->where('status', 'ongoing')
-            ->with(['creator', 'attendances'])
+            ->with(['opd', 'creator', 'attendances'])
             ->orderBy('date', 'desc')
             ->orderBy('start_time', 'asc')
             ->get();
@@ -49,21 +55,22 @@ new class extends Component {
                           ->where('status', 'scheduled');
                   });
             })
-            ->with(['creator'])
+            ->with(['opd', 'creator'])
             ->orderBy('date', 'asc')
             ->orderBy('start_time', 'asc')
             ->take(5)
             ->get();
 
-        // Needs Action: Completed meetings missing notulen / dokumentasi
+        // Needs Action: Meetings that are ongoing or completed but missing minutes
         $missingMinutesMeetings = (clone $query)
-            ->where('status', 'completed')
+            ->whereIn('status', ['ongoing', 'completed'])
             ->where(function($q) {
-                $q->whereNull('notulen')
-                  ->orWhere('notulen', '')
-                  ->orDoesntHave('photos');
+                $q->whereDoesntHave('minutes')
+                  ->orWhereHas('minutes', function($mq) {
+                      $mq->whereNull('content')->orWhere('content', '');
+                  });
             })
-            ->with(['creator'])
+            ->with(['opd', 'creator'])
             ->orderBy('date', 'desc')
             ->take(5)
             ->get();
@@ -169,11 +176,13 @@ new class extends Component {
                         {{ $meeting->title }}
                     </a>
                     <div class="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs text-slate-500 mt-1.5 font-medium">
-                        <span>{{ $meeting->creator?->unit_name ?: 'Pemerintah Kabupaten Sinjai' }}</span>
+                        @if($isAdmin)
+                        <span class="font-bold text-slate-700">{{ $meeting->opd?->name ?? $meeting->creator?->unit_name ?? 'Pemerintah Kabupaten Sinjai' }}</span>
                         <span>&bull;</span>
+                        @endif
                         <span>{{ $meeting->location ?: 'Ruang Rapat' }}</span>
                         <span>&bull;</span>
-                        <span class="text-rose-600 font-bold">{{ $meeting->attendances->count() }} Hadir</span>
+                        <span class="font-bold text-rose-600">{{ $meeting->attendances->count() }} Hadir</span>
                     </div>
                 </div>
 
@@ -209,11 +218,11 @@ new class extends Component {
                         <x-meeting-status-badge :status="$meeting->status" />
                     </div>
                 @empty
-                    <div class="py-12 px-6 text-center flex flex-col items-center justify-center h-full">
-                        <div class="w-12 h-12 bg-slate-50 text-slate-300 rounded-2xl flex items-center justify-center mb-3">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                    <div class="py-14 px-6 text-center flex flex-col items-center justify-center h-full">
+                        <div class="w-12 h-12 bg-slate-100 text-slate-400 rounded-2xl flex items-center justify-center mb-2.5">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                         </div>
-                        <p class="text-sm font-medium text-slate-500">Tidak ada rapat mendatang.</p>
+                        <p class="text-sm font-extrabold text-slate-900">Tidak Ada Rapat Mendatang</p>
                     </div>
                 @endforelse
             </div>
@@ -226,23 +235,30 @@ new class extends Component {
             </div>
             <div class="divide-y divide-slate-100 flex-1 flex flex-col">
                 @forelse($missingMinutesMeetings as $meeting)
+                    @php
+                        $canEditMinute = auth()->user()->hasRole(['admin', 'admin_opd']) || $meeting->created_by === auth()->id();
+                    @endphp
                     <div class="p-5 hover:bg-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-colors">
                         <div class="min-w-0 flex-1">
-                            <div class="font-extrabold text-sm text-slate-900 truncate">{{ $meeting->title }}</div>
-                            <div class="text-xs font-medium text-slate-500 mt-1 ">
-                                Selesai: {{ $meeting->date->translatedFormat('d F Y') }}
+                            <a href="{{ route('meetings.notulen', $meeting->id) }}" wire:navigate class="font-extrabold text-sm text-slate-900 hover:text-primary-600 truncate block transition-colors">
+                                {{ $meeting->title }}
+                            </a>
+                            <div class="text-xs font-medium text-slate-500 mt-1">
+                                {{ $meeting->date->translatedFormat('d F Y') }}
                             </div>
                         </div>
+                        @if($canEditMinute)
                         <a href="{{ route('meetings.notulen', $meeting->id) }}" wire:navigate class="shrink-0 inline-flex items-center justify-center px-4 py-2 border border-primary-200 text-xs font-bold rounded-xl text-primary-700 bg-primary-50 hover:bg-primary-100 active:scale-95 transition-all shadow-sm">
                             Isi Notulen
                         </a>
+                        @endif
                     </div>
                 @empty
-                    <div class="py-12 px-6 text-center flex flex-col items-center justify-center h-full">
-                        <div class="w-12 h-12 bg-emerald-50 text-emerald-500 rounded-2xl flex items-center justify-center mb-3">
+                    <div class="py-14 px-6 text-center flex flex-col items-center justify-center h-full">
+                        <div class="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center mb-2.5">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                         </div>
-                        <p class="text-sm font-medium text-slate-500">Semua notulen telah diisi.</p>
+                        <p class="text-sm font-extrabold text-slate-900">Semua Notulen Lengkap</p>
                     </div>
                 @endforelse
             </div>

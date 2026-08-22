@@ -7,6 +7,8 @@ Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/
 ## [Unreleased] - 2026-08-22
 
 ### Ditambahkan
+- Relasi `opd_id` pada model `Meeting` dan migrasi basis data untuk pemilihan OPD langsung saat Super Admin membuat rapat.
+- Pembatasan dan proteksi otorisasi berbasis peran: pengguna non-pembuat rapat (pegawai biasa) hanya dapat membaca notulen (*read-only*) dan galeri foto tanpa hak mengubah/menghapus.
 - Modul Pengaturan Sistem (`Setting` model & migration, `admin/settings.blade.php`) untuk pengelolaan konfigurasi tautan Survei Kepuasan Masyarakat (SKM).
 - Integrasi ajakan pengisian Survei Kepuasan Masyarakat (SKM) secara instan pada layar sukses presensi (*check-in*).
 - Komponen lencana peran pengguna global `<x-user-role-badge>` untuk standardisasi tampilan *role* (Super Admin, Admin OPD, Pegawai).
@@ -16,6 +18,11 @@ Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/
 - Nomor urut otomatis (`#`) pada tabel daftar hadir presensi rapat.
 
 ### Diubah
+- Penyederhanaan tampilan akun di *topbar*: trigger menampilkan avatar, nama, dan role secara proporsional; menu dropdown fokus pada Profil dan Logout.
+- Penyesuaian widget *Menunggu Notulen* pada dasbor: hanya rapat berstatus *ongoing* atau *completed* tanpa notulen yang dimuat, serta tombol "Isi Notulen" dikhususkan bagi pembuat rapat dan admin.
+- Audit dan perapian seluruh *Empty State*: menghilangkan teks deskriptif berlebih pada notulen, dokumentasi, presensi, tabel rapat, pengguna, dan OPD.
+- Penyelarasan kartu *Rapat Hari Ini* pada Landing Page dengan estetika *glassmorphism*, pemisahan tegas header dan body, serta format tipografi bersih tanpa ikon repetitif.
+- Perapian urutan tab workspace rapat menjadi *Ringkasan, Presensi, Dokumentasi, Notulen* dan penghapusan badge angka status pada tab Notulen.
 - Standardisasi token warna lencana rapat: status *Live / Berlangsung* menggunakan warna merah menyala (`rose-50 / rose-700`) dengan animasi denyut (*pulsing dot*).
 - Pembaruan kartu statistik Dashboard menjadi 4 periode waktu kronologis (*Hari Ini, Minggu Ini, Bulan Ini, Tahun Ini*).
 - Penyederhanaan widget *Rapat Berlangsung* pada dashboard dengan pembersihan elemen berlebih.

@@ -7,20 +7,12 @@ use App\Models\OpdSigner;
 
 new class extends Component {
     public Meeting $meeting;
-
-    // Edit form fields
-    public $title;
-    public $date;
-    public $start_time;
-    public $end_time;
-    public $location;
-    public $signer_title;
-    public $signer_name;
-    public $signer_nip;
-    public $signer_rank;
+    public $title, $date, $start_time, $end_time, $location;
+    public $signer_title, $signer_name, $signer_nip, $signer_rank;
     public $selected_signer_id = '';
+    public $selected_opd_id = '';
+    public $opd;
     public $opdSigners = [];
-    public ?Opd $opd = null;
 
     public function mount(Meeting $meeting)
     {
@@ -39,14 +31,19 @@ new class extends Component {
         $this->signer_name = $this->meeting->signer_name ?? '';
         $this->signer_nip = $this->meeting->signer_nip ?? '';
         $this->signer_rank = $this->meeting->signer_rank ?? '';
+        $this->selected_opd_id = (string)($this->meeting->opd_id ?? '');
 
-        $userUnit = $this->meeting->creator?->unit_name ?? auth()->user()->unit_name;
         $opd = null;
-        if ($userUnit) {
-            $opd = Opd::where('name', $userUnit)->first();
-            if (!$opd) {
-                $cleanUnit = str_replace([',', '.', '-'], '', $userUnit);
-                $opd = Opd::whereRaw("REPLACE(REPLACE(REPLACE(name, ',', ''), '.', ''), '-', '') LIKE ?", ['%' . $cleanUnit . '%'])->first();
+        if ($this->selected_opd_id) {
+            $opd = Opd::find($this->selected_opd_id);
+        } else {
+            $userUnit = $this->meeting->creator?->unit_name ?? auth()->user()->unit_name;
+            if ($userUnit) {
+                $opd = Opd::where('name', $userUnit)->first();
+                if (!$opd) {
+                    $cleanUnit = str_replace([',', '.', '-'], '', $userUnit);
+                    $opd = Opd::whereRaw("REPLACE(REPLACE(REPLACE(name, ',', ''), '.', ''), '-', '') LIKE ?", ['%' . $cleanUnit . '%'])->first();
+                }
             }
         }
         $this->opd = $opd;
@@ -56,6 +53,26 @@ new class extends Component {
             return $s->name === $this->meeting->signer_name || $s->title === $this->meeting->signer_title;
         });
         $this->selected_signer_id = $matchedSigner ? (string) $matchedSigner->id : '';
+    }
+
+    public function updatedSelectedOpdId($val)
+    {
+        $this->selected_signer_id = '';
+        $opd = !empty($val) ? Opd::find($val) : null;
+        $this->opd = $opd;
+        $this->opdSigners = $opd ? $opd->signers()->where('is_active', true)->orderByRaw("CASE eselon WHEN 'II.a' THEN 1 WHEN 'II.b' THEN 2 WHEN 'III.a' THEN 3 WHEN 'III.b' THEN 4 WHEN 'IV.a' THEN 5 WHEN 'IV.b' THEN 6 ELSE 7 END, id ASC")->get() : collect();
+
+        if ($opd) {
+            $this->signer_title = $opd->leader_title ?: 'Kepala OPD';
+            $this->signer_name = $opd->leader_name;
+            $this->signer_nip = $opd->leader_nip;
+            $this->signer_rank = $opd->leader_rank;
+        } else {
+            $this->signer_title = '';
+            $this->signer_name = '';
+            $this->signer_nip = '';
+            $this->signer_rank = '';
+        }
     }
 
     public function updatedSelectedSignerId($val)
@@ -88,6 +105,18 @@ new class extends Component {
             'signer_name' => 'nullable|string|max:255',
             'signer_nip' => 'nullable|string|max:50',
             'signer_rank' => 'nullable|string|max:255',
+        ];
+    }
+
+    public function messages()
+    {
+        return [
+            'title.required' => 'Agenda rapat wajib diisi.',
+            'date.required' => 'Tanggal pelaksanaan rapat wajib diisi.',
+            'start_time.required' => 'Waktu mulai rapat wajib diisi.',
+            'end_time.required' => 'Waktu selesai rapat wajib diisi.',
+            'end_time.after' => 'Waktu selesai harus lebih lambat dari waktu mulai.',
+            'location.required' => 'Lokasi rapat wajib diisi.',
         ];
     }
 
@@ -126,6 +155,9 @@ new class extends Component {
         }
 
         $validated = $this->validate();
+        if (auth()->user()->hasRole('admin')) {
+            $validated['opd_id'] = $this->selected_opd_id ?: null;
+        }
         $this->meeting->update($validated);
         $this->meeting->refresh();
 
@@ -142,6 +174,14 @@ new class extends Component {
         $this->meeting->delete();
         session()->flash('message', 'Data rapat berhasil dihapus.');
         $this->redirect(route('meetings.index'), navigate: true);
+    }
+
+    public function with(): array
+    {
+        return [
+            'allOpds' => auth()->user()->hasRole('admin') ? Opd::where('is_active', true)->orderBy('name')->get() : collect(),
+            'isAdmin' => auth()->user()->hasRole('admin'),
+        ];
     }
 }; ?>
 
@@ -192,12 +232,12 @@ new class extends Component {
                     <span class="break-words">{{ $meeting->location }}</span>
                 </div>
 
-                @if($meeting->creator && $meeting->creator->unit_name)
+                @if($meeting->opd || ($meeting->creator && $meeting->creator->unit_name))
                 <div class="flex items-center gap-1.5 shrink-0">
                     <svg class="w-4 h-4 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                     </svg>
-                    <span class="text-slate-800 break-words">{{ $meeting->creator->unit_name }}</span>
+                    <span class="text-slate-800 break-words">{{ $meeting->opd?->name ?? $meeting->creator?->unit_name }}</span>
                 </div>
                 @endif
             </div>
@@ -295,12 +335,28 @@ new class extends Component {
                     @error('location') <span class="text-xs text-red-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                 </div>
 
+                @if($isAdmin)
+                <div>
+                    <label for="edit_selected_opd_id" class="block text-sm font-bold text-slate-700 mb-1">OPD</label>
+                    <select wire:model.live="selected_opd_id" id="edit_selected_opd_id" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" required>
+                        <option value="">-- Pilih OPD --</option>
+                        @foreach($allOpds as $opdItem)
+                        <option value="{{ $opdItem->id }}">{{ $opdItem->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                @endif
+
                 <!-- Penandatangan -->
                 <div class="pt-4 border-t border-slate-100">
                     <label for="edit_selected_signer_id" class="block text-sm font-bold text-slate-700 mb-1">Penandatangan Dokumen</label>
-                    <select wire:model.live="selected_signer_id" id="edit_selected_signer_id" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors">
+                    <select wire:model.live="selected_signer_id" id="edit_selected_signer_id" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" {{ $isAdmin && empty($selected_opd_id) ? 'disabled' : '' }}>
                         <option value="">
+                            @if($isAdmin && empty($selected_opd_id))
+                            -- Pilih OPD terlebih dahulu --
+                            @else
                             {{ $opd?->leader_title ?: 'Kepala OPD' }}{{ !empty($opd?->leader_name) ? ' — ' . $opd->leader_name : ' (Default)' }}
+                            @endif
                         </option>
                         @foreach($opdSigners as $s)
                         <option value="{{ $s->id }}">{{ $s->title }} — {{ $s->name }}</option>
@@ -383,7 +439,7 @@ new class extends Component {
                     </svg>
                 </div>
                 <p class="font-extrabold text-amber-900 text-lg">Presensi Belum Dibuka</p>
-                <p class="text-sm font-medium text-amber-800 mt-2">QR Code akan aktif secara otomatis saat sesi rapat dimulai.</p>
+                <p class="text-sm font-medium text-amber-800 mt-2">Silakan mulai rapat untuk membuka sesi presensi.</p>
             </div>
             @else
             <div class="p-8 bg-slate-50 border border-slate-200 rounded-2xl text-center">
@@ -393,7 +449,7 @@ new class extends Component {
                     </svg>
                 </div>
                 <p class="font-extrabold text-slate-800 text-lg">Presensi Telah Ditutup</p>
-                <p class="text-sm font-medium text-slate-500 mt-2">Rapat ini telah selesai dilaksanakan. QR Code tidak lagi dapat digunakan.</p>
+                <p class="text-sm font-medium text-slate-500 mt-2">Sesi presensi untuk rapat ini telah ditutup.</p>
             </div>
             @endif
         </div>

@@ -22,7 +22,7 @@ class RoleAndUserSeeder extends Seeder
         $admin = User::updateOrCreate(
             ['nip' => 'kalamangna'],
             [
-                'name' => 'Super Admin',
+                'name' => 'kalamangna',
                 'password' => bcrypt('Syazani'),
             ]
         );
