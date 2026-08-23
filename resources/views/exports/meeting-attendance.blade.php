@@ -3,7 +3,8 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Daftar Hadir Rapat - {{ $meeting->title }}</title>
+    <title>Presensi - {{ $meeting->title }}</title>
+    <link rel="icon" type="image/png" href="{{ asset('img/logo.png') }}">
     <style>
         @page {
             size: a4 portrait;
@@ -268,20 +269,22 @@
         </p>
 
         @if($signedAt && $qrCodeBase64)
-        <div style="margin: 8px 0 10px 0; border: 1px solid #cbd5e1; border-radius: 6px; padding: 6px 8px; background-color: #f8fafc; width: 270px;">
-            <table style="border-collapse: collapse; border: none; width: 100%;">
-                <tr>
-                    <td style="border: none; padding: 0 8px 0 0; vertical-align: middle; width: 46px;">
-                        <img src="data:image/svg+xml;base64,{{ $qrCodeBase64 }}" style="width: 42px; height: 42px; display: block;" alt="QR Code TTE">
-                    </td>
-                    <td style="border: none; padding: 0; vertical-align: middle; line-height: 1.35;">
-                        <div style="font-weight: bold; color: #0f172a; font-size: 7.5pt;">Ditandatangani Secara Elektronik</div>
-                        <div style="font-weight: 600; color: #334155; font-size: 7.5pt;">Pemerintah Kabupaten Sinjai</div>
-                        <div style="color: #64748b; font-size: 7pt;">Balai Sertifikasi Elektronik (BSrE)</div>
-                    </td>
-                </tr>
-            </table>
-        </div>
+        <a href="{{ $qrData }}" target="_blank" style="text-decoration: none; color: inherit; display: block; margin: 8px 0 10px 0;">
+            <div style="border: 1px solid #cbd5e1; border-radius: 6px; padding: 6px 8px; background-color: #f8fafc; width: 270px;">
+                <table style="border-collapse: collapse; border: none; width: 100%;">
+                    <tr>
+                        <td style="border: none; padding: 0 8px 0 0; vertical-align: middle; width: 46px;">
+                            <img src="data:image/svg+xml;base64,{{ $qrCodeBase64 }}" style="width: 42px; height: 42px; display: block;" alt="QR Code TTE">
+                        </td>
+                        <td style="border: none; padding: 0; vertical-align: middle; line-height: 1.35;">
+                            <div style="font-weight: bold; color: #0f172a; font-size: 7.5pt;">Ditandatangani Secara Elektronik</div>
+                            <div style="font-weight: 600; color: #334155; font-size: 7.5pt;">Pemerintah Kabupaten Sinjai</div>
+                            <div style="color: #64748b; font-size: 7pt;">Balai Sertifikasi Elektronik (BSrE)</div>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </a>
         @else
         <div style="height: 50px;"></div>
         @endif
@@ -289,14 +292,14 @@
         <p style="font-weight: bold; margin-bottom: 1px; font-size: 10pt;">
             {{ $signerName }}
         </p>
+        @if($signerRank)
+        <p style="margin: 0; font-size: 9pt; color: #334155;">
+            {{ $signerRank }}
+        </p>
+        @endif
         <p style="margin: 0; font-size: 9pt; color: #334155;">
             NIP. {{ $signerNip }}
         </p>
-        @if($signerRank)
-        <p style="margin: 0; font-size: 9pt; color: #475569;">
-            Pangkat: {{ $signerRank }}
-        </p>
-        @endif
     </div>
     <div style="clear: both;"></div>
 

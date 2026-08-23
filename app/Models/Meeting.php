@@ -93,6 +93,43 @@ class Meeting extends Model
     }
 
     /**
+     * Check if the given user is the designated signer for this meeting.
+     */
+    public function isSigner(?User $user = null): bool
+    {
+        $user = $user ?: auth()->user();
+        if (!$user) {
+            return false;
+        }
+
+        // TTE is exclusively for users with role 'pimpinan'
+        if (!$user->hasRole('pimpinan')) {
+            return false;
+        }
+
+        // 1. Direct match with meeting signer NIP or name
+        if (!empty($user->nip) && !empty($this->signer_nip) && $user->nip === $this->signer_nip) {
+            return true;
+        }
+        if (!empty($user->name) && !empty($this->signer_name) && strcasecmp(trim($user->name), trim($this->signer_name)) === 0) {
+            return true;
+        }
+
+        // 2. Check if meeting is assigned to an OPD where this user is the Kepala OPD
+        $opd = $this->opd;
+        if ($opd) {
+            if (!empty($user->nip) && !empty($opd->leader_nip) && $user->nip === $opd->leader_nip) {
+                return true;
+            }
+            if (!empty($user->name) && !empty($opd->leader_name) && strcasecmp(trim($user->name), trim($opd->leader_name)) === 0) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * Count how many documents are currently waiting for TTE.
      */
     public function pendingTteCount(): int

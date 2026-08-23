@@ -29,18 +29,18 @@ class RoleAndUserSeeder extends Seeder
         );
         $admin->syncRoles(['admin']);
 
-        // Akun Pimpinan (Testing)
-        $pimpinanDiskominfo = User::updateOrCreate(
+        // Akun Pimpinan (Testing TTE)
+        $pimpinanTesting = User::updateOrCreate(
             ['nip' => '123456'],
             [
                 'name' => 'Testing TTE',
                 'nik' => '7307010101800001',
-                'jabatan' => 'Kepala Dinas Komunikasi Informatika dan Persandian',
+                'jabatan' => 'Kepala Bidang eGov',
                 'unit_name' => 'Dinas Komunikasi Informatika dan Persandian',
                 'password' => bcrypt('password'),
             ]
         );
-        $pimpinanDiskominfo->syncRoles(['pimpinan']);
+        $pimpinanTesting->syncRoles(['pimpinan']);
     }
 }
 

@@ -8,6 +8,7 @@ use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 new #[Layout('layouts.app')] class extends Component {
     public Meeting $meeting;
+    public bool $canEdit = false;
 
     public bool $showSignModal = false;
     public string $passphrase = '';
@@ -16,6 +17,24 @@ new #[Layout('layouts.app')] class extends Component {
     public function mount(Meeting $meeting)
     {
         $this->meeting = $meeting;
+
+        $user = auth()->user();
+        if ($user->hasRole('pimpinan') && !$meeting->isSigner($user)) {
+            abort(403, 'Anda hanya dapat mengakses presensi rapat yang penandatangannya adalah Anda sendiri.');
+        }
+
+        if ($user->hasRole('pegawai') && $meeting->created_by !== $user->id) {
+            abort(403, 'Anda hanya dapat mengakses presensi rapat yang Anda buat sendiri.');
+        }
+
+        if ($user->hasRole('admin')) {
+            $this->canEdit = true;
+        } elseif ($user->hasRole('admin_opd')) {
+            $this->canEdit = $user->unit_name === $meeting->opd?->name || $user->unit_name === $meeting->creator?->unit_name;
+        } else {
+            // Pegawai biasa: hanya bisa mengelola rapat yang dibuat sendiri
+            $this->canEdit = $meeting->created_by === $user->id;
+        }
     }
 
     public function openSignModal()
@@ -36,6 +55,10 @@ new #[Layout('layouts.app')] class extends Component {
 
     public function executeSign(BsreEsignService $esignService)
     {
+        if (!auth()->user()->hasRole('pimpinan') || !$this->meeting->isSigner(auth()->user())) {
+            abort(403, 'Anda bukan pejabat penandatangan yang ditunjuk untuk rapat ini.');
+        }
+
         $this->errorMessage = '';
         $this->validate([
             'passphrase' => 'required|string',
@@ -53,6 +76,26 @@ new #[Layout('layouts.app')] class extends Component {
             $this->errorMessage = $result['message'];
         }
     }
+
+    public function unlockForRevision(): void
+    {
+        if (!$this->canEdit) {
+            abort(403, 'Akses tidak diizinkan.');
+        }
+
+        if ($this->meeting->attendance_pdf_path && \Illuminate\Support\Facades\Storage::disk('public')->exists($this->meeting->attendance_pdf_path)) {
+            \Illuminate\Support\Facades\Storage::disk('public')->delete($this->meeting->attendance_pdf_path);
+        }
+
+        $this->meeting->update([
+            'attendance_signed_at' => null,
+            'attendance_signed_by' => null,
+            'attendance_pdf_path' => null,
+        ]);
+
+        $this->meeting->refresh();
+        session()->flash('message', 'Kunci presensi dibuka untuk revisi. Status TTE telah direset, silakan sesuaikan data presensi lalu minta Pimpinan untuk menandatangani ulang.');
+    }
 }; ?>
 
 <x-meeting-layout :meeting="$meeting" activeTab="presensi">
@@ -66,7 +109,7 @@ new #[Layout('layouts.app')] class extends Component {
         <!-- Action Header Toolbar -->
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
             <div class="flex items-center gap-2.5">
-                <h3 class="text-lg font-extrabold text-slate-900 tracking-tight">Daftar Hadir</h3>
+                <h3 class="text-lg font-extrabold text-slate-900 tracking-tight">Daftar Hadir Rapat</h3>
                 <span class="px-2.5 py-0.5 bg-primary-50 text-primary-700 border border-primary-200/60 rounded-full text-xs font-bold">{{ $meeting->attendances->count() }} Orang</span>
             </div>
 
@@ -104,6 +147,26 @@ new #[Layout('layouts.app')] class extends Component {
             </div>
             @endif
         </div>
+
+        @if($meeting->attendance_signed_at)
+        <!-- Locked Banner (TTE Signed) -->
+        <div class="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs sm:text-sm font-medium">
+            <div class="flex items-center gap-2.5">
+                <svg class="w-5 h-5 text-amber-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+                <span>Daftar hadir telah disahkan secara digital (TTE BSrE) dan dikunci.</span>
+            </div>
+            @if($canEdit)
+            <button wire:click="unlockForRevision"
+                    wire:confirm="Membuka kunci daftar hadir akan membatalkan status TTE saat ini dan mewajibkan Pimpinan melakukan TTE ulang setelah perbaikan selesai. Lanjutkan revisi?"
+                    class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-amber-600 hover:bg-amber-700 active:scale-95 text-white rounded-xl text-xs font-bold transition-all shadow-sm shrink-0 self-start sm:self-auto">
+                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" /></svg>
+                <span>Buka Kunci untuk Revisi</span>
+            </button>
+            @endif
+        </div>
+        @endif
 
         <!-- Full-Width Attendee Table -->
         <div class="overflow-x-auto rounded-2xl border border-slate-200">
@@ -220,9 +283,29 @@ new #[Layout('layouts.app')] class extends Component {
                     </div>
                 </div>
 
-                <div>
+                <div x-data="{ showPassphrase: false }">
                     <label for="passphrase_attendance" class="block text-sm font-bold text-slate-700 mb-1">Passphrase BSrE</label>
-                    <input wire:model="passphrase" id="passphrase_attendance" type="password" class="w-full text-sm py-2.5 px-3.5 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Masukkan passphrase" required autofocus />
+                    <div class="relative">
+                        <input wire:model="passphrase"
+                               id="passphrase_attendance"
+                               :type="showPassphrase ? 'text' : 'password'"
+                               class="w-full text-sm py-2.5 pl-3.5 pr-10 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors"
+                               placeholder="Masukkan passphrase"
+                               required
+                               autofocus />
+                        <button type="button"
+                                @click="showPassphrase = !showPassphrase"
+                                class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 focus:outline-none cursor-pointer"
+                                :title="showPassphrase ? 'Sembunyikan Passphrase' : 'Lihat Passphrase'">
+                            <svg x-show="showPassphrase" x-cloak class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18" />
+                            </svg>
+                            <svg x-show="!showPassphrase" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                        </button>
+                    </div>
                     @error('passphrase') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                 </div>
 

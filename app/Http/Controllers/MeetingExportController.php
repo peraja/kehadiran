@@ -20,12 +20,41 @@ class MeetingExportController extends Controller
         return "{$prefix}_{$date}_{$slug}.{$extension}";
     }
 
-    public function exportMinutes(Meeting $meeting)
+    protected function authorizeExport(Meeting $meeting): void
     {
-        // Pastikan pengguna berhak mengakses
-        if (!auth()->user()->hasRole('admin') && $meeting->created_by !== auth()->id() && auth()->user()->unit_name !== $meeting->creator?->unit_name) {
+        $user = auth()->user();
+        if (!$user) {
             abort(403);
         }
+
+        if ($user->hasRole('admin')) {
+            return;
+        }
+
+        if ($user->hasRole('admin_opd')) {
+            if ($user->unit_name === $meeting->creator?->unit_name || $user->unit_name === $meeting->opd?->name) {
+                return;
+            }
+        }
+
+        if ($user->hasRole('pimpinan')) {
+            if ($meeting->isSigner($user)) {
+                return;
+            }
+        }
+
+        if ($user->hasRole('pegawai')) {
+            if ($meeting->created_by === $user->id) {
+                return;
+            }
+        }
+
+        abort(403, 'Anda tidak memiliki hak untuk mengunduh dokumen rapat ini.');
+    }
+
+    public function exportMinutes(Meeting $meeting)
+    {
+        $this->authorizeExport($meeting);
 
         // Dokumen hanya dapat diekspor jika rapat telah diselesaikan
         if ($meeting->status !== 'completed') {
@@ -40,10 +69,7 @@ class MeetingExportController extends Controller
 
     public function exportAttendance(Meeting $meeting)
     {
-        // Pastikan pengguna berhak mengakses
-        if (!auth()->user()->hasRole('admin') && $meeting->created_by !== auth()->id() && auth()->user()->unit_name !== $meeting->creator?->unit_name) {
-            abort(403);
-        }
+        $this->authorizeExport($meeting);
 
         // Dokumen hanya dapat diekspor jika rapat telah diselesaikan
         if ($meeting->status !== 'completed') {
@@ -58,10 +84,7 @@ class MeetingExportController extends Controller
 
     public function exportPhotos(Meeting $meeting)
     {
-        // Pastikan pengguna berhak mengakses
-        if (!auth()->user()->hasRole('admin') && $meeting->created_by !== auth()->id() && auth()->user()->unit_name !== $meeting->creator?->unit_name) {
-            abort(403);
-        }
+        $this->authorizeExport($meeting);
 
         // Dokumentasi foto hanya dapat diekspor jika rapat telah diselesaikan
         if ($meeting->status !== 'completed') {

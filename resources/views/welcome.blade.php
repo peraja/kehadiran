@@ -78,11 +78,11 @@
             @endphp
 
             @if($todayMeetings->count() > 0)
-            <div class="mt-14 text-left bg-white/60 backdrop-blur-sm rounded-3xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow max-w-2xl mx-auto overflow-hidden">
+            <div class="mt-14 text-left bg-white/70 backdrop-blur-md rounded-3xl border border-slate-200 shadow-sm hover:shadow-md transition-all max-w-3xl mx-auto overflow-hidden">
                 <!-- Header -->
                 <div class="p-6 pb-4 border-b border-slate-200/80 flex items-center justify-between gap-4">
                     <div class="flex items-center gap-3.5">
-                        <div class="w-11 h-11 bg-emerald-100 text-emerald-600 rounded-2xl flex items-center justify-center shrink-0">
+                        <div class="w-11 h-11 bg-emerald-100 text-emerald-600 rounded-2xl flex items-center justify-center shrink-0 shadow-2xs">
                             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                             </svg>
@@ -95,24 +95,34 @@
                     <span class="inline-flex items-center px-3 py-1 bg-white border border-slate-200 text-slate-700 rounded-full text-xs font-bold shadow-2xs">{{ $todayMeetings->count() }} Rapat</span>
                 </div>
 
-                <!-- Body -->
-                <div class="p-6 pt-2 divide-y divide-slate-200/60">
+                <!-- Body List -->
+                <div class="divide-y divide-slate-100">
                     @foreach($todayMeetings as $m)
                     @php
                         $opdName = $m->opd?->name ?? $m->creator?->unit_name ?? 'Pemerintah Kabupaten Sinjai';
                     @endphp
-                    <div class="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 group">
-                        <div class="min-w-0 flex-1">
-                            <div class="font-bold text-slate-900 text-sm group-hover:text-primary-600 transition-colors leading-snug">{{ $m->title }}</div>
-                            <div class="text-xs text-slate-500 font-normal mt-1 flex flex-wrap items-center gap-1.5">
-                                <span class="font-semibold text-slate-700">{{ $m->start_time ? $m->start_time->format('H:i') . ' WITA' : '' }}</span>
+                    <div class="p-5 sm:px-6 hover:bg-slate-50/80 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-4 group">
+                        <div class="min-w-0 flex-1 space-y-1">
+                            <!-- Judul Agenda -->
+                            <div class="font-extrabold text-slate-900 text-sm sm:text-base group-hover:text-primary-600 transition-colors leading-snug break-words">
+                                {{ $m->title }}
+                            </div>
+
+                            <!-- Nama OPD -->
+                            <div class="font-bold text-slate-700 text-xs break-words leading-relaxed">
+                                {{ $opdName }}
+                            </div>
+
+                            <!-- Waktu & Lokasi -->
+                            <div class="text-xs text-slate-500 font-medium flex flex-wrap items-center gap-x-2 gap-y-1 pt-0.5">
+                                <span class="font-semibold text-slate-700">{{ $m->start_time ? $m->start_time->format('H:i') : '' }} - {{ $m->end_time ? $m->end_time->format('H:i') : 'Selesai' }} WITA</span>
                                 <span class="text-slate-300">&bull;</span>
-                                <span class="text-slate-700 font-semibold">{{ $opdName }}</span>
-                                <span class="text-slate-300">&bull;</span>
-                                <span class="truncate text-slate-500">{{ $m->location ?: 'Ruang Rapat' }}</span>
+                                <span class="break-words">{{ $m->location ?: 'Ruang Rapat' }}</span>
                             </div>
                         </div>
-                        <div class="shrink-0 self-start sm:self-auto">
+
+                        <!-- Status Badge -->
+                        <div class="shrink-0 self-start sm:self-center">
                             <x-meeting-status-badge :status="$m->status" />
                         </div>
                     </div>

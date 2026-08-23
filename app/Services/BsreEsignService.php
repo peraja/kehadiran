@@ -35,6 +35,13 @@ class BsreEsignService
      */
     public function signDocument(Meeting $meeting, User $user, string $type, string $passphrase): array
     {
+        if (!$user->hasRole('pimpinan')) {
+            return [
+                'success' => false,
+                'message' => 'Hanya pengguna dengan peran Pimpinan yang berhak menandatangani dokumen secara elektronik.',
+            ];
+        }
+
         if (empty($user->nik)) {
             return [
                 'success' => false,
@@ -46,6 +53,13 @@ class BsreEsignService
             return [
                 'success' => false,
                 'message' => 'Pengesahan TTE hanya dapat dilakukan setelah status rapat diselesaikan.',
+            ];
+        }
+
+        if (!$meeting->isSigner($user)) {
+            return [
+                'success' => false,
+                'message' => 'Anda bukan pejabat penandatangan yang ditunjuk untuk rapat ini.',
             ];
         }
 

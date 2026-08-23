@@ -8,8 +8,9 @@ Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/
 
 ### Ditambahkan
 - Integrasi modul **Tanda Tangan Elektronik (TTE) BSrE - BSSN** (`app/Services/BsreEsignService.php`) untuk pengesahan digital Notulen, Daftar Hadir, dan Dokumentasi Foto Rapat.
-- Modal eksekusi TTE terintegrasi pada workspace rapat dengan validasi Passphrase dan verifikasi NIK pejabat penandatangan.
-- Halaman verifikasi publik TTE (`resources/views/livewire/meetings/verify-tte.blade.php`) dengan *design system* konsisten untuk memvalidasi keabsahan dokumen serta stempel waktu (*timestamp*) penandatanganan.
+- Modal eksekusi TTE terintegrasi pada workspace rapat dengan validasi Passphrase, toggle *show/hide* password interaktif, dan verifikasi NIK pejabat penandatangan.
+- Mekanisme proteksi penguncian dokumen setelah TTE (*Locked State*) serta fitur **Buka Kunci untuk Revisi** pada tab Notulen, Presensi, dan Dokumentasi Foto.
+- Halaman verifikasi publik TTE (`resources/views/livewire/meetings/verify-tte.blade.php`) berfokus langsung pada keabsahan dokumen dan identitas penandatangan, selaras dengan *design system* halaman *check-in*.
 - Rute publik pengunduhan dokumen PDF bertanda tangan digital resmi (`meetings.verify.download`).
 - Blok QR Code verifikasi dinamis pada PDF ekspor dokumen rapat yang mengarahkan pembaca ke halaman verifikasi publik.
 - Catatan kaki (*footer legal disclaimer*) standar BSrE BSSN dan Permendagri No. 1 Tahun 2023 pada margin bawah berkas PDF yang telah ditandatangani.
@@ -21,9 +22,13 @@ Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/
 
 ### Diubah
 - Standardisasi seluruh tipografi dan tata letak dokumen ekspor PDF (Notulen, Daftar Hadir, Dokumentasi) sesuai standar Permendagri No. 1 Tahun 2023 menggunakan font `Arial, sans-serif` murni.
+- Penyelarasan konsisten desain seluruh tab workspace detail rapat (*Ringkasan, Presensi, Dokumentasi, Notulen*) dengan *toolbar header* terpadu dan kontainer data kartu putih halus.
+- Penyelarasan visual kartu widget **Rapat Berlangsung** dan **Menunggu TTE** pada dasbor, serta perluasan akses monitoring antrean TTE bagi peran Super Admin.
+- Penyempurnaan notifikasi sistem: penghapusan duplikasi alert sukses pada workspace rapat.
+- Pembersihan spasi dan indentasi berlebih pada tampilan notulen mode *read-only*.
+- Pembaruan label badge header rapat menjadi *"Sudah TTE Semua"*.
 - Penyesuaian blok tanda tangan pada PDF: nama pejabat berformat tebal (`font-bold`) tanpa garis bawah (*underline*).
 - Penambahan restriksi peran *Pimpinan*: penutupan akses dan penyembunyian tombol buat rapat pada antarmuka serta proteksi *authorization guard* backend.
-- Pembaruan label status TTE pada antarmuka menjadi *"Sudah TTE"* dengan lencana hijau emerald.
 - Konsolidasi seluruh migrasi database menjadi 11 berkas atomik bersih siap pasang di server cPanel / produksi.
 - Penggabungan tampilan Kepala OPD ke dalam tabel Pejabat Penandatangan pada halaman Pengaturan OPD dengan dukungan modal edit dinamis (Eselon, Pangkat, Jabatan, NIK, dan Unit Kerja).
 - Penghapusan input manual password pada form pembuatan pengguna karena otentikasi login terhubung langsung ke Gateway ENIKDA / SIMPEG Sinjai.

@@ -21,7 +21,24 @@ new #[Layout('layouts.app')] class extends Component {
     public function mount(Meeting $meeting)
     {
         $this->meeting = $meeting;
-        $this->canEdit = auth()->user()->hasRole(['admin', 'admin_opd']) || $meeting->created_by === auth()->id();
+
+        $user = auth()->user();
+        if ($user->hasRole('pimpinan') && !$meeting->isSigner($user)) {
+            abort(403, 'Anda hanya dapat mengakses dokumentasi rapat yang penandatangannya adalah Anda sendiri.');
+        }
+
+        if ($user->hasRole('pegawai') && $meeting->created_by !== $user->id) {
+            abort(403, 'Anda hanya dapat mengakses dokumentasi rapat yang Anda buat sendiri.');
+        }
+
+        if ($user->hasRole('admin')) {
+            $this->canEdit = true;
+        } elseif ($user->hasRole('admin_opd')) {
+            $this->canEdit = $user->unit_name === $meeting->opd?->name || $user->unit_name === $meeting->creator?->unit_name;
+        } else {
+            // Pegawai biasa: hanya bisa mengelola rapat yang dibuat sendiri
+            $this->canEdit = $meeting->created_by === $user->id;
+        }
     }
 
     public function openSignModal()
@@ -42,6 +59,10 @@ new #[Layout('layouts.app')] class extends Component {
 
     public function executeSign(BsreEsignService $esignService)
     {
+        if (!auth()->user()->hasRole('pimpinan') || !$this->meeting->isSigner(auth()->user())) {
+            abort(403, 'Anda bukan pejabat penandatangan yang ditunjuk untuk rapat ini.');
+        }
+
         $this->errorMessage = '';
         $this->validate([
             'passphrase' => 'required|string',
@@ -60,9 +81,29 @@ new #[Layout('layouts.app')] class extends Component {
         }
     }
 
-    public function updatedPhotos()
+    public function unlockForRevision(): void
     {
         if (!$this->canEdit) {
+            abort(403, 'Akses tidak diizinkan.');
+        }
+
+        if ($this->meeting->photos_pdf_path && \Illuminate\Support\Facades\Storage::disk('public')->exists($this->meeting->photos_pdf_path)) {
+            \Illuminate\Support\Facades\Storage::disk('public')->delete($this->meeting->photos_pdf_path);
+        }
+
+        $this->meeting->update([
+            'photos_signed_at' => null,
+            'photos_signed_by' => null,
+            'photos_pdf_path' => null,
+        ]);
+
+        $this->meeting->refresh();
+        session()->flash('message', 'Kunci dokumentasi dibuka untuk revisi. Status TTE telah direset, silakan perbarui foto lalu minta Pimpinan untuk menandatangani ulang.');
+    }
+
+    public function updatedPhotos()
+    {
+        if (!$this->canEdit || $this->meeting->photos_signed_at) {
             $this->photos = [];
             return;
         }
@@ -87,7 +128,7 @@ new #[Layout('layouts.app')] class extends Component {
 
     public function savePhotos()
     {
-        if (!$this->canEdit) {
+        if (!$this->canEdit || $this->meeting->photos_signed_at) {
             abort(403, 'Akses tidak diizinkan.');
         }
 
@@ -140,7 +181,7 @@ new #[Layout('layouts.app')] class extends Component {
 
     public function deletePhoto($id)
     {
-        if (!$this->canEdit) {
+        if (!$this->canEdit || $this->meeting->photos_signed_at) {
             abort(403);
         }
 
@@ -156,198 +197,201 @@ new #[Layout('layouts.app')] class extends Component {
 
 <x-meeting-layout :meeting="$meeting" activeTab="dokumentasi">
     @if (session()->has('message'))
-    <x-alert type="success" class="mb-6">
+    <x-alert type="success" class="mb-5">
         {{ session('message') }}
     </x-alert>
     @endif
 
-    <div class="space-y-8">
-        <!-- Form Unggah Foto (Khusus Penyelenggara / Admin) -->
-        @if($canEdit)
-            @if(in_array($meeting->status, ['ongoing', 'completed']))
-            <div class="bg-slate-50/70 border border-slate-200/80 p-5 sm:p-6 rounded-2xl shadow-2xs">
-                <div class="flex items-center gap-2 mb-4">
-                    <h3 class="text-base font-extrabold text-slate-900">Unggah Foto</h3>
-                </div>
-
-                <form wire:submit="savePhotos" class="space-y-4">
-                    <div x-data="{
-                        clientError: '',
-                        checkFiles(e) {
-                            this.clientError = '';
-                            const files = e.target.files;
-                            if (!files) return;
-                            for (let i = 0; i < files.length; i++) {
-                                if (files[i].size > 2 * 1024 * 1024) {
-                                    this.clientError = 'Ukuran foto maksimal 2MB.';
-                                    e.target.value = '';
-                                    $wire.set('photos', []);
-                                    return false;
-                                }
-                            }
-                        }
-                    }"
-                        x-on:livewire-upload-error="clientError = 'Ukuran foto maksimal 2MB.'; $wire.set('photos', [])">
-                        <label for="photos" class="block text-sm font-bold text-slate-700 mb-1.5">Pilih Foto</label>
-                        <div class="relative">
-                            <input type="file" wire:model="photos" :key="$uploadKey" id="photos" multiple accept="image/*"
-                                @change="checkFiles($event)"
-                                class="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-white file:text-slate-700 hover:file:bg-slate-100 hover:file:text-slate-900 file:shadow-xs file:ring-1 file:ring-slate-300 file:transition-all focus:outline-none cursor-pointer bg-white rounded-xl border border-slate-300 p-1.5" required>
-                        </div>
-                        <div wire:loading wire:target="photos" class="mt-2 text-xs font-semibold text-primary-700 bg-primary-50 border border-primary-200 px-3.5 py-2 rounded-xl flex items-center gap-2">
-                            <svg class="animate-spin w-4 h-4 text-primary-600 shrink-0" fill="none" viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
-                            </svg>
-                            <span>Memuat foto...</span>
-                        </div>
-                        <p class="text-xs text-slate-400 font-medium mt-1">Format JPG, PNG, WEBP (maks. 2MB per foto).</p>
-
-                        <div x-show="clientError" x-cloak class="mt-2 text-xs font-semibold text-rose-700 bg-rose-50 border border-rose-200 px-3.5 py-2 rounded-xl flex items-center gap-2">
-                            <svg class="w-4 h-4 text-rose-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                            </svg>
-                            <span x-text="clientError"></span>
-                        </div>
-
-                        <template x-if="!clientError">
-                            <div>
-                                @error('photos') <span class="text-xs text-red-600 mt-1 block font-medium">{{ $message }}</span> @enderror
-                                @error('photos.*') <span class="text-xs text-red-600 mt-1 block font-medium">{{ $message }}</span> @enderror
-                            </div>
-                        </template>
-                    </div>
-
-                    <!-- Preview sebelum unggah -->
-                    @if ($photos && count($photos) > 0)
-                    <div class="pt-2">
-                        <div class="flex items-center justify-between mb-2">
-                            <p class="text-xs font-bold text-slate-700">Pratinjau ({{ count($photos) }} foto):</p>
-                            <button type="button" wire:click="$set('photos', [])" class="text-[11px] font-bold text-rose-600 hover:text-rose-700">Batal Semua</button>
-                        </div>
-                        <div class="p-3 bg-white border border-slate-200 rounded-xl flex gap-3 overflow-x-auto shadow-2xs">
-                            @foreach($photos as $index => $photo)
-                            <div class="relative group shrink-0">
-                                <img src="{{ $photo->temporaryUrl() }}" class="h-20 w-24 object-cover rounded-xl border border-slate-200 shadow-2xs">
-                                <button type="button" wire:click="removeTempPhoto({{ $index }})" class="absolute -top-1.5 -right-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-full p-1 shadow-sm transition-transform active:scale-90" title="Hapus foto ini">
-                                    <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                                    </svg>
-                                </button>
-                            </div>
-                            @endforeach
-                        </div>
-                    </div>
-                    @endif
-
-                    <div class="flex justify-end pt-2">
-                        <button type="submit" wire:loading.attr="disabled" wire:target="photos, savePhotos" class="inline-flex items-center justify-center px-5 py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl font-bold text-sm transition-all shadow-sm gap-2">
-                            <svg wire:loading.remove wire:target="savePhotos" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                            </svg>
-                            <svg wire:loading wire:target="savePhotos" class="animate-spin w-4 h-4 text-white" fill="none" viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
-                            </svg>
-                            <span>Unggah Foto</span>
-                        </button>
-                    </div>
-                </form>
+    <div class="space-y-6">
+        <!-- Action Header Toolbar -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+            <div class="flex items-center gap-2.5">
+                <h3 class="text-lg font-extrabold text-slate-900 tracking-tight">Dokumentasi Rapat</h3>
+                <span class="px-2.5 py-0.5 bg-primary-50 text-primary-700 border border-primary-200/60 rounded-full text-xs font-bold">{{ $meeting->photos->count() }} Foto</span>
             </div>
-            @else
-            <div class="p-6 bg-slate-50 border border-slate-200 rounded-2xl text-center">
-                <div class="w-12 h-12 bg-slate-200/70 text-slate-400 rounded-2xl flex items-center justify-center mx-auto mb-3">
-                    <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+
+            @if($meeting->photos->count() > 0)
+            <div class="flex flex-wrap items-center gap-3 self-start sm:self-auto">
+                @if($meeting->photos_signed_at)
+                <span class="inline-flex items-center gap-1.5 px-3 py-2 bg-emerald-100/80 text-emerald-800 rounded-xl text-xs font-bold">
+                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" /></svg>
+                    <span>Sudah TTE</span>
+                </span>
+                @elseif(auth()->user()->hasRole('pimpinan') && $meeting->status === 'completed')
+                <button type="button" x-data="" x-on:click.prevent="$dispatch('open-modal', 'sign-photos-modal'); $wire.openSignModal()" class="inline-flex justify-center items-center px-4 py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl font-bold text-sm transition-all shadow-sm gap-2">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                    </svg>
+                    <span>TTE Dokumentasi</span>
+                </button>
+                @endif
+
+                @if($meeting->status === 'completed')
+                <a href="{{ route('meetings.export.photos', $meeting->id) }}" target="_blank" class="inline-flex justify-center items-center px-4 py-2.5 bg-white hover:bg-slate-50 border border-slate-300 hover:border-slate-400 active:scale-95 text-slate-700 rounded-xl font-bold text-sm transition-all shadow-sm gap-2">
+                    <svg class="w-4 h-4 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    <span>Cetak PDF</span>
+                </a>
+                @else
+                <button type="button" disabled class="inline-flex justify-center items-center px-4 py-2.5 bg-slate-100 border border-slate-200 text-slate-400 rounded-xl font-bold text-sm cursor-not-allowed gap-2" title="Ekspor PDF hanya dapat dilakukan setelah status rapat diselesaikan">
+                    <svg class="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                     </svg>
-                </div>
-                <h3 class="text-slate-900 font-bold text-sm">Sesi Unggah Belum Dibuka</h3>
-                <p class="text-slate-500 text-xs mt-1">Foto dokumentasi dapat diunggah setelah rapat dimulai.</p>
+                    <span>Cetak PDF</span>
+                </button>
+                @endif
             </div>
             @endif
+        </div>
+
+        @if($meeting->photos_signed_at)
+        <!-- Locked Banner & Read-Only Content (TTE Signed) -->
+        <div class="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs sm:text-sm font-medium">
+            <div class="flex items-center gap-2.5">
+                <svg class="w-5 h-5 text-amber-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+                <span>Dokumentasi foto telah disahkan secara digital (TTE BSrE) dan dikunci.</span>
+            </div>
+            @if($canEdit)
+            <button wire:click="unlockForRevision"
+                    wire:confirm="Membuka kunci dokumentasi akan membatalkan status TTE saat ini dan mewajibkan Pimpinan melakukan TTE ulang setelah perbaikan selesai. Lanjutkan revisi?"
+                    class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-amber-600 hover:bg-amber-700 active:scale-95 text-white rounded-xl text-xs font-bold transition-all shadow-sm shrink-0 self-start sm:self-auto">
+                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" /></svg>
+                <span>Buka Kunci untuk Revisi</span>
+            </button>
+            @endif
+        </div>
+        @elseif($canEdit)
+        <!-- Form Unggah Foto (Khusus Penyelenggara / Admin - Belum TTE) -->
+        <div class="bg-slate-50/70 border border-slate-200/80 p-5 sm:p-6 rounded-2xl shadow-2xs">
+            <div class="flex items-center gap-2 mb-4">
+                <h3 class="text-base font-extrabold text-slate-900">Unggah Foto</h3>
+            </div>
+
+            <form wire:submit="savePhotos" class="space-y-4">
+                <div x-data="{
+                    clientError: '',
+                    checkFiles(e) {
+                        this.clientError = '';
+                        const files = e.target.files;
+                        if (!files) return;
+                        for (let i = 0; i < files.length; i++) {
+                            if (files[i].size > 2 * 1024 * 1024) {
+                                this.clientError = 'Ukuran foto maksimal 2MB.';
+                                e.target.value = '';
+                                $wire.set('photos', []);
+                                return false;
+                            }
+                        }
+                    }
+                }"
+                    x-on:livewire-upload-error="clientError = 'Ukuran foto maksimal 2MB.'; $wire.set('photos', [])">
+                    <label for="photos" class="block text-sm font-bold text-slate-700 mb-1.5">Pilih Foto</label>
+                    <div class="relative">
+                        <input type="file" wire:model="photos" :key="$uploadKey" id="photos" multiple accept="image/*"
+                            @change="checkFiles($event)"
+                            class="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-white file:text-slate-700 hover:file:bg-slate-100 hover:file:text-slate-900 file:shadow-xs file:ring-1 file:ring-slate-300 file:transition-all focus:outline-none cursor-pointer bg-white rounded-xl border border-slate-300 p-1.5" required>
+                    </div>
+                    <div wire:loading wire:target="photos" class="mt-2 text-xs font-semibold text-primary-700 bg-primary-50 border border-primary-200 px-3.5 py-2 rounded-xl flex items-center gap-2">
+                        <svg class="animate-spin w-4 h-4 text-primary-600 shrink-0" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                        </svg>
+                        <span>Memuat foto...</span>
+                    </div>
+                    <p class="text-xs text-slate-400 font-medium mt-1">Format JPG, PNG, WEBP (maks. 2MB per foto).</p>
+
+                    <div x-show="clientError" x-cloak class="mt-2 text-xs font-semibold text-rose-700 bg-rose-50 border border-rose-200 px-3.5 py-2 rounded-xl flex items-center gap-2">
+                        <svg class="w-4 h-4 text-rose-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                        <span x-text="clientError"></span>
+                    </div>
+
+                    <template x-if="!clientError">
+                        <div>
+                            @error('photos') <span class="text-xs text-red-600 mt-1 block font-medium">{{ $message }}</span> @enderror
+                            @error('photos.*') <span class="text-xs text-red-600 mt-1 block font-medium">{{ $message }}</span> @enderror
+                        </div>
+                    </template>
+                </div>
+
+                <!-- Preview sebelum unggah -->
+                @if ($photos && count($photos) > 0)
+                <div class="pt-2">
+                    <div class="flex items-center justify-between mb-2">
+                        <p class="text-xs font-bold text-slate-700">Pratinjau ({{ count($photos) }} foto):</p>
+                        <button type="button" wire:click="$set('photos', [])" class="text-[11px] font-bold text-rose-600 hover:text-rose-700">Batal Semua</button>
+                    </div>
+                    <div class="p-3 bg-white border border-slate-200 rounded-xl flex gap-3 overflow-x-auto shadow-2xs">
+                        @foreach($photos as $index => $photo)
+                        <div class="relative group shrink-0">
+                            <img src="{{ $photo->temporaryUrl() }}" class="h-20 w-24 object-cover rounded-xl border border-slate-200 shadow-2xs">
+                            <button type="button" wire:click="removeTempPhoto({{ $index }})" class="absolute -top-1.5 -right-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-full p-1 shadow-sm transition-transform active:scale-90" title="Hapus foto ini">
+                                <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                </svg>
+                            </button>
+                        </div>
+                        @endforeach
+                    </div>
+                </div>
+                @endif
+
+                <div class="flex justify-end pt-2">
+                    <button type="submit" wire:loading.attr="disabled" wire:target="photos, savePhotos" class="inline-flex items-center justify-center px-5 py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl font-bold text-sm transition-all shadow-sm gap-2">
+                        <svg wire:loading.remove wire:target="savePhotos" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                        </svg>
+                        <svg wire:loading wire:target="savePhotos" class="animate-spin w-4 h-4 text-white" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                        </svg>
+                        <span>Unggah Foto</span>
+                    </button>
+                </div>
+            </form>
+        </div>
         @endif
 
         <!-- Section Galeri Foto -->
         <div>
-            <!-- Header Galeri -->
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100 mb-6">
-                <div class="flex items-center gap-2.5">
-                    <h3 class="text-lg font-extrabold text-slate-900 tracking-tight">Galeri Dokumentasi</h3>
-                    <span class="px-2.5 py-0.5 bg-primary-50 text-primary-700 border border-primary-200/60 rounded-full text-xs font-bold">{{ $meeting->photos->count() }} Foto</span>
-                </div>
 
-                @if($meeting->photos->count() > 0)
-                <div class="flex flex-wrap items-center gap-3 self-start sm:self-auto">
-                    @if($meeting->photos_signed_at)
-                    <span class="inline-flex items-center gap-1.5 px-3 py-2 bg-emerald-100/80 text-emerald-800 rounded-xl text-xs font-bold">
-                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" /></svg>
-                        <span>Sudah TTE</span>
-                    </span>
-                    @elseif(auth()->user()->hasRole('pimpinan') && $meeting->status === 'completed')
-                    <button type="button" x-data="" x-on:click.prevent="$dispatch('open-modal', 'sign-photos-modal'); $wire.openSignModal()" class="inline-flex justify-center items-center px-4 py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl font-bold text-sm transition-all shadow-sm gap-2">
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                        </svg>
-                        <span>TTE Dokumentasi</span>
-                    </button>
-                    @endif
-
-                    @if($meeting->status === 'completed')
-                    <a href="{{ route('meetings.export.photos', $meeting->id) }}" target="_blank" class="inline-flex justify-center items-center px-4 py-2.5 bg-white hover:bg-slate-50 border border-slate-300 hover:border-slate-400 active:scale-95 text-slate-700 rounded-xl font-bold text-sm transition-all shadow-sm gap-2">
-                        <svg class="w-4 h-4 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
-                        <span>Cetak PDF</span>
-                    </a>
-                    @else
-                    <button type="button" disabled class="inline-flex justify-center items-center px-4 py-2.5 bg-slate-100 border border-slate-200 text-slate-400 rounded-xl font-bold text-sm cursor-not-allowed gap-2" title="Ekspor PDF hanya dapat dilakukan setelah status rapat diselesaikan">
-                        <svg class="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                        </svg>
-                        <span>Cetak PDF</span>
-                    </button>
-                    @endif
-                </div>
-                @endif
-            </div>
-
-            <!-- Galeri Grid Container with Lightbox -->
+            <!-- Galeri Grid Container with Smooth Lightbox -->
             <div x-data="{
-                previewUrl: null,
-                currentIndex: 0,
-                getPhotos() {
-                    return Array.from(this.$el.querySelectorAll('.gallery-photo-img')).map(el => el.dataset.src);
-                },
-                open(url, index) {
-                    if (!url) return;
+                photos: {{ \Illuminate\Support\Js::from($meeting->photos->map(fn($p) => asset('storage/' . $p->file))->values()) }},
+                currentIndex: null,
+                get isOpen() { return this.currentIndex !== null; },
+                get currentUrl() { return (this.currentIndex !== null && this.photos[this.currentIndex]) ? this.photos[this.currentIndex] : ''; },
+                open(index) {
                     this.currentIndex = index;
-                    this.previewUrl = url;
+                },
+                close() {
+                    this.currentIndex = null;
                 },
                 prev() {
-                    const photos = this.getPhotos();
-                    if (photos.length === 0) return;
-                    this.currentIndex = (this.currentIndex - 1 + photos.length) % photos.length;
-                    this.previewUrl = photos[this.currentIndex];
+                    if (!this.photos || this.photos.length === 0) return;
+                    this.currentIndex = (this.currentIndex - 1 + this.photos.length) % this.photos.length;
                 },
                 next() {
-                    const photos = this.getPhotos();
-                    if (photos.length === 0) return;
-                    this.currentIndex = (this.currentIndex + 1) % photos.length;
-                    this.previewUrl = photos[this.currentIndex];
+                    if (!this.photos || this.photos.length === 0) return;
+                    this.currentIndex = (this.currentIndex + 1) % this.photos.length;
                 }
             }"
-                @keydown.arrow-left.window="if (previewUrl) prev()"
-                @keydown.arrow-right.window="if (previewUrl) next()">
+                @keydown.arrow-left.window="if (isOpen) prev()"
+                @keydown.arrow-right.window="if (isOpen) next()"
+                @keydown.escape.window="if (isOpen) close()">
                 <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
                     @forelse($meeting->photos as $index => $photo)
                     <div class="relative group rounded-2xl overflow-hidden border border-slate-200 bg-slate-100 aspect-4/3 shadow-2xs hover:shadow-md transition-shadow duration-300">
                         <img src="{{ asset('storage/' . $photo->file) }}"
-                            data-src="{{ asset('storage/' . $photo->file) }}"
                             alt="Foto Dokumentasi"
-                            @click="open('{{ asset('storage/' . $photo->file) }}', {{ $index }})"
-                            class="gallery-photo-img w-full h-full object-cover cursor-pointer group-hover:scale-105 transition-transform duration-500">
+                            @click="open({{ $index }})"
+                            class="w-full h-full object-cover cursor-pointer group-hover:scale-105 transition-transform duration-500">
 
-                        @if($canEdit)
+                        @if($canEdit && !$meeting->photos_signed_at)
                         <div class="absolute top-2.5 right-2.5 opacity-0 group-hover:opacity-100 transition-opacity" @click.stop>
                             <button type="button"
                                 @click.stop
@@ -374,55 +418,54 @@ new #[Layout('layouts.app')] class extends Component {
                     @endforelse
                 </div>
 
-                <!-- Lightbox Modal -->
-                <div x-show="previewUrl"
-                    x-cloak
-                    x-transition:enter="ease-out duration-300"
-                    x-transition:enter-start="opacity-0 backdrop-blur-none"
-                    x-transition:enter-end="opacity-100 backdrop-blur-md"
-                    x-transition:leave="ease-in duration-200"
-                    x-transition:leave-start="opacity-100 backdrop-blur-md"
-                    x-transition:leave-end="opacity-0 backdrop-blur-none"
-                    @keydown.escape.window="previewUrl = null"
-                    class="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-slate-900/90"
-                    @click.self="previewUrl = null">
+                <!-- Lightbox Modal (Teleported to Body) -->
+                <template x-teleport="body">
+                    <div x-show="isOpen"
+                        x-cloak
+                        x-transition:enter="ease-out duration-200"
+                        x-transition:enter-start="opacity-0"
+                        x-transition:enter-end="opacity-100"
+                        x-transition:leave="ease-in duration-150"
+                        x-transition:leave-start="opacity-100"
+                        x-transition:leave-end="opacity-0"
+                        class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/95 backdrop-blur-md select-none"
+                        @click="close()">
 
-                    <div class="relative w-full max-w-6xl max-h-screen flex flex-col items-center justify-center"
-                        x-transition:enter="ease-out duration-300"
-                        x-transition:enter-start="opacity-0 scale-95"
-                        x-transition:enter-end="opacity-100 scale-100">
-
-                        <!-- Tombol Tutup & Counter -->
-                        <div class="absolute -top-12 right-0 left-0 flex justify-between items-center px-2">
-                            <span class="text-white/80 text-xs font-mono font-bold bg-slate-800/80 px-3 py-1.5 rounded-xl border border-slate-700" x-text="`Foto ${currentIndex + 1} dari ${getPhotos().length}`"></span>
-                            <button type="button" @click="previewUrl = null" class="text-white/80 hover:text-white px-3 py-1.5 text-xs font-bold flex items-center gap-1.5 transition-colors bg-slate-800/80 hover:bg-slate-800 rounded-xl backdrop-blur-sm border border-slate-700 shadow-md">
-                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        <!-- Top Toolbar (Header & Close) -->
+                        <div class="fixed top-0 inset-x-0 p-3 sm:p-4 flex justify-between items-center z-50 pointer-events-none">
+                            <div class="pointer-events-auto bg-slate-900/80 border border-slate-700/80 backdrop-blur-md px-3 py-1 rounded-xl shadow-md">
+                                <span class="text-white/90 text-xs font-bold font-mono" x-text="`Foto ${(currentIndex ?? 0) + 1} dari ${photos.length}`"></span>
+                            </div>
+                            <button type="button" @click.stop="close()" class="pointer-events-auto text-white/90 hover:text-white px-3 py-1.5 text-xs font-bold flex items-center gap-1.5 transition-all bg-slate-900/80 hover:bg-slate-800 border border-slate-700/80 rounded-xl backdrop-blur-md shadow-md active:scale-95 cursor-pointer">
+                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path>
                                 </svg>
-                                Tutup
+                                <span>Tutup</span>
                             </button>
                         </div>
 
+                        <!-- Main Preview Image -->
+                        <div class="w-full h-full flex items-center justify-center p-4 sm:p-8" @click.stop>
+                            <img :src="currentUrl"
+                                alt="Foto Dokumentasi"
+                                class="max-h-[85vh] max-w-[90vw] w-auto h-auto rounded-2xl shadow-2xl object-contain ring-1 ring-white/10 transition-opacity duration-150">
+                        </div>
+
                         <!-- Tombol Navigasi Prev -->
-                        <button type="button" x-show="getPhotos().length > 1" @click.stop="prev()" class="absolute left-2 sm:-left-6 top-1/2 -translate-y-1/2 text-white/90 hover:text-white p-3 bg-slate-800/80 hover:bg-slate-800 rounded-2xl backdrop-blur-sm border border-slate-700 shadow-lg active:scale-95 transition-all z-10" title="Foto Sebelumnya (&larr;)">
-                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                        <button type="button" x-show="photos.length > 1" @click.stop="prev()" class="fixed left-3 sm:left-5 top-1/2 -translate-y-1/2 text-white/90 hover:text-white p-2.5 bg-slate-900/80 hover:bg-slate-800 rounded-xl backdrop-blur-md border border-slate-700/80 shadow-lg active:scale-90 transition-all z-50 cursor-pointer" title="Foto Sebelumnya (&larr;)">
+                            <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"></path>
                             </svg>
                         </button>
 
-                        <!-- Gambar -->
-                        <template x-if="previewUrl">
-                            <img :src="previewUrl" alt="Foto Dokumentasi" class="max-h-[80vh] w-auto max-w-full rounded-2xl shadow-2xl object-contain ring-1 ring-white/10">
-                        </template>
-
                         <!-- Tombol Navigasi Next -->
-                        <button type="button" x-show="getPhotos().length > 1" @click.stop="next()" class="absolute right-2 sm:-right-6 top-1/2 -translate-y-1/2 text-white/90 hover:text-white p-3 bg-slate-800/80 hover:bg-slate-800 rounded-2xl backdrop-blur-sm border border-slate-700 shadow-lg active:scale-95 transition-all z-10" title="Foto Selanjutnya (&rarr;)">
-                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                        <button type="button" x-show="photos.length > 1" @click.stop="next()" class="fixed right-3 sm:right-5 top-1/2 -translate-y-1/2 text-white/90 hover:text-white p-2.5 bg-slate-900/80 hover:bg-slate-800 rounded-xl backdrop-blur-md border border-slate-700/80 shadow-lg active:scale-90 transition-all z-50 cursor-pointer" title="Foto Selanjutnya (&rarr;)">
+                            <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"></path>
                             </svg>
                         </button>
                     </div>
-                </div>
+                </template>
             </div>
         </div>
     </div>
@@ -466,9 +509,29 @@ new #[Layout('layouts.app')] class extends Component {
                     </div>
                 </div>
 
-                <div>
+                <div x-data="{ showPassphrase: false }">
                     <label for="passphrase_photos" class="block text-sm font-bold text-slate-700 mb-1">Passphrase BSrE</label>
-                    <input wire:model="passphrase" id="passphrase_photos" type="password" class="w-full text-sm py-2.5 px-3.5 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Masukkan passphrase" required autofocus />
+                    <div class="relative">
+                        <input wire:model="passphrase"
+                               id="passphrase_photos"
+                               :type="showPassphrase ? 'text' : 'password'"
+                               class="w-full text-sm py-2.5 pl-3.5 pr-10 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors"
+                               placeholder="Masukkan passphrase"
+                               required
+                               autofocus />
+                        <button type="button"
+                                @click="showPassphrase = !showPassphrase"
+                                class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 focus:outline-none cursor-pointer"
+                                :title="showPassphrase ? 'Sembunyikan Passphrase' : 'Lihat Passphrase'">
+                            <svg x-show="showPassphrase" x-cloak class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18" />
+                            </svg>
+                            <svg x-show="!showPassphrase" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                        </button>
+                    </div>
                     @error('passphrase') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                 </div>
 

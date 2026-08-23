@@ -20,9 +20,28 @@ new class extends Component {
 
         $query = Meeting::query();
         
+        $user = auth()->user();
+
         // Filter based on role
-        if (!$isAdmin) {
-            $unitName = auth()->user()->unit_name;
+        if ($user->hasRole('pimpinan')) {
+            $query->where(function ($q) use ($user) {
+                $q->where(function ($sq) use ($user) {
+                    if (!empty($user->nip)) {
+                        $sq->where('signer_nip', $user->nip)
+                            ->orWhere('signer_name', $user->name);
+                    } else {
+                        $sq->where('signer_name', $user->name);
+                    }
+                })->orWhereHas('opd', function ($oq) use ($user) {
+                    if (!empty($user->nip)) {
+                        $oq->where('leader_nip', $user->nip)->orWhere('leader_name', $user->name);
+                    } else {
+                        $oq->where('leader_name', $user->name);
+                    }
+                });
+            });
+        } elseif ($user->hasRole('admin_opd')) {
+            $unitName = $user->unit_name;
             $query->where(function ($q) use ($unitName) {
                 $q->whereHas('creator', function ($cq) use ($unitName) {
                     $cq->where('unit_name', $unitName);
@@ -31,6 +50,8 @@ new class extends Component {
                        ->orWhere('name', 'like', '%' . $unitName . '%');
                 });
             });
+        } elseif ($user->hasRole('pegawai')) {
+            $query->where('created_by', $user->id);
         }
 
         $meetingsToday = (clone $query)->whereDate('date', $today)->count();
@@ -77,8 +98,9 @@ new class extends Component {
 
         $isPimpinan = auth()->user()->hasRole('pimpinan');
 
-        // Meetings waiting for TTE (only needed for pimpinan role)
-        $pendingTteMeetings = $isPimpinan ? (clone $query)
+        // Meetings waiting for TTE (for pimpinan & super admin)
+        $showPendingTte = $isPimpinan || $isAdmin;
+        $pendingTteMeetings = $showPendingTte ? (clone $query)
             ->where('status', 'completed')
             ->where(function($q) {
                 $q->whereNull('minutes_signed_at')
@@ -183,9 +205,12 @@ new class extends Component {
     <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
         <div class="px-6 py-5 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
             <div class="flex items-center gap-2">
-                <span class="w-2 h-2 rounded-full bg-rose-500"></span>
+                <span class="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span>
                 <h3 class="font-extrabold text-slate-900 text-sm">Rapat Berlangsung</h3>
             </div>
+            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-extrabold bg-rose-100 text-rose-800">
+                {{ $ongoingMeetings->count() }}
+            </span>
         </div>
         <div class="divide-y divide-slate-100">
             @foreach($ongoingMeetings as $meeting)
@@ -201,16 +226,17 @@ new class extends Component {
                         @endif
                         <span>{{ $meeting->location ?: 'Ruang Rapat' }}</span>
                         <span>&bull;</span>
-                        <span class="font-bold text-rose-600">{{ $meeting->attendances->count() }} Hadir</span>
+                        <span class="font-bold text-emerald-600">{{ $meeting->attendances->count() }} Hadir</span>
                     </div>
                 </div>
 
                 <div class="flex items-center gap-2 shrink-0">
                     <a href="{{ route('meetings.presensi', $meeting->id) }}" wire:navigate class="inline-flex items-center justify-center px-4 py-2 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl font-bold text-xs transition-all shadow-sm gap-1.5">
                         <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                         </svg>
-                        Presensi
+                        Lihat Presensi
                     </a>
                 </div>
             </div>
@@ -219,27 +245,38 @@ new class extends Component {
     </div>
     @endif
 
-    <!-- Menunggu TTE Widget (Khusus Pimpinan) -->
-    @if($isPimpinan && $pendingTteMeetings->isNotEmpty())
+    <!-- Menunggu TTE Widget (Khusus Pimpinan & Super Admin) -->
+    @if(($isPimpinan || $isAdmin) && $pendingTteMeetings->isNotEmpty())
     <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
         <div class="px-6 py-5 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
-            <h3 class="font-extrabold text-slate-900 text-sm">Menunggu TTE</h3>
+            <div class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+                <h3 class="font-extrabold text-slate-900 text-sm">Menunggu TTE</h3>
+            </div>
             <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-extrabold bg-amber-100 text-amber-800">
                 {{ $pendingTteMeetings->count() }}
             </span>
         </div>
         <div class="divide-y divide-slate-100">
             @foreach($pendingTteMeetings as $meeting)
-            <div class="p-5 hover:bg-slate-50 flex flex-col md:flex-row md:items-center justify-between gap-4 transition-colors group">
+            <div class="p-5 hover:bg-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-colors group">
                 <div class="min-w-0 flex-1">
                     <a href="{{ route('meetings.overview', $meeting->id) }}" wire:navigate class="font-extrabold text-sm text-slate-900 group-hover:text-primary-600 transition-colors truncate block">
                         {{ $meeting->title }}
                     </a>
-                    <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500 mt-1 font-medium">
-                        <span>{{ $meeting->date->translatedFormat('d F Y') }}</span>
+                    <div class="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs text-slate-500 mt-1.5 font-medium">
                         @if($isAdmin)
+                        <span class="font-bold text-slate-700">{{ $meeting->opd?->name ?? $meeting->creator?->unit_name ?? 'Pemerintah Kabupaten Sinjai' }}</span>
+                        @if($meeting->signer_name)
                         <span>&bull;</span>
-                        <span>{{ $meeting->opd?->name ?? $meeting->creator?->unit_name ?? 'Pemkab Sinjai' }}</span>
+                        <span>Penandatangan: <span class="font-bold text-slate-700">{{ $meeting->signer_name }}</span></span>
+                        @endif
+                        @else
+                        <span>{{ $meeting->date->translatedFormat('d F Y') }}</span>
+                        @if($meeting->start_time)
+                        <span>&bull;</span>
+                        <span>{{ $meeting->start_time->format('H:i') }} - {{ $meeting->end_time ? $meeting->end_time->format('H:i') : 'Selesai' }} WITA</span>
+                        @endif
                         @endif
                     </div>
 
@@ -275,12 +312,22 @@ new class extends Component {
                 </div>
 
                 <div class="flex items-center gap-2 shrink-0">
+                    @if($isPimpinan)
                     <a href="{{ route('meetings.overview', $meeting->id) }}" wire:navigate class="inline-flex items-center justify-center px-4 py-2 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl font-bold text-xs transition-all shadow-sm gap-1.5">
                         <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                         </svg>
                         TTE Dokumen
                     </a>
+                    @else
+                    <a href="{{ route('meetings.overview', $meeting->id) }}" wire:navigate class="inline-flex items-center justify-center px-4 py-2 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl font-bold text-xs transition-all shadow-sm gap-1.5">
+                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                        Lihat Dokumen
+                    </a>
+                    @endif
                 </div>
             </div>
             @endforeach

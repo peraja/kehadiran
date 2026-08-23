@@ -3,7 +3,8 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Notulen Rapat - {{ $meeting->title }}</title>
+    <title>Notulen - {{ $meeting->title }}</title>
+    <link rel="icon" type="image/png" href="{{ asset('img/logo.png') }}">
     <style>
         @page {
             size: a4 portrait;
@@ -120,11 +121,15 @@
 
         .content {
             font-size: 10pt;
-            text-align: justify;
-            white-space: pre-line;
-            padding-left: 4px;
-            line-height: 1.55;
+            line-height: 1.65;
             color: #111827;
+            text-align: justify;
+            padding: 4px 0 15px 0;
+        }
+
+        .content p {
+            margin: 0 0 8px 0;
+            line-height: 1.65;
         }
     </style>
 </head>
@@ -180,14 +185,20 @@
             <td>: {{ $meeting->date ? $meeting->date->translatedFormat('l, d F Y') : '-' }}</td>
         </tr>
         <tr>
-            <td class="label">Tempat</td>
+            <td class="label">Lokasi</td>
             <td>: {{ $meeting->location ?? 'Online / Menyesuaikan' }}</td>
         </tr>
     </table>
 
     <div class="divider"></div>
 
-    <div class="content">{{ $meeting->minutes->content ?? 'Tidak ada catatan notulen.' }}</div>
+    <div class="content">
+        @if($meeting->minutes && !empty(trim($meeting->minutes->content)))
+            {!! nl2br(e(trim($meeting->minutes->content))) !!}
+        @else
+            <em style="color: #64748b;">Tidak ada catatan notulen.</em>
+        @endif
+    </div>
 
     <?php
     $signerTitle = $meeting->signer_title ?: ($opd?->leader_title ?: ('Kepala ' . $unitName));
@@ -210,20 +221,22 @@
         </p>
 
         @if($signedAt && $qrCodeBase64)
-        <div style="margin: 8px 0 10px 0; border: 1px solid #cbd5e1; border-radius: 6px; padding: 6px 8px; background-color: #f8fafc; width: 270px;">
-            <table style="border-collapse: collapse; border: none; width: 100%;">
-                <tr>
-                    <td style="border: none; padding: 0 8px 0 0; vertical-align: middle; width: 46px;">
-                        <img src="data:image/svg+xml;base64,{{ $qrCodeBase64 }}" style="width: 42px; height: 42px; display: block;" alt="QR Code TTE">
-                    </td>
-                    <td style="border: none; padding: 0; vertical-align: middle; line-height: 1.35;">
-                        <div style="font-weight: bold; color: #0f172a; font-size: 7.5pt;">Ditandatangani Secara Elektronik</div>
-                        <div style="font-weight: 600; color: #334155; font-size: 7.5pt;">Pemerintah Kabupaten Sinjai</div>
-                        <div style="color: #64748b; font-size: 7pt;">Balai Sertifikasi Elektronik (BSrE)</div>
-                    </td>
-                </tr>
-            </table>
-        </div>
+        <a href="{{ $qrData }}" target="_blank" style="text-decoration: none; color: inherit; display: block; margin: 8px 0 10px 0;">
+            <div style="border: 1px solid #cbd5e1; border-radius: 6px; padding: 6px 8px; background-color: #f8fafc; width: 270px;">
+                <table style="border-collapse: collapse; border: none; width: 100%;">
+                    <tr>
+                        <td style="border: none; padding: 0 8px 0 0; vertical-align: middle; width: 46px;">
+                            <img src="data:image/svg+xml;base64,{{ $qrCodeBase64 }}" style="width: 42px; height: 42px; display: block;" alt="QR Code TTE">
+                        </td>
+                        <td style="border: none; padding: 0; vertical-align: middle; line-height: 1.35;">
+                            <div style="font-weight: bold; color: #0f172a; font-size: 7.5pt;">Ditandatangani Secara Elektronik</div>
+                            <div style="font-weight: 600; color: #334155; font-size: 7.5pt;">Pemerintah Kabupaten Sinjai</div>
+                            <div style="color: #64748b; font-size: 7pt;">Balai Sertifikasi Elektronik (BSrE)</div>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </a>
         @else
         <div style="height: 50px;"></div>
         @endif
@@ -231,14 +244,14 @@
         <p style="font-weight: bold; margin-bottom: 1px; font-size: 10pt;">
             {{ $signerName }}
         </p>
+        @if($signerRank)
+        <p style="margin: 0; font-size: 9pt; color: #334155;">
+            {{ $signerRank }}
+        </p>
+        @endif
         <p style="margin: 0; font-size: 9pt; color: #334155;">
             NIP. {{ $signerNip }}
         </p>
-        @if($signerRank)
-        <p style="margin: 0; font-size: 9pt; color: #475569;">
-            Pangkat: {{ $signerRank }}
-        </p>
-        @endif
     </div>
     <div style="clear: both;"></div>
 

@@ -22,6 +22,16 @@ new class extends Component {
     public function mount(Meeting $meeting)
     {
         $this->meeting = $meeting;
+
+        $user = auth()->user();
+        if ($user->hasRole('pimpinan') && !$meeting->isSigner($user)) {
+            abort(403, 'Anda hanya dapat mengakses rapat yang penandatangannya adalah Anda sendiri.');
+        }
+
+        if ($user->hasRole('pegawai') && $meeting->created_by !== $user->id) {
+            abort(403, 'Anda hanya dapat mengakses rapat yang Anda buat sendiri.');
+        }
+
         $this->loadMeetingData();
     }
 
@@ -43,6 +53,10 @@ new class extends Component {
 
     public function executeSign(BsreEsignService $esignService)
     {
+        if (!auth()->user()->hasRole('pimpinan') || !$this->meeting->isSigner(auth()->user())) {
+            abort(403, 'Anda bukan pejabat penandatangan yang ditunjuk untuk rapat ini.');
+        }
+
         $this->errorMessage = '';
         $this->validate([
             'passphrase' => 'required|string',
@@ -94,21 +108,21 @@ new class extends Component {
         $matchedSigner = $this->opdSigners->first(function ($s) {
             return $s->name === $this->meeting->signer_name || $s->title === $this->meeting->signer_title;
         });
-        $this->selected_signer_id = $matchedSigner ? (string) $matchedSigner->id : '';
+        $this->selected_signer_id = $matchedSigner ? (string) $matchedSigner->id : 'kepala_opd';
     }
 
     public function updatedSelectedOpdId($val)
     {
-        $this->selected_signer_id = '';
+        $this->selected_signer_id = 'kepala_opd';
         $opd = !empty($val) ? Opd::find($val) : null;
         $this->opd = $opd;
         $this->opdSigners = $opd ? $opd->signers()->where('is_active', true)->orderByRaw("CASE eselon WHEN 'II.a' THEN 1 WHEN 'II.b' THEN 2 WHEN 'III.a' THEN 3 WHEN 'III.b' THEN 4 ELSE 5 END, id ASC")->get() : collect();
 
         if ($opd) {
-            $this->signer_title = $opd->leader_title ?: 'Kepala OPD';
+            $this->signer_title = $opd->leader_title ?: ('Kepala ' . $opd->name);
             $this->signer_name = $opd->leader_name;
             $this->signer_nip = $opd->leader_nip;
-            $this->signer_rank = $opd->leader_rank;
+            $this->signer_rank = $opd->leader_rank ?: $opd->leader_eselon;
         } else {
             $this->signer_title = '';
             $this->signer_name = '';
@@ -119,18 +133,25 @@ new class extends Component {
 
     public function updatedSelectedSignerId($val)
     {
-        if (empty($val)) {
-            $this->signer_title = '';
-            $this->signer_name = '';
-            $this->signer_nip = '';
-            $this->signer_rank = '';
+        if ($val === 'kepala_opd' || empty($val)) {
+            if ($this->opd) {
+                $this->signer_title = $this->opd->leader_title ?: ('Kepala ' . $this->opd->name);
+                $this->signer_name = $this->opd->leader_name;
+                $this->signer_nip = $this->opd->leader_nip;
+                $this->signer_rank = $this->opd->leader_rank ?: $this->opd->leader_eselon;
+            } else {
+                $this->signer_title = '';
+                $this->signer_name = '';
+                $this->signer_nip = '';
+                $this->signer_rank = '';
+            }
         } else {
             $signer = OpdSigner::find($val);
             if ($signer) {
                 $this->signer_title = $signer->title;
                 $this->signer_name = $signer->name;
                 $this->signer_nip = $signer->nip ?? '';
-                $this->signer_rank = $signer->rank ?? '';
+                $this->signer_rank = $signer->rank ?? $signer->eselon ?? '';
             }
         }
     }
@@ -162,10 +183,22 @@ new class extends Component {
         ];
     }
 
+    public function canManageMeeting(): bool
+    {
+        $user = auth()->user();
+        if (!$user) return false;
+        if ($user->hasRole('admin')) return true;
+        if ($user->hasRole('admin_opd')) {
+            return $user->unit_name === $this->meeting->opd?->name || $user->unit_name === $this->meeting->creator?->unit_name;
+        }
+        // Pegawai biasa: hanya bisa mengelola rapat yang dibuat sendiri
+        return $this->meeting->created_by === $user->id;
+    }
+
     public function startMeeting()
     {
-        if (!auth()->user()->hasRole(['admin', 'admin_opd']) && $this->meeting->created_by !== auth()->id()) {
-            return;
+        if (!$this->canManageMeeting()) {
+            abort(403, 'Akses tidak diizinkan.');
         }
 
         $this->meeting->update(['status' => 'ongoing']);
@@ -175,8 +208,8 @@ new class extends Component {
 
     public function finishMeeting()
     {
-        if (!auth()->user()->hasRole(['admin', 'admin_opd']) && $this->meeting->created_by !== auth()->id()) {
-            return;
+        if (!$this->canManageMeeting()) {
+            abort(403, 'Akses tidak diizinkan.');
         }
 
         $this->meeting->update(['status' => 'completed']);
@@ -186,14 +219,17 @@ new class extends Component {
 
     public function openEditModal()
     {
+        if (!$this->canManageMeeting()) {
+            abort(403, 'Akses tidak diizinkan.');
+        }
         $this->resetValidation();
         $this->loadMeetingData();
     }
 
     public function updateMeeting()
     {
-        if (!auth()->user()->hasRole(['admin', 'admin_opd']) && $this->meeting->created_by !== auth()->id()) {
-            return;
+        if (!$this->canManageMeeting()) {
+            abort(403, 'Akses tidak diizinkan.');
         }
 
         $validated = $this->validate();
@@ -209,8 +245,8 @@ new class extends Component {
 
     public function deleteMeeting()
     {
-        if (!auth()->user()->hasRole(['admin', 'admin_opd']) && $this->meeting->created_by !== auth()->id()) {
-            return;
+        if (!$this->canManageMeeting()) {
+            abort(403, 'Akses tidak diizinkan.');
         }
 
         $this->meeting->delete();
@@ -228,12 +264,6 @@ new class extends Component {
 }; ?>
 
 <div class="relative">
-    @if (session()->has('message'))
-    <x-alert type="success" class="mb-5">
-        {{ session('message') }}
-    </x-alert>
-    @endif
-
     <div class="flex flex-col md:flex-row md:items-start justify-between gap-5 relative z-10">
         <div class="space-y-2.5 flex-1 min-w-0">
             <div>
@@ -242,39 +272,10 @@ new class extends Component {
 
             <h1 class="font-extrabold text-2xl sm:text-3xl text-slate-900 tracking-tight leading-tight break-words">{{ trim($meeting->title) }}</h1>
 
-            <!-- Single Line Metadata with Icons -->
-            <div class="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm font-medium text-slate-600 pt-1">
-                <div class="flex items-center gap-1.5 shrink-0">
-                    <svg class="w-4 h-4 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                    <span>{{ $meeting->date ? $meeting->date->translatedFormat('l, d F Y') : '-' }}</span>
-                </div>
-
-                <div class="flex items-center gap-1.5 shrink-0">
-                    <svg class="w-4 h-4 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <span>{{ $meeting->start_time ? $meeting->start_time->format('H:i') : '' }} - {{ $meeting->end_time ? $meeting->end_time->format('H:i') : 'Selesai' }} WITA</span>
-                </div>
-
-                <div class="flex items-center gap-1.5 shrink-0">
-                    <svg class="w-4 h-4 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                    <span class="break-words">{{ $meeting->location }}</span>
-                </div>
-
-                @if($meeting->opd || ($meeting->creator && $meeting->creator->unit_name))
-                <div class="flex items-center gap-1.5 shrink-0">
-                    <svg class="w-4 h-4 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                    </svg>
-                    <span class="text-slate-800 break-words">{{ $meeting->opd?->name ?? $meeting->creator?->unit_name }}</span>
-                </div>
-                @endif
-            </div>
+            @php
+                $opdName = $meeting->opd?->name ?? $meeting->creator?->unit_name ?? 'Pemerintah Kabupaten Sinjai';
+            @endphp
+            <p class="text-sm font-semibold text-slate-600 pt-0.5 break-words">{{ $opdName }}</p>
         </div>
 
         <div class="flex flex-wrap items-center gap-2.5 shrink-0 w-full md:w-auto mt-2 md:mt-0">
@@ -282,7 +283,7 @@ new class extends Component {
                 @if($meeting->isFullySigned())
                 <span class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-100/80 text-emerald-800 rounded-xl text-xs font-bold shadow-xs">
                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" /></svg>
-                    <span>Sudah TTE</span>
+                    <span>Sudah TTE Semua</span>
                 </span>
                 @else
                 <button type="button" x-data="" x-on:click.prevent="$dispatch('open-modal', 'sign-all-modal'); $wire.openSignModal()" class="flex-1 md:flex-none inline-flex justify-center items-center px-4 py-2 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl font-bold text-sm transition-all shadow-sm gap-2">
@@ -294,7 +295,7 @@ new class extends Component {
                 @endif
             @endif
 
-            @if(auth()->user()->hasRole(['admin', 'admin_opd']) || $meeting->created_by === auth()->id())
+            @if($this->canManageMeeting())
             @if($meeting->status == 'scheduled')
             <button wire:click="startMeeting" wire:loading.attr="disabled" wire:target="startMeeting" wire:confirm="Mulai rapat ini?" class="flex-1 md:flex-none inline-flex justify-center items-center px-4 py-2 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl font-bold text-sm transition-all shadow-sm hover:shadow-md gap-1.5">
                 <svg wire:loading.remove wire:target="startMeeting" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -405,19 +406,14 @@ new class extends Component {
                 </div>
                 @endif
 
-                <!-- Penandatangan -->
+                <!-- Penandatangan Dokumen -->
                 <div>
-                    <label for="edit_selected_signer_id" class="block text-sm font-bold text-slate-700 mb-1">Penandatangan</label>
+                    <label for="edit_selected_signer_id" class="block text-sm font-bold text-slate-700 mb-1">Penandatangan Dokumen</label>
                     <select wire:model.live="selected_signer_id" id="edit_selected_signer_id" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" {{ $isAdmin && empty($selected_opd_id) ? 'disabled' : '' }}>
-                        <option value="">
-                            @if($isAdmin && empty($selected_opd_id))
-                            -- Pilih OPD terlebih dahulu --
-                            @elseif(!empty($opd?->leader_name))
-                            {{ $opd->leader_title ?: 'Kepala OPD' }} — {{ $opd->leader_name }} (Default)
-                            @else
-                            -- Pilih Penandatangan --
-                            @endif
-                        </option>
+                        @php
+                            $leaderTitle = $opd?->leader_title ?: ($opd ? 'Kepala ' . $opd->name : 'Kepala OPD');
+                        @endphp
+                        <option value="kepala_opd">{{ $leaderTitle }}{{ $opd?->leader_name ? ' — ' . $opd->leader_name : '' }}</option>
                         @foreach($opdSigners as $s)
                         <option value="{{ $s->id }}">{{ $s->title }} — {{ $s->name }}</option>
                         @endforeach
@@ -554,9 +550,29 @@ new class extends Component {
                     </div>
                 </div>
 
-                <div>
+                <div x-data="{ showPassphrase: false }">
                     <label for="passphrase_header" class="block text-sm font-bold text-slate-700 mb-1">Passphrase BSrE</label>
-                    <input wire:model="passphrase" id="passphrase_header" type="password" class="w-full text-sm py-2.5 px-3.5 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Masukkan passphrase" required autofocus />
+                    <div class="relative">
+                        <input wire:model="passphrase"
+                               id="passphrase_header"
+                               :type="showPassphrase ? 'text' : 'password'"
+                               class="w-full text-sm py-2.5 pl-3.5 pr-10 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors"
+                               placeholder="Masukkan passphrase"
+                               required
+                               autofocus />
+                        <button type="button"
+                                @click="showPassphrase = !showPassphrase"
+                                class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 focus:outline-none cursor-pointer"
+                                :title="showPassphrase ? 'Sembunyikan Passphrase' : 'Lihat Passphrase'">
+                            <svg x-show="showPassphrase" x-cloak class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18" />
+                            </svg>
+                            <svg x-show="!showPassphrase" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                        </button>
+                    </div>
                     @error('passphrase') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                 </div>
 

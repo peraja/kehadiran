@@ -70,14 +70,24 @@ class OpdSeeder extends Seeder
             );
         }
 
-        // Set default Diskominfo leader for TTE testing
-        Opd::where('unit_id', '730714')->update([
-            'leader_name' => 'Testing TTE',
-            'leader_nip' => '123456',
-            'leader_nik' => '7307010101800001',
-            'leader_title' => 'Kepala Dinas Komunikasi Informatika dan Persandian',
-            'leader_rank' => 'Pembina Utama Muda (IV/c)',
-            'leader_eselon' => 'II.b',
-        ]);
+        // Daftarkan akun pengujian TTE sebagai Pejabat Penandatangan di Diskominfo
+        $diskominfo = Opd::where('unit_id', '730714')->first();
+        if ($diskominfo) {
+            \App\Models\OpdSigner::updateOrCreate(
+                [
+                    'opd_id' => $diskominfo->id,
+                    'nip' => '123456',
+                ],
+                [
+                    'bidang_name' => 'Bidang eGov',
+                    'title' => 'Kepala Bidang eGov',
+                    'name' => 'Testing TTE',
+                    'nik' => '7307010101800001',
+                    'rank' => 'Pembina',
+                    'eselon' => 'III.b',
+                    'is_active' => true,
+                ]
+            );
+        }
     }
 }

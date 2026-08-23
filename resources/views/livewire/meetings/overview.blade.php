@@ -10,28 +10,38 @@ new #[Layout('layouts.app')] class extends Component {
     public function mount(Meeting $meeting)
     {
         $this->meeting = $meeting;
+
+        $user = auth()->user();
+        if ($user->hasRole('pimpinan') && !$meeting->isSigner($user)) {
+            abort(403, 'Anda hanya dapat mengakses rapat yang penandatangannya adalah Anda sendiri.');
+        }
+
+        if ($user->hasRole('pegawai') && $meeting->created_by !== $user->id) {
+            abort(403, 'Anda hanya dapat mengakses rapat yang Anda buat sendiri.');
+        }
     }
 }; ?>
 
 <x-meeting-layout :meeting="$meeting" activeTab="overview">
     @if (session()->has('message'))
-    <x-alert type="success" class="mb-6">
+    <x-alert type="success" class="mb-5">
         {{ session('message') }}
     </x-alert>
     @endif
 
     <div class="space-y-6">
-        <!-- Informasi Rapat Card -->
-        <div class="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 sm:p-8">
-            <div class="flex items-center justify-between pb-4 border-b border-slate-100 mb-2">
-                <div>
-                    <h3 class="text-lg font-extrabold text-slate-900 tracking-tight">Informasi Rapat</h3>
-                </div>
+        <!-- Action Header Toolbar -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+            <div class="flex items-center gap-2.5">
+                <h3 class="text-lg font-extrabold text-slate-900 tracking-tight">Informasi Rapat</h3>
             </div>
+        </div>
 
+        <!-- Details Table Container -->
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden">
             <div class="divide-y divide-slate-100 text-sm">
                 <!-- Agenda -->
-                <div class="flex flex-col sm:flex-row sm:items-start py-4 px-2 gap-2 sm:gap-6 hover:bg-slate-50/50 rounded-xl transition-colors">
+                <div class="flex flex-col sm:flex-row sm:items-start py-4 px-6 gap-2 sm:gap-6 hover:bg-slate-50/50 transition-colors">
                     <div class="sm:w-1/4 text-slate-500 font-bold text-sm shrink-0 pt-0.5">
                         Agenda
                     </div>
@@ -39,7 +49,7 @@ new #[Layout('layouts.app')] class extends Component {
                 </div>
 
                 <!-- Tanggal & Waktu -->
-                <div class="flex flex-col sm:flex-row sm:items-center py-4 px-2 gap-2 sm:gap-6 hover:bg-slate-50/50 rounded-xl transition-colors">
+                <div class="flex flex-col sm:flex-row sm:items-center py-4 px-6 gap-2 sm:gap-6 hover:bg-slate-50/50 transition-colors">
                     <div class="sm:w-1/4 text-slate-500 font-bold text-sm shrink-0">
                         Tanggal & Waktu
                     </div>
@@ -51,7 +61,7 @@ new #[Layout('layouts.app')] class extends Component {
                 </div>
 
                 <!-- Lokasi -->
-                <div class="flex flex-col sm:flex-row sm:items-center py-4 px-2 gap-2 sm:gap-6 hover:bg-slate-50/50 rounded-xl transition-colors">
+                <div class="flex flex-col sm:flex-row sm:items-center py-4 px-6 gap-2 sm:gap-6 hover:bg-slate-50/50 transition-colors">
                     <div class="sm:w-1/4 text-slate-500 font-bold text-sm shrink-0">
                         Lokasi
                     </div>
@@ -60,7 +70,7 @@ new #[Layout('layouts.app')] class extends Component {
 
                 <!-- Penandatangan Dokumen -->
                 @if($meeting->signer_name || $meeting->signer_title)
-                <div class="flex flex-col sm:flex-row sm:items-center py-4 px-2 gap-2 sm:gap-6 hover:bg-slate-50/50 rounded-xl transition-colors">
+                <div class="flex flex-col sm:flex-row sm:items-center py-4 px-6 gap-2 sm:gap-6 hover:bg-slate-50/50 transition-colors">
                     <div class="sm:w-1/4 text-slate-500 font-bold text-sm shrink-0">
                         Penandatangan
                     </div>
@@ -72,7 +82,7 @@ new #[Layout('layouts.app')] class extends Component {
                 @endif
 
                 <!-- Dibuat Oleh -->
-                <div class="flex flex-col sm:flex-row sm:items-center py-4 px-2 gap-2 sm:gap-6 hover:bg-slate-50/50 rounded-xl transition-colors">
+                <div class="flex flex-col sm:flex-row sm:items-center py-4 px-6 gap-2 sm:gap-6 hover:bg-slate-50/50 transition-colors">
                     <div class="sm:w-1/4 text-slate-500 font-bold text-sm shrink-0">
                         Dibuat Oleh
                     </div>
@@ -83,7 +93,7 @@ new #[Layout('layouts.app')] class extends Component {
                 </div>
 
                 <!-- Waktu Dibuat -->
-                <div class="flex flex-col sm:flex-row sm:items-center py-4 px-2 gap-2 sm:gap-6 hover:bg-slate-50/50 rounded-xl transition-colors">
+                <div class="flex flex-col sm:flex-row sm:items-center py-4 px-6 gap-2 sm:gap-6 hover:bg-slate-50/50 transition-colors">
                     <div class="sm:w-1/4 text-slate-500 font-bold text-sm shrink-0">
                         Waktu Dibuat
                     </div>
