@@ -23,6 +23,7 @@ new #[Layout('layouts.app')] class extends Component {
     public $password = '';
     public $unit_name = '';
     public $jabatan = '';
+    public $pangkat = '';
 
     public $isEdit = false;
     public $apiSynced = false;
@@ -56,7 +57,7 @@ new #[Layout('layouts.app')] class extends Component {
     public function openAddModal()
     {
         $this->resetValidation();
-        $this->reset(['userId', 'name', 'nip', 'nik', 'password', 'unit_name', 'jabatan', 'apiSynced', 'apiStatusMessage']);
+        $this->reset(['userId', 'name', 'nip', 'nik', 'password', 'unit_name', 'jabatan', 'pangkat', 'apiSynced', 'apiStatusMessage']);
         $this->roles = ['pegawai'];
 
         // If current user is admin_opd, prefill unit_name
@@ -84,6 +85,7 @@ new #[Layout('layouts.app')] class extends Component {
         }
         $this->unit_name = $user->unit_name ?? '';
         $this->jabatan = $user->jabatan ?? '';
+        $this->pangkat = $user->pangkat ?? '';
         $this->password = '';
         $this->isEdit = true;
 
@@ -116,6 +118,7 @@ new #[Layout('layouts.app')] class extends Component {
             if ($pegawaiResponse->successful() && is_array($pData) && !empty($pData['nama'] ?? $pData['nama_pegawai'] ?? null)) {
                 $this->name = $pData['nama_pegawai'] ?? $pData['nama'] ?? $this->name;
                 $this->jabatan = $pData['jabatan_nama'] ?? $pData['jabatan'] ?? $this->jabatan;
+                $this->pangkat = $pData['pangkat_nama'] ?? $this->pangkat;
 
                 $nik = trim((string)($pData['nik'] ?? ($pData['no_ktp'] ?? ($pData['ktp'] ?? ($pData['no_identitas'] ?? '')))));
                 if ($nik) {
@@ -152,6 +155,7 @@ new #[Layout('layouts.app')] class extends Component {
             'roles.*' => 'in:admin,admin_opd,pimpinan,pegawai',
             'unit_name' => 'nullable|string|max:255',
             'jabatan' => 'nullable|string|max:255',
+            'pangkat' => 'nullable|string|max:255',
         ];
 
         // Prevent non-super-admin from assigning 'admin' role
@@ -176,11 +180,12 @@ new #[Layout('layouts.app')] class extends Component {
         if ($this->isEdit) {
             $user = User::findOrFail($this->userId);
             $user->update([
-                'name' => $validated['name'],
-                'nip' => $validated['nip'],
-                'nik' => !empty($this->nik) ? trim($this->nik) : null,
+                'name'      => $validated['name'],
+                'nip'       => $validated['nip'],
+                'nik'       => !empty($this->nik) ? trim($this->nik) : null,
                 'unit_name' => $validated['unit_name'],
-                'jabatan' => $validated['jabatan'],
+                'jabatan'   => $validated['jabatan'],
+                'pangkat'   => !empty($this->pangkat) ? trim($this->pangkat) : null,
             ]);
 
             $user->syncRoles($validated['roles']);
@@ -188,12 +193,13 @@ new #[Layout('layouts.app')] class extends Component {
             session()->flash('message', 'Pengguna berhasil diperbarui.');
         } else {
             $user = User::create([
-                'name' => $validated['name'],
-                'nip' => $validated['nip'],
-                'nik' => !empty($this->nik) ? trim($this->nik) : null,
-                'password' => null,
+                'name'      => $validated['name'],
+                'nip'       => $validated['nip'],
+                'nik'       => !empty($this->nik) ? trim($this->nik) : null,
+                'password'  => null,
                 'unit_name' => $validated['unit_name'],
-                'jabatan' => $validated['jabatan'],
+                'jabatan'   => $validated['jabatan'],
+                'pangkat'   => !empty($this->pangkat) ? trim($this->pangkat) : null,
             ]);
 
             $user->syncRoles($validated['roles']);
@@ -202,7 +208,7 @@ new #[Layout('layouts.app')] class extends Component {
         }
 
         $this->dispatch('close-modal', 'user-form-modal');
-        $this->reset(['userId', 'name', 'nip', 'nik', 'roles', 'unit_name', 'jabatan', 'password', 'apiSynced', 'apiStatusMessage']);
+        $this->reset(['userId', 'name', 'nip', 'nik', 'roles', 'unit_name', 'jabatan', 'pangkat', 'password', 'apiSynced', 'apiStatusMessage']);
         $this->roles = ['pegawai'];
     }
 
@@ -527,8 +533,13 @@ new #[Layout('layouts.app')] class extends Component {
                 <div class="p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center justify-between gap-3">
                     <div class="min-w-0 space-y-0.5">
                         <p class="text-sm font-bold text-emerald-900 truncate">{{ $name }}</p>
-                        @if($jabatan)
-                        <p class="text-xs font-semibold text-emerald-800 truncate">{{ $jabatan }}</p>
+                        @if($jabatan || $pangkat)
+                        <p class="text-xs font-semibold text-emerald-800 truncate">
+                            {{ $jabatan ?: '-' }}
+                            @if($pangkat)
+                            <span class="text-emerald-700 font-medium">• {{ $pangkat }}</span>
+                            @endif
+                        </p>
                         @endif
                         @if($unit_name)
                         <p class="text-xs font-medium text-emerald-600 truncate">{{ $unit_name }}</p>
@@ -586,12 +597,19 @@ new #[Layout('layouts.app')] class extends Component {
                         @error('jabatan') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                     </div>
 
-                    <!-- OPD -->
+                    <!-- Pangkat -->
                     <div>
-                        <label for="unit_name" class="block text-sm font-bold text-slate-700 mb-1">OPD</label>
-                        <input wire:model="unit_name" id="unit_name" type="text" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Contoh: Dinas Komunikasi Informatika dan Persandian" />
-                        @error('unit_name') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
+                        <label for="pangkat" class="block text-sm font-bold text-slate-700 mb-1">Pangkat</label>
+                        <input wire:model="pangkat" id="pangkat" type="text" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Contoh: Pembina" />
+                        @error('pangkat') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                     </div>
+                </div>
+
+                <!-- OPD -->
+                <div>
+                    <label for="unit_name" class="block text-sm font-bold text-slate-700 mb-1">OPD</label>
+                    <input wire:model="unit_name" id="unit_name" type="text" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Contoh: Dinas Komunikasi Informatika dan Persandian" />
+                    @error('unit_name') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                 </div>
 
                 <div class="mt-8 pt-6 border-t border-slate-100 flex justify-end gap-3">

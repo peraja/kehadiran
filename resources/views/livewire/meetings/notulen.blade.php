@@ -32,15 +32,20 @@ new #[Layout('layouts.app')] class extends Component {
         $this->minutes = $meeting->minutes;
 
         $user = auth()->user();
-        if ($user->hasActiveRole('pimpinan') && !$meeting->isSigner($user)) {
-            abort(403, 'Anda hanya dapat mengakses notulen rapat yang penandatangannya adalah Anda sendiri.');
+        if ($user->hasActiveRole('pimpinan')) {
+            if (!$meeting->isSigner($user)) {
+                abort(403, 'Anda hanya dapat mengakses notulen rapat yang penandatangannya adalah Anda sendiri.');
+            }
+            return $this->redirect(route('meetings.overview', $meeting->id), navigate: true);
         }
 
         if ($user->hasActiveRole('pegawai') && $meeting->created_by !== $user->id) {
             abort(403, 'Anda hanya dapat mengakses notulen rapat yang Anda buat sendiri.');
         }
 
-        if ($user->hasActiveRole('admin')) {
+        if ($user->hasActiveRole('pimpinan')) {
+            $this->canEdit = false;
+        } elseif ($user->hasActiveRole('admin')) {
             $this->canEdit = true;
         } elseif ($user->hasActiveRole('admin_opd')) {
             $this->canEdit = $user->unit_name === $meeting->opd?->name || $user->unit_name === $meeting->creator?->unit_name;
@@ -63,7 +68,7 @@ new #[Layout('layouts.app')] class extends Component {
 
     public function processAi(GeminiAiService $aiService): void
     {
-        if (!$this->canEdit || $this->meeting->status !== 'completed' || $this->meeting->minutes_signed_at) {
+        if (!$this->canEdit || auth()->user()->hasActiveRole('pimpinan') || $this->meeting->minutes_signed_at) {
             abort(403, 'Akses tidak diizinkan.');
         }
 
@@ -102,7 +107,7 @@ new #[Layout('layouts.app')] class extends Component {
 
     public function applyAiMinutes(): void
     {
-        if (!$this->canEdit || $this->meeting->status !== 'completed' || $this->meeting->minutes_signed_at) {
+        if (!$this->canEdit || auth()->user()->hasActiveRole('pimpinan') || $this->meeting->minutes_signed_at) {
             abort(403, 'Akses tidak diizinkan.');
         }
 
@@ -163,6 +168,7 @@ new #[Layout('layouts.app')] class extends Component {
             session()->flash('message', $result['message']);
         } else {
             $this->errorMessage = $result['message'];
+            $this->passphrase = '';
         }
     }
 
@@ -192,7 +198,7 @@ new #[Layout('layouts.app')] class extends Component {
 
     public function saveMinutes()
     {
-        if (!$this->canEdit || $this->meeting->minutes_signed_at) {
+        if (!$this->canEdit || auth()->user()->hasActiveRole('pimpinan') || $this->meeting->minutes_signed_at) {
             abort(403, 'Akses tidak diizinkan.');
         }
 
@@ -208,6 +214,13 @@ new #[Layout('layouts.app')] class extends Component {
         $this->lastSaved = now()->format('H:i') . ' WITA';
         $this->meeting->refresh();
         session()->flash('message', 'Notulen berhasil disimpan.');
+    }
+
+    public function with(BsreEsignService $esignService): array
+    {
+        return [
+            'tteStatus' => $esignService->checkUserStatus(auth()->user()?->nik),
+        ];
     }
 }; ?>
 
@@ -226,7 +239,7 @@ new #[Layout('layouts.app')] class extends Component {
             </div>
 
             <div class="flex flex-wrap items-center gap-3 self-start sm:self-auto">
-                @if($canEdit && $meeting->status === 'completed' && !$meeting->minutes_signed_at)
+                @if($canEdit && !$meeting->minutes_signed_at)
                 <!-- Tombol Notulen AI (Langsung Buka Modal & Jalankan AI) -->
                 <button type="button"
                     x-data=""
@@ -240,11 +253,9 @@ new #[Layout('layouts.app')] class extends Component {
                 @endif
 
                 @if($meeting->minutes_signed_at)
-                <span class="inline-flex items-center gap-1.5 px-3 py-2 bg-emerald-100/80 text-emerald-800 rounded-xl text-xs font-bold">
-                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
-                    </svg>
-                    <span>Sudah TTE</span>
+                <span class="inline-flex items-center px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full text-[11px] font-bold uppercase tracking-wider whitespace-nowrap shadow-2xs">
+                    <svg class="w-3 h-3 mr-1.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    Sudah TTE
                 </span>
                 @elseif(auth()->user()->hasActiveRole('pimpinan') && $meeting->status === 'completed' && $minutes && !empty($minutes->content))
                 <button type="button" wire:click="openSignModal" class="inline-flex items-center gap-2 px-4 py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl font-bold text-sm shadow-sm transition-all cursor-pointer">
@@ -432,7 +443,23 @@ new #[Layout('layouts.app')] class extends Component {
                         <span class="text-slate-500 font-medium">NIK</span>
                         <span class="font-mono font-bold text-slate-800 text-right">{{ auth()->user()->nik ?: '-' }}</span>
                     </div>
+                    <div class="flex items-center justify-between text-xs sm:text-sm pt-2.5 border-t border-slate-200/70">
+                        <span class="text-slate-500 font-medium">Status TTE</span>
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold border {{ $tteStatus['badge_class'] }}">
+                            <span class="w-1.5 h-1.5 rounded-full {{ $tteStatus['dot_class'] ?? ($tteStatus['can_sign'] ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500') }}"></span>
+                            {{ $tteStatus['label'] }}
+                        </span>
+                    </div>
                 </div>
+
+                @if(!$tteStatus['can_sign'])
+                <div class="p-3 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-800 flex items-center gap-2.5">
+                    <svg class="w-4 h-4 text-amber-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span class="font-medium leading-relaxed">{{ $tteStatus['description'] }}</span>
+                </div>
+                @endif
 
                 <div x-data="{ showPassphrase: false }">
                     <label for="passphrase_minutes" class="block text-sm font-bold text-slate-700 mb-1">Passphrase BSrE</label>

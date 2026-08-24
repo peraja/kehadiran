@@ -186,8 +186,26 @@ class GeminiAiNotulenTest extends TestCase
         $this->assertStringContainsString('Rapat koordinasi eRapat', $meeting->minutes->content);
     }
 
-    public function test_notulen_ai_is_forbidden_if_meeting_not_completed(): void
+    public function test_notulen_ai_works_for_ongoing_meetings(): void
     {
+        config([
+            'services.gemini.api_key' => 'test-fake-key',
+        ]);
+
+        Http::fake([
+            'https://generativelanguage.googleapis.com/*' => Http::response([
+                'candidates' => [
+                    [
+                        'content' => [
+                            'parts' => [
+                                ['text' => "I. PEMBUKAAN\nRapat sedang berjalan."]
+                            ]
+                        ]
+                    ]
+                ]
+            ], 200),
+        ]);
+
         $user = User::factory()->create();
         $user->assignRole('pegawai');
 
@@ -205,7 +223,34 @@ class GeminiAiNotulenTest extends TestCase
         $this->actingAs($user);
 
         Volt::test('meetings.notulen', ['meeting' => $meeting])
-            ->set('content', 'Catatan sementara.')
+            ->set('content', 'Catatan sementara yang sedang berjalan.')
+            ->call('processAi')
+            ->assertSet('showAiModal', true)
+            ->assertHasNoErrors()
+            ->assertSet('aiResult', "I. PEMBUKAAN\nRapat sedang berjalan.");
+    }
+
+    public function test_notulen_ai_is_forbidden_if_minutes_already_signed(): void
+    {
+        $user = User::factory()->create();
+        $user->assignRole('pegawai');
+
+        $meeting = Meeting::create([
+            'title' => 'Rapat Selesai TTE',
+            'agenda' => 'Pembahasan',
+            'date' => now()->toDateString(),
+            'start_time' => '09:00',
+            'end_time' => '11:00',
+            'location' => 'Ruang Pola',
+            'status' => 'completed',
+            'minutes_signed_at' => now(),
+            'created_by' => $user->id,
+        ]);
+
+        $this->actingAs($user);
+
+        Volt::test('meetings.notulen', ['meeting' => $meeting])
+            ->set('content', 'Catatan setelah TTE.')
             ->call('processAi')
             ->assertStatus(403);
     }

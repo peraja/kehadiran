@@ -18,6 +18,7 @@
         
         <livewire:meetings.header :meeting="$meeting" :key="'meeting-header-'.$meeting->id" />
         
+        @unless(auth()->user()?->hasActiveRole('pimpinan'))
         <!-- Premium Tabs (Pills) -->
         <nav class="flex items-center gap-2 mt-8 overflow-x-auto pb-2 scrollbar-hide relative z-10">
             @php
@@ -59,6 +60,7 @@
                 </a>
             @endforeach
         </nav>
+        @endunless
     </div>
 
     <!-- Workspace Content Card -->

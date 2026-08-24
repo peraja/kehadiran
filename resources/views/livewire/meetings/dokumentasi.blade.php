@@ -24,15 +24,20 @@ new #[Layout('layouts.app')] class extends Component {
         $this->meeting = $meeting;
 
         $user = auth()->user();
-        if ($user->hasActiveRole('pimpinan') && !$meeting->isSigner($user)) {
-            abort(403, 'Anda hanya dapat mengakses dokumentasi rapat yang penandatangannya adalah Anda sendiri.');
+        if ($user->hasActiveRole('pimpinan')) {
+            if (!$meeting->isSigner($user)) {
+                abort(403, 'Anda hanya dapat mengakses dokumentasi rapat yang penandatangannya adalah Anda sendiri.');
+            }
+            return $this->redirect(route('meetings.overview', $meeting->id), navigate: true);
         }
 
         if ($user->hasActiveRole('pegawai') && $meeting->created_by !== $user->id) {
             abort(403, 'Anda hanya dapat mengakses dokumentasi rapat yang Anda buat sendiri.');
         }
 
-        if ($user->hasActiveRole('admin')) {
+        if ($user->hasActiveRole('pimpinan')) {
+            $this->canEdit = false;
+        } elseif ($user->hasActiveRole('admin')) {
             $this->canEdit = true;
         } elseif ($user->hasActiveRole('admin_opd')) {
             $this->canEdit = $user->unit_name === $meeting->opd?->name || $user->unit_name === $meeting->creator?->unit_name;
@@ -85,6 +90,7 @@ new #[Layout('layouts.app')] class extends Component {
             session()->flash('message', $result['message']);
         } else {
             $this->errorMessage = $result['message'];
+            $this->passphrase = '';
         }
     }
 
@@ -138,7 +144,7 @@ new #[Layout('layouts.app')] class extends Component {
 
     public function savePhotos()
     {
-        if (!$this->canEdit || $this->meeting->photos_signed_at) {
+        if (!$this->canEdit || auth()->user()->hasActiveRole('pimpinan') || $this->meeting->photos_signed_at) {
             abort(403, 'Akses tidak diizinkan.');
         }
 
@@ -178,7 +184,9 @@ new #[Layout('layouts.app')] class extends Component {
         $this->reset(['photos']);
         $this->uploadKey++;
         $this->meeting->refresh();
-        session()->flash('message', 'Foto berhasil diunggah.');
+        $this->meeting->load('photos');
+        $this->dispatch('meeting-updated');
+        session()->flash('message', 'Foto berhasil diupload.');
     }
 
     public function removeTempPhoto(int $index): void
@@ -191,7 +199,7 @@ new #[Layout('layouts.app')] class extends Component {
 
     public function deletePhoto($id)
     {
-        if (!$this->canEdit || $this->meeting->photos_signed_at) {
+        if (!$this->canEdit || auth()->user()->hasActiveRole('pimpinan') || $this->meeting->photos_signed_at) {
             abort(403);
         }
 
@@ -200,8 +208,17 @@ new #[Layout('layouts.app')] class extends Component {
             \Illuminate\Support\Facades\Storage::disk('public')->delete($photo->file);
             $photo->delete();
             $this->meeting->refresh();
+            $this->meeting->load('photos');
+            $this->dispatch('meeting-updated');
             session()->flash('message', 'Foto berhasil dihapus.');
         }
+    }
+
+    public function with(BsreEsignService $esignService): array
+    {
+        return [
+            'tteStatus' => $esignService->checkUserStatus(auth()->user()?->nik),
+        ];
     }
 }; ?>
 
@@ -223,9 +240,9 @@ new #[Layout('layouts.app')] class extends Component {
             @if($meeting->photos->count() > 0)
             <div class="flex flex-wrap items-center gap-3 self-start sm:self-auto">
                 @if($meeting->photos_signed_at)
-                <span class="inline-flex items-center gap-1.5 px-3 py-2 bg-emerald-100/80 text-emerald-800 rounded-xl text-xs font-bold">
-                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" /></svg>
-                    <span>Sudah TTE</span>
+                <span class="inline-flex items-center px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full text-[11px] font-bold uppercase tracking-wider whitespace-nowrap shadow-2xs">
+                    <svg class="w-3 h-3 mr-1.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    Sudah TTE
                 </span>
                 @elseif(auth()->user()->hasActiveRole('pimpinan') && $meeting->status === 'completed')
                 <button type="button" x-data="" x-on:click.prevent="$dispatch('open-modal', 'sign-photos-modal'); $wire.openSignModal()" class="inline-flex justify-center items-center px-4 py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl font-bold text-sm transition-all shadow-sm gap-2">
@@ -265,10 +282,10 @@ new #[Layout('layouts.app')] class extends Component {
             @endif
         </div>
         @elseif($canEdit)
-        <!-- Form Unggah Foto (Khusus Penyelenggara / Admin - Belum TTE) -->
+        <!-- Form Upload Foto (Khusus Penyelenggara / Admin - Belum TTE) -->
         <div class="bg-slate-50/70 border border-slate-200/80 p-5 sm:p-6 rounded-2xl shadow-2xs">
             <div class="flex items-center gap-2 mb-4">
-                <h3 class="text-base font-extrabold text-slate-900">Unggah Foto</h3>
+                <h3 class="text-base font-extrabold text-slate-900">Upload Foto</h3>
             </div>
 
             <form wire:submit="savePhotos" class="space-y-4">
@@ -350,7 +367,7 @@ new #[Layout('layouts.app')] class extends Component {
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
                         </svg>
-                        <span>Unggah Foto</span>
+                        <span>Upload Foto</span>
                     </button>
                 </div>
             </form>
@@ -361,32 +378,46 @@ new #[Layout('layouts.app')] class extends Component {
         <div>
 
             <!-- Galeri Grid Container with Smooth Lightbox -->
-            <div x-data="{
-                photos: {{ \Illuminate\Support\Js::from($meeting->photos->map(fn($p) => asset('storage/' . $p->file))->values()) }},
-                currentIndex: null,
-                get isOpen() { return this.currentIndex !== null; },
-                get currentUrl() { return (this.currentIndex !== null && this.photos[this.currentIndex]) ? this.photos[this.currentIndex] : ''; },
+            <div id="meeting-photo-gallery"
+                x-data="{
+                photos: [],
+                currentIndex: 0,
+                isOpen: false,
+                get currentUrl() {
+                    return (this.photos && this.photos[this.currentIndex]) ? this.photos[this.currentIndex] : '';
+                },
+                updatePhotos() {
+                    const gallery = document.getElementById('meeting-photo-gallery');
+                    if (gallery) {
+                        this.photos = Array.from(gallery.querySelectorAll('[data-photo-url]')).map(el => el.getAttribute('data-photo-url'));
+                    }
+                },
                 open(index) {
+                    this.updatePhotos();
                     this.currentIndex = index;
+                    this.isOpen = true;
                 },
                 close() {
-                    this.currentIndex = null;
+                    this.isOpen = false;
                 },
                 prev() {
+                    this.updatePhotos();
                     if (!this.photos || this.photos.length === 0) return;
                     this.currentIndex = (this.currentIndex - 1 + this.photos.length) % this.photos.length;
                 },
                 next() {
+                    this.updatePhotos();
                     if (!this.photos || this.photos.length === 0) return;
                     this.currentIndex = (this.currentIndex + 1) % this.photos.length;
                 }
             }"
+                x-init="updatePhotos()"
                 @keydown.arrow-left.window="if (isOpen) prev()"
                 @keydown.arrow-right.window="if (isOpen) next()"
                 @keydown.escape.window="if (isOpen) close()">
                 <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
                     @forelse($meeting->photos as $index => $photo)
-                    <div class="relative group rounded-2xl overflow-hidden border border-slate-200 bg-slate-100 aspect-4/3 shadow-2xs hover:shadow-md transition-shadow duration-300">
+                    <div data-photo-url="{{ asset('storage/' . $photo->file) }}" class="relative group rounded-2xl overflow-hidden border border-slate-200 bg-slate-100 aspect-4/3 shadow-2xs hover:shadow-md transition-shadow duration-300">
                         <img src="{{ asset('storage/' . $photo->file) }}"
                             alt="Foto Dokumentasi"
                             @click="open({{ $index }})"
@@ -498,7 +529,7 @@ new #[Layout('layouts.app')] class extends Component {
                 <div class="p-4 bg-slate-50 border border-slate-200/80 rounded-2xl space-y-2.5 text-sm">
                     <div class="flex items-center justify-between text-xs sm:text-sm">
                         <span class="text-slate-500 font-medium">Dokumen</span>
-                        <span class="font-extrabold text-slate-900 text-right">Dokumentasi</span>
+                        <span class="font-extrabold text-slate-900 text-right">Dokumentasi Rapat</span>
                     </div>
                     <div class="flex items-center justify-between text-xs sm:text-sm">
                         <span class="text-slate-500 font-medium">Penandatangan</span>
@@ -508,7 +539,23 @@ new #[Layout('layouts.app')] class extends Component {
                         <span class="text-slate-500 font-medium">NIK</span>
                         <span class="font-mono font-bold text-slate-800 text-right">{{ auth()->user()->nik ?: '-' }}</span>
                     </div>
+                    <div class="flex items-center justify-between text-xs sm:text-sm pt-2.5 border-t border-slate-200/70">
+                        <span class="text-slate-500 font-medium">Status TTE</span>
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold border {{ $tteStatus['badge_class'] }}">
+                            <span class="w-1.5 h-1.5 rounded-full {{ $tteStatus['dot_class'] ?? ($tteStatus['can_sign'] ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500') }}"></span>
+                            {{ $tteStatus['label'] }}
+                        </span>
+                    </div>
                 </div>
+
+                @if(!$tteStatus['can_sign'])
+                <div class="p-3 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-800 flex items-center gap-2.5">
+                    <svg class="w-4 h-4 text-amber-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span class="font-medium leading-relaxed">{{ $tteStatus['description'] }}</span>
+                </div>
+                @endif
 
                 <div x-data="{ showPassphrase: false }">
                     <label for="passphrase_photos" class="block text-sm font-bold text-slate-700 mb-1">Passphrase BSrE</label>

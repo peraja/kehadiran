@@ -19,6 +19,14 @@ class BsreEsignTest extends TestCase
         \Spatie\Permission\Models\Role::firstOrCreate(['name' => 'pimpinan']);
         \Spatie\Permission\Models\Role::firstOrCreate(['name' => 'admin']);
         \Spatie\Permission\Models\Role::firstOrCreate(['name' => 'pegawai']);
+
+        \Illuminate\Support\Facades\Http::fake([
+            '*/user/check/status' => \Illuminate\Support\Facades\Http::response([
+                'status_code' => 1111,
+                'message' => 'Status Sertifikat Anda ISSUE',
+                'status' => 'ISSUE',
+            ], 200),
+        ]);
     }
 
     public function test_pimpinan_can_sign_documents_via_service(): void
@@ -47,6 +55,13 @@ class BsreEsignTest extends TestCase
         MeetingMinute::create([
             'meeting_id' => $meeting->id,
             'content' => 'Hasil rapat penting disepakati.',
+        ]);
+
+        \Illuminate\Support\Facades\Http::fake([
+            '*/sign/pdf' => \Illuminate\Support\Facades\Http::response([
+                'time' => 1000,
+                'file' => [base64_encode('%PDF-1.4 mock signed content')],
+            ], 200),
         ]);
 
         $service = app(BsreEsignService::class);
@@ -200,5 +215,48 @@ class BsreEsignTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertHeader('content-type', 'application/pdf');
+    }
+
+    public function test_bsre_wrong_passphrase_and_error_handling(): void
+    {
+        $pimpinan = User::factory()->create([
+            'nik' => '7307010101850001',
+            'name' => 'Bupati Sinjai',
+            'nip' => '123456',
+        ]);
+        $pimpinan->assignRole('pimpinan');
+
+        $meeting = Meeting::create([
+            'title' => 'Rapat Test Error BSrE',
+            'agenda' => 'Test Error',
+            'date' => now()->toDateString(),
+            'start_time' => '09:00',
+            'end_time' => '11:00',
+            'location' => 'Ruang Pola',
+            'status' => 'completed',
+            'created_by' => $pimpinan->id,
+            'signer_name' => $pimpinan->name,
+            'signer_nip' => $pimpinan->nip,
+        ]);
+
+        MeetingMinute::create([
+            'meeting_id' => $meeting->id,
+            'content' => 'Isi rapat.',
+        ]);
+
+        // Mock BSrE error response for wrong passphrase (HTTP 400 with code 2031)
+        \Illuminate\Support\Facades\Http::fake([
+            '*/sign/pdf' => \Illuminate\Support\Facades\Http::response([
+                'status_code' => 2031,
+                'error' => 'Passphrase anda salah',
+            ], 400),
+        ]);
+
+        $service = app(BsreEsignService::class);
+        $result = $service->signDocument($meeting, $pimpinan, 'minutes', 'wrong_passphrase');
+
+        $this->assertFalse($result['success']);
+        $this->assertEquals('Passphrase salah.', $result['message']);
+        $this->assertNull($meeting->fresh()->minutes_signed_at);
     }
 }

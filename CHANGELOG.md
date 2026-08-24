@@ -4,6 +4,30 @@ Semua perubahan penting pada proyek ini dicatat dalam berkas ini.
 
 Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/1.0.0/), dan proyek ini mematuhi [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.3] - 2026-08-25
+
+### Ditambahkan
+- **Integrasi BSrE API Client Service v2**: Dukungan penuh penandatanganan digital kriptografi resmi BSrE - BSSN (`POST /api/v2/sign/pdf` & `/api/v2/user/check/status`) berstandar `PAdES-BASELINE-LT` dengan Time-Stamp Authority (TSA).
+- **Pengujian Error Handling BSrE**: Unit & feature test untuk simulasi kesalahan passphrase (`HTTP 400 - Kode 2031`), pengguna tidak terdaftar, dan koneksi server pada `tests/Feature/BsreEsignTest.php`.
+
+### Diubah
+- **Penyelarasan Tampilan Dokumen Rapat (`overview.blade.php`)**:
+  - Penataan urutan dokumen menjadi: 1. Presensi Rapat, 2. Dokumentasi Rapat, 3. Notulen Rapat.
+  - Penyelarasan format tabel dokumen menggunakan tata letak 2-kolom (`sm:w-1/4` dan `sm:w-3/4`) identik dengan kartu Informasi Rapat.
+  - Penyesuaian label tombol TTE spesifik dokumen: `TTE Presensi`, `TTE Dokumentasi`, `TTE Notulen`.
+- **Standardisasi & Peringkasan Badge Status TTE**:
+  - Label badge disederhanakan menjadi ringkas: `Aktif`, `Belum Terdaftar`, `Expired`, `Pembaruan`, `Verifikasi`, `Belum Aktif`, `Tanpa Sertifikat`, `Suspend`, `Dicabut`, `NIK Kosong`, `Offline`.
+  - Kotak peringatan pada modal TTE dipadatkan menjadi 1 baris penjelasan langsung.
+- **Penyempurnaan Penanganan Error TTE (Modal UX)**:
+  - Modal TTE tetap terbuka saat terjadi kesalahan (*passphrase* salah / gangguan koneksi).
+  - Kolom input *passphrase* otomatis dikosongkan kembali dengan kursor tetap aktif untuk kemudahan input ulang.
+  - Pesan kesalahan dipersingkat dan langsung pada intinya (contoh: *"Passphrase salah."*, *"NIK belum terdaftar di BSrE."*).
+- **Penyajian Berkas Fisik PDF Ber-TTE (`MeetingExportController`)**:
+  - Aksi "Lihat PDF" dan "Download" pada dokumen yang telah di-TTE menyajikan berkas fisik asli yang sama persis (`storage/app/public/signed_documents/...`) berisi segel kriptografi resmi BSrE.
+  - Perbaikan render QR Code dan *footer* resmi BSrE pada template PDF sebelum dokumen dikirim ke mesin penandatanganan BSrE.
+- **Standardisasi Payload `reason` TTE**:
+  - Format `reason` TTE distandardisasi menjadi: `TTE Notulen - {Judul Rapat}`, `TTE Presensi - {Judul Rapat}`, dan `TTE Dokumentasi - {Judul Rapat}`.
+
 ## [1.3.2] - 2026-08-25
 
 ### Ditambahkan

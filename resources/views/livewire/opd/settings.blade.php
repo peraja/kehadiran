@@ -3,6 +3,7 @@
 use Livewire\Volt\Component;
 use App\Models\Opd;
 use App\Models\OpdSigner;
+use App\Models\User;
 use Livewire\Attributes\Layout;
 
 new #[Layout('layouts.app')] class extends Component {
@@ -25,6 +26,7 @@ new #[Layout('layouts.app')] class extends Component {
     public string $signer_rank = '';
     public string $signer_bidang = '';
     public string $signer_eselon = '';
+    public ?int $editingManualPimpinanId = null;
     public bool $apiSynced = false;
     public string $apiStatusMessage = '';
 
@@ -93,7 +95,7 @@ new #[Layout('layouts.app')] class extends Component {
         $this->phone = $this->opd->phone ?? $this->phone;
         $this->email = $this->opd->email ?? $this->email;
 
-        session()->flash('message', 'Data OPD dan Pejabat berhasil disinkronkan dari SIMPEG.');
+        session()->flash('message', 'Data OPD dan Penandatangan berhasil disinkronkan dari SIMPEG.');
         $this->redirect(route('opd.settings'), navigate: true);
     }
 
@@ -123,6 +125,7 @@ new #[Layout('layouts.app')] class extends Component {
         $this->apiStatusMessage = '';
         $this->isEditingLeader = true;
         $this->editingSignerId = null;
+        $this->editingManualPimpinanId = null;
 
         $this->signer_name = $this->opd->leader_name ?? '';
         $this->signer_nip = $this->opd->leader_nip ?? '';
@@ -141,6 +144,7 @@ new #[Layout('layouts.app')] class extends Component {
         $this->apiSynced = false;
         $this->apiStatusMessage = '';
         $this->isEditingLeader = false;
+        $this->editingManualPimpinanId = null;
 
         $signer = OpdSigner::where('opd_id', $this->opd->id)->findOrFail($id);
         $this->editingSignerId = $signer->id;
@@ -152,6 +156,27 @@ new #[Layout('layouts.app')] class extends Component {
         $this->signer_rank = $signer->rank ?? '';
         $this->signer_bidang = $signer->bidang_name ?? '';
         $this->signer_eselon = $signer->eselon ?? 'III.a';
+
+        $this->dispatch('open-modal', 'signer-form-modal');
+    }
+
+    public function openEditManualPimpinanModal(int $id): void
+    {
+        $this->resetValidation();
+        $this->apiSynced = false;
+        $this->apiStatusMessage = '';
+        $this->isEditingLeader = false;
+        $this->editingSignerId = null;
+        $this->editingManualPimpinanId = $id;
+
+        $user = User::findOrFail($id);
+        $this->signer_name = $user->name;
+        $this->signer_nip = $user->nip ?? '';
+        $this->signer_nik = $user->nik ?? '';
+        $this->signer_title = $user->jabatan ?? '';
+        $this->signer_rank = $user->pangkat ?? '';
+        $this->signer_bidang = $user->unit_name ?? $this->opd->name;
+        $this->signer_eselon = 'Non-Eselon';
 
         $this->dispatch('open-modal', 'signer-form-modal');
     }
@@ -245,7 +270,18 @@ new #[Layout('layouts.app')] class extends Component {
                 'bidang_name' => $this->signer_bidang ? trim($this->signer_bidang) : null,
                 'eselon' => $this->signer_eselon ? trim($this->signer_eselon) : null,
             ]);
-            session()->flash('message', 'Data Pejabat Penandatangan berhasil diperbarui.');
+            session()->flash('message', 'Data Penandatangan berhasil diperbarui.');
+        } elseif ($this->editingManualPimpinanId) {
+            $user = User::findOrFail($this->editingManualPimpinanId);
+            $user->update([
+                'name' => trim($this->signer_name),
+                'nip' => $this->signer_nip ? trim($this->signer_nip) : null,
+                'nik' => $this->signer_nik ? trim($this->signer_nik) : null,
+                'jabatan' => trim($this->signer_title),
+                'pangkat' => $this->signer_rank ? trim($this->signer_rank) : null,
+                'unit_name' => $this->signer_bidang ? trim($this->signer_bidang) : $user->unit_name,
+            ]);
+            session()->flash('message', 'Data Penandatangan Tambahan berhasil diperbarui.');
         }
 
         $this->dispatch('close-modal', 'signer-form-modal');
@@ -255,18 +291,44 @@ new #[Layout('layouts.app')] class extends Component {
     {
         $signer = OpdSigner::where('opd_id', $this->opd->id)->findOrFail($id);
         $signer->delete();
-        session()->flash('message', 'Pejabat Penandatangan berhasil dihapus.');
+        session()->flash('message', 'Penandatangan berhasil dihapus.');
     }
 
     public function with(): array
     {
-        return [
-            'signers' => $this->opd
-                ? $this->opd->signers()
+        $signers = $this->opd
+            ? $this->opd->signers()
                 ->orderByRaw("CASE eselon WHEN 'II.a' THEN 1 WHEN 'II.b' THEN 2 WHEN 'III.a' THEN 3 WHEN 'III.b' THEN 4 WHEN 'IV.a' THEN 5 WHEN 'IV.b' THEN 6 ELSE 7 END, id ASC")
                 ->get()
-                : collect(),
-        ];
+            : collect();
+
+        // Ambil NIP dari opd_signers yang aktif (hasil sinkron API)
+        $signerNips = $signers->pluck('nip')->filter()->values();
+
+        // NIP Kepala OPD (disimpan di kolom opd.leader_nip, bukan di opd_signers)
+        $leaderNip = $this->opd?->leader_nip;
+
+        // User ber-role pimpinan di OPD ini yang TIDAK ada di opd_signers
+        // dan BUKAN kepala OPD — artinya murni dari penugasan manual admin
+        $pimpinanUsers = $this->opd
+            ? \App\Models\User::role('pimpinan')
+                ->where('unit_name', $this->opd->name)
+                ->get()
+                ->filter(function ($u) use ($signerNips, $leaderNip) {
+                    // Eksklusikan kepala OPD
+                    if ($leaderNip && $u->nip === $leaderNip) {
+                        return false;
+                    }
+                    // Eksklusikan yang sudah ada di opd_signers (sinkron API/form)
+                    if (!empty($u->nip) && $signerNips->contains($u->nip)) {
+                        return false;
+                    }
+                    return true;
+                })
+                ->values()
+            : collect();
+
+        return compact('signers', 'pimpinanUsers');
     }
 }; ?>
 
@@ -356,11 +418,11 @@ new #[Layout('layouts.app')] class extends Component {
         </form>
     </div>
 
-    <!-- Card 2: Pejabat Penandatangan -->
+    <!-- Card 2: Penandatangan -->
     <div class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
         <div class="p-6 sm:p-8 border-b border-slate-100 bg-white">
             <h2 class="text-lg font-bold text-slate-900">
-                Pejabat Penandatangan
+                Penandatangan
             </h2>
         </div>
 
@@ -484,13 +546,67 @@ new #[Layout('layouts.app')] class extends Component {
         </div>
     </div>
 
-    <!-- Modal Form Edit / Tambah Pejabat -->
+    {{-- Card 3: Penandatangan Tambahan --}}
+    @if($pimpinanUsers->isNotEmpty())
+    <div class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="p-6 sm:p-8 border-b border-slate-100 bg-white">
+            <h2 class="text-lg font-bold text-slate-900">
+                Penandatangan Tambahan
+            </h2>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead class="bg-slate-50 border-b border-slate-200 text-slate-500">
+                    <tr class="text-[11px] font-extrabold uppercase tracking-wider">
+                        <th class="py-4 px-6 text-left">Nama & NIP</th>
+                        <th class="py-4 px-6 text-left">Jabatan & Pangkat</th>
+                        <th class="py-4 px-6 text-left">Unit Kerja</th>
+                        <th class="py-4 px-6 text-center w-28">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 bg-white text-sm">
+                    @foreach($pimpinanUsers as $pu)
+                    <tr class="hover:bg-slate-50/80 transition-colors">
+                        <td class="py-4 px-6">
+                            <div class="font-bold text-slate-800">{{ $pu->name }}</div>
+                            <div class="text-xs text-slate-400 font-mono mt-0.5">NIP. {{ $pu->nip ?: '-' }}</div>
+                        </td>
+                        <td class="py-4 px-6">
+                            <div class="text-xs font-semibold text-slate-800">{{ $pu->jabatan ?: '-' }}</div>
+                            @if($pu->pangkat)
+                            <div class="text-xs text-slate-500 font-medium mt-0.5">{{ $pu->pangkat }}</div>
+                            @endif
+                        </td>
+                        <td class="py-4 px-6">
+                            <span class="font-bold text-slate-800 text-xs block">{{ $pu->unit_name ?: $opd->name }}</span>
+                        </td>
+                        <td class="py-4 px-6 text-center whitespace-nowrap">
+                            <div class="flex items-center justify-center gap-1.5">
+                                <button type="button" wire:click="openEditManualPimpinanModal({{ $pu->id }})" class="inline-flex items-center gap-1 px-2.5 py-1.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-xs font-bold transition-all shadow-xs active:scale-95" title="Edit">
+                                    <svg class="w-3.5 h-3.5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                    </svg>
+                                    <span>Edit</span>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+    </div>
+    @endif
+
+    {{-- Modal Form Edit / Tambah Pejabat --}}
+
     <x-modal name="signer-form-modal" maxWidth="2xl">
         <div class="p-6 sm:p-8">
             <div class="flex items-center justify-between border-b border-slate-100 pb-4 mb-6">
                 <div>
                     <h2 class="text-xl font-extrabold text-slate-900">
-                        {{ $isEditingLeader ? 'Edit Kepala OPD' : 'Edit Pejabat Penandatangan' }}
+                        {{ $isEditingLeader ? 'Edit Kepala OPD' : ($editingManualPimpinanId ? 'Edit Penandatangan Tambahan' : 'Edit Penandatangan') }}
                     </h2>
                 </div>
                 <button type="button" x-on:click="$dispatch('close-modal', 'signer-form-modal')" class="p-2 bg-slate-50 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-colors">
@@ -573,10 +689,10 @@ new #[Layout('layouts.app')] class extends Component {
                         @error('signer_eselon') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                     </div>
 
-                    <!-- Pangkat / Golongan -->
+                    <!-- Pangkat -->
                     <div>
                         <label for="signer_rank" class="block text-sm font-bold text-slate-700 mb-1">Pangkat</label>
-                        <input wire:model="signer_rank" id="signer_rank" type="text" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Contoh: Pembina (IV/a)" />
+                        <input wire:model="signer_rank" id="signer_rank" type="text" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Contoh: Pembina" />
                         @error('signer_rank') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                     </div>
                 </div>

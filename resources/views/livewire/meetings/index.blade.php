@@ -165,9 +165,11 @@ new #[Layout('layouts.app')] class extends Component {
             $opd = \App\Models\Opd::find($this->selected_opd_id);
             $validated['opd_id'] = $this->selected_opd_id;
         } else {
-            $opd = \App\Models\Opd::where('name', auth()->user()->unit_name)->first();
-            if (!$opd && auth()->user()->unit_name) {
-                $opd = \App\Models\Opd::where('name', 'like', '%' . auth()->user()->unit_name . '%')->first();
+            $userUnit = auth()->user()->unit_name;
+            $opd = \App\Models\Opd::where('name', $userUnit)->first();
+            if (!$opd && $userUnit) {
+                $cleanUnit = str_replace([',', '.', '-'], '', $userUnit);
+                $opd = \App\Models\Opd::whereRaw("REPLACE(REPLACE(REPLACE(name, ',', ''), '.', ''), '-', '') LIKE ?", ['%' . $cleanUnit . '%'])->first();
             }
             if ($opd) {
                 $validated['opd_id'] = $opd->id;
@@ -175,19 +177,32 @@ new #[Layout('layouts.app')] class extends Component {
         }
 
         if ($this->selected_signer_id && $this->selected_signer_id !== 'kepala_opd') {
-            $signer = \App\Models\OpdSigner::find($this->selected_signer_id);
-            if ($signer) {
-                $validated['signer_title'] = $signer->title;
-                $validated['signer_name'] = $signer->name;
-                $validated['signer_nip'] = $signer->nip;
-                $validated['signer_rank'] = $signer->rank ?: $signer->eselon;
+            if (str_starts_with($this->selected_signer_id, 'pimpinan_')) {
+                // Pimpinan manual: ambil dari tabel users
+                $userId = (int) str_replace('pimpinan_', '', $this->selected_signer_id);
+                $pimpinanUser = \App\Models\User::find($userId);
+                if ($pimpinanUser) {
+                    $validated['signer_title'] = $pimpinanUser->jabatan ?: 'Pimpinan';
+                    $validated['signer_name']  = $pimpinanUser->name;
+                    $validated['signer_nip']   = $pimpinanUser->nip;
+                    $validated['signer_rank']  = $pimpinanUser->pangkat ?: null;
+                }
+            } else {
+                $signer = \App\Models\OpdSigner::find($this->selected_signer_id);
+                if ($signer) {
+                    $validated['signer_title'] = $signer->title;
+                    $validated['signer_name']  = $signer->name;
+                    $validated['signer_nip']   = $signer->nip;
+                    $validated['signer_rank']  = $signer->rank ?: $signer->eselon;
+                }
             }
         } else if ($opd) {
             $validated['signer_title'] = $opd->leader_title ?: ('Kepala ' . $opd->name);
-            $validated['signer_name'] = $opd->leader_name;
-            $validated['signer_nip'] = $opd->leader_nip;
-            $validated['signer_rank'] = $opd->leader_rank ?: $opd->leader_eselon;
+            $validated['signer_name']  = $opd->leader_name;
+            $validated['signer_nip']   = $opd->leader_nip;
+            $validated['signer_rank']  = $opd->leader_rank ?: $opd->leader_eselon;
         }
+
 
         unset($validated['selected_opd_id'], $validated['selected_signer_id']);
 
@@ -252,13 +267,45 @@ new #[Layout('layouts.app')] class extends Component {
                 $targetOpd = \App\Models\Opd::find($this->selected_opd_id);
             }
         } else {
-            $targetOpd = \App\Models\Opd::where('name', auth()->user()->unit_name)->first();
-            if (!$targetOpd && auth()->user()->unit_name) {
-                $targetOpd = \App\Models\Opd::where('name', 'like', '%' . auth()->user()->unit_name . '%')->first();
+            $userUnit = auth()->user()->unit_name;
+            $targetOpd = \App\Models\Opd::where('name', $userUnit)->first();
+            if (!$targetOpd && $userUnit) {
+                $cleanUnit = str_replace([',', '.', '-'], '', $userUnit);
+                $targetOpd = \App\Models\Opd::whereRaw("REPLACE(REPLACE(REPLACE(name, ',', ''), '.', ''), '-', '') LIKE ?", ['%' . $cleanUnit . '%'])->first();
             }
         }
 
         $opdSigners = $targetOpd ? $targetOpd->signers()->where('is_active', true)->orderByRaw("CASE eselon WHEN 'II.a' THEN 1 WHEN 'II.b' THEN 2 WHEN 'III.a' THEN 3 WHEN 'III.b' THEN 4 ELSE 5 END, id ASC")->get() : collect();
+
+        // Tambahkan pimpinan manual (user ber-role pimpinan yang NIP-nya belum ada di opd_signers)
+        if ($targetOpd) {
+            $signerNips   = $opdSigners->pluck('nip')->filter()->values();
+            $leaderNip    = $targetOpd->leader_nip;
+            $manualPimpinan = \App\Models\User::role('pimpinan')
+                ->where(function ($q) use ($targetOpd) {
+                    $q->where('unit_name', $targetOpd->name);
+                    if (auth()->user()->unit_name) {
+                        $q->orWhere('unit_name', auth()->user()->unit_name);
+                    }
+                })
+                ->get()
+                ->filter(function ($u) use ($signerNips, $leaderNip) {
+                    return ($leaderNip ? $u->nip !== $leaderNip : true)
+                        && (empty($u->nip) || !$signerNips->contains($u->nip));
+                });
+            foreach ($manualPimpinan as $u) {
+                $opdSigners->push((object)[
+                    'id'          => 'pimpinan_' . $u->id,
+                    'name'        => $u->name,
+                    'nip'         => $u->nip,
+                    'title'       => $u->jabatan ?: 'Pimpinan',
+                    'bidang_name' => null,
+                    'eselon'      => null,
+                    'rank'        => $u->pangkat,
+                    'is_manual'   => true,
+                ]);
+            }
+        }
 
         $baseCountQuery = Meeting::query();
         if (!auth()->user()->hasActiveRole('admin')) {
@@ -380,9 +427,10 @@ new #[Layout('layouts.app')] class extends Component {
                     <tr class="text-[11px] font-extrabold uppercase tracking-wider">
                         <th class="py-4 px-6 text-left">Agenda & Lokasi</th>
                         <th class="py-4 px-6 text-left">Tanggal & Waktu</th>
-                        <th class="py-4 px-6 text-center {{ auth()->user()->hasActiveRole('pimpinan') ? 'w-36' : 'w-32' }}">
-                            {{ auth()->user()->hasActiveRole('pimpinan') ? 'Status Dokumen' : 'Status' }}
-                        </th>
+                        @unless(auth()->user()->hasActiveRole('pimpinan'))
+                        <th class="py-4 px-6 text-center w-32">Status Rapat</th>
+                        @endunless
+                        <th class="py-4 px-6 text-center w-36">Status Dokumen</th>
                         <th class="py-4 px-6 text-right w-24">Aksi</th>
                     </tr>
                 </thead>
@@ -409,67 +457,16 @@ new #[Layout('layouts.app')] class extends Component {
                             </div>
                         </td>
 
-                        <!-- Status / Status Dokumen -->
+                        @unless(auth()->user()->hasActiveRole('pimpinan'))
+                        <!-- Status Rapat -->
                         <td class="py-4 px-6 text-center whitespace-nowrap">
-                            @if(auth()->user()->hasActiveRole('pimpinan'))
-                                <!-- Khusus Pimpinan: Hanya Status Dokumen -->
-                                @if($meeting->status === 'completed')
-                                    @php $signedCount = $meeting->signedTteCount(); @endphp
-                                    @if($meeting->isFullySigned())
-                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200" title="Notulen, Presensi & Dokumentasi telah TTE">
-                                        <svg class="w-3.5 h-3.5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
-                                        </svg>
-                                        <span>TTE Lengkap</span>
-                                    </span>
-                                    @elseif($signedCount > 0)
-                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200" title="{{ $signedCount }} dari 3 dokumen telah di-TTE">
-                                        <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
-                                        <span>{{ $signedCount }}/3 Sudah TTE</span>
-                                    </span>
-                                    @else
-                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 border border-slate-200" title="Belum ada dokumen yang di-TTE">
-                                        <svg class="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                        </svg>
-                                        <span>Menunggu TTE</span>
-                                    </span>
-                                    @endif
-                                @else
-                                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium text-slate-400 bg-slate-50 border border-slate-200/70" title="Dokumen disahkan setelah status rapat diselesaikan">
-                                        <span>Draft</span>
-                                    </span>
-                                @endif
-                            @else
-                                <!-- Non-Pimpinan: Status Rapat + Status Dokumen -->
-                                <div class="flex flex-col items-center gap-1.5">
-                                    <x-meeting-status-badge :status="$meeting->status" />
+                            <x-meeting-status-badge :status="$meeting->status" />
+                        </td>
+                        @endunless
 
-                                    @if($meeting->status === 'completed')
-                                        @php $signedCount = $meeting->signedTteCount(); @endphp
-                                        @if($meeting->isFullySigned())
-                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200" title="Notulen, Presensi & Dokumentasi telah TTE">
-                                            <svg class="w-3 h-3 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
-                                            </svg>
-                                            <span>TTE Lengkap</span>
-                                        </span>
-                                        @elseif($signedCount > 0)
-                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200" title="{{ $signedCount }} dari 3 dokumen telah di-TTE">
-                                            <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
-                                            <span>{{ $signedCount }}/3 Sudah TTE</span>
-                                        </span>
-                                        @else
-                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-500 border border-slate-200" title="Belum ada dokumen yang di-TTE">
-                                            <svg class="w-3 h-3 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                            </svg>
-                                            <span>Menunggu TTE</span>
-                                        </span>
-                                        @endif
-                                    @endif
-                                </div>
-                            @endif
+                        <!-- Status Dokumen -->
+                        <td class="py-4 px-6 text-center whitespace-nowrap">
+                            <x-document-status-badge :meeting="$meeting" />
                         </td>
 
                         <!-- Aksi -->
@@ -485,7 +482,7 @@ new #[Layout('layouts.app')] class extends Component {
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="4" class="py-16 px-6 text-center">
+                        <td colspan="{{ auth()->user()->hasActiveRole('pimpinan') ? 4 : 5 }}" class="py-16 px-6 text-center">
                             <div class="flex flex-col items-center justify-center max-w-sm mx-auto">
                                 <div class="w-14 h-14 bg-slate-100 rounded-2xl flex items-center justify-center mb-3 text-slate-400">
                                     <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -539,7 +536,7 @@ new #[Layout('layouts.app')] class extends Component {
                     @error('title') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                 </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div class="grid grid-cols-1 sm:grid-cols-[1fr_auto_auto] gap-4">
                     <!-- Tanggal -->
                     <div>
                         <label for="date" class="block text-sm font-bold text-slate-700 mb-1">Tanggal</label>
@@ -549,10 +546,10 @@ new #[Layout('layouts.app')] class extends Component {
 
                     <!-- Jam Mulai -->
                     <div>
-                        <label class="block text-sm font-bold text-slate-700 mb-1">Waktu Mulai (WITA)</label>
+                        <label class="block text-sm font-bold text-slate-700 mb-1">Waktu Mulai</label>
                         <div class="flex items-center gap-1.5">
-                            <div class="flex-1">
-                                <select wire:model="start_hour" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors cursor-pointer">
+                            <div>
+                                <select wire:model="start_hour" class="w-16 text-sm py-2.5 px-2 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors cursor-pointer">
                                     @for($h = 8; $h <= 16; $h++)
                                         @php $hStr = sprintf('%02d', $h); @endphp
                                         <option value="{{ $hStr }}">{{ $hStr }}</option>
@@ -560,8 +557,8 @@ new #[Layout('layouts.app')] class extends Component {
                                 </select>
                             </div>
                             <span class="text-slate-400 font-bold text-sm">:</span>
-                            <div class="flex-1">
-                                <select wire:model="start_minute" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors cursor-pointer">
+                            <div>
+                                <select wire:model="start_minute" class="w-16 text-sm py-2.5 px-2 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors cursor-pointer">
                                     @foreach(['00', '15', '30', '45'] as $mOption)
                                         <option value="{{ $mOption }}">{{ $mOption }}</option>
                                     @endforeach
@@ -576,10 +573,10 @@ new #[Layout('layouts.app')] class extends Component {
 
                     <!-- Jam Selesai -->
                     <div>
-                        <label class="block text-sm font-bold text-slate-700 mb-1">Waktu Selesai (WITA)</label>
+                        <label class="block text-sm font-bold text-slate-700 mb-1">Waktu Selesai</label>
                         <div class="flex items-center gap-1.5">
-                            <div class="flex-1">
-                                <select wire:model="end_hour" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors cursor-pointer">
+                            <div>
+                                <select wire:model="end_hour" class="w-16 text-sm py-2.5 px-2 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors cursor-pointer">
                                     @for($h = 8; $h <= 16; $h++)
                                         @php $hStr = sprintf('%02d', $h); @endphp
                                         <option value="{{ $hStr }}">{{ $hStr }}</option>
@@ -587,8 +584,8 @@ new #[Layout('layouts.app')] class extends Component {
                                 </select>
                             </div>
                             <span class="text-slate-400 font-bold text-sm">:</span>
-                            <div class="flex-1">
-                                <select wire:model="end_minute" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors cursor-pointer">
+                            <div>
+                                <select wire:model="end_minute" class="w-16 text-sm py-2.5 px-2 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors cursor-pointer">
                                     @foreach(['00', '15', '30', '45'] as $mOption)
                                         <option value="{{ $mOption }}">{{ $mOption }}</option>
                                     @endforeach

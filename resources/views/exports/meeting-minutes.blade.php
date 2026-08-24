@@ -243,7 +243,7 @@
 
         $signerName = $meeting->signer_name ?: ($opd?->leader_name ?: '..................................................');
         $signerNip = $meeting->signer_nip ?: ($opd?->leader_nip ?: '..................................................');
-        $signerRank = $meeting->signer_rank ?: ($opd?->leader_rank ?: null);
+        $signerRank = $meeting->signer_rank ?: (\App\Models\User::where('nip', $meeting->signer_nip)->value('pangkat') ?: (\App\Models\User::where('name', $meeting->signer_name)->value('pangkat') ?: ($opd?->leader_rank ?: null)));
         $signerTitle = $meeting->signer_title ?: ($opd?->leader_title ?: ('Kepala ' . $unitName));
         $signedAt = $meeting->minutes_signed_at;
 

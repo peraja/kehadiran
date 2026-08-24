@@ -14,12 +14,77 @@ new class extends Component {
     public $signer_title, $signer_name, $signer_nip, $signer_rank;
     public $selected_signer_id = 'kepala_opd';
     public $selected_opd_id = '';
-    public $opd;
-    public $opdSigners = [];
 
     public bool $showSignModal = false;
     public string $passphrase = '';
     public string $errorMessage = '';
+
+    public function getOpdProperty(): ?Opd
+    {
+        if ($this->selected_opd_id) {
+            return Opd::find($this->selected_opd_id);
+        }
+
+        $userUnit = $this->meeting->creator?->unit_name ?? auth()->user()->unit_name;
+        if ($userUnit) {
+            $opd = Opd::where('name', $userUnit)->first();
+            if (!$opd) {
+                $cleanUnit = str_replace([',', '.', '-'], '', $userUnit);
+                $opd = Opd::whereRaw("REPLACE(REPLACE(REPLACE(name, ',', ''), '.', ''), '-', '') LIKE ?", ['%' . $cleanUnit . '%'])->first();
+            }
+            return $opd;
+        }
+
+        return null;
+    }
+
+    public function getOpdSignersProperty(): \Illuminate\Support\Collection
+    {
+        $opd = $this->opd;
+        if (!$opd) {
+            return collect();
+        }
+
+        $signers = $opd->signers()
+            ->where('is_active', true)
+            ->orderByRaw("CASE eselon WHEN 'II.a' THEN 1 WHEN 'II.b' THEN 2 WHEN 'III.a' THEN 3 WHEN 'III.b' THEN 4 ELSE 5 END, id ASC")
+            ->get()
+            ->map(fn($s) => (object)[
+                'id'          => (string) $s->id,
+                'name'        => $s->name,
+                'nip'         => $s->nip,
+                'title'       => $s->title,
+                'bidang_name' => $s->bidang_name,
+                'eselon'      => $s->eselon,
+                'rank'        => $s->rank,
+                'is_manual'   => false,
+            ]);
+
+        $signerNips = $signers->pluck('nip')->filter()->values();
+        $leaderNip  = $opd->leader_nip;
+
+        $manualPimpinan = \App\Models\User::role('pimpinan')
+            ->where(function ($q) use ($opd) {
+                $q->where('unit_name', $opd->name);
+                if (auth()->user()->unit_name) {
+                    $q->orWhere('unit_name', auth()->user()->unit_name);
+                }
+            })
+            ->get()
+            ->filter(fn($u) => ($leaderNip ? $u->nip !== $leaderNip : true) && (empty($u->nip) || !$signerNips->contains($u->nip)))
+            ->map(fn($u) => (object)[
+                'id'          => 'pimpinan_' . $u->id,
+                'name'        => $u->name,
+                'nip'         => $u->nip,
+                'title'       => $u->jabatan ?: 'Pimpinan',
+                'bidang_name' => null,
+                'eselon'      => null,
+                'rank'        => $u->pangkat,
+                'is_manual'   => true,
+            ]);
+
+        return $signers->concat($manualPimpinan);
+    }
 
     /**
      * True jika ada dokumen yang sudah di-TTE — perubahan penandatangan diblokir.
@@ -85,6 +150,7 @@ new class extends Component {
             $this->redirect(request()->header('Referer') ?: route('meetings.overview', $this->meeting->id), navigate: true);
         } else {
             $this->errorMessage = $result['message'];
+            $this->passphrase = '';
         }
     }
 
@@ -113,22 +179,7 @@ new class extends Component {
         $this->signer_rank = $this->meeting->signer_rank ?? '';
         $this->selected_opd_id = (string)($this->meeting->opd_id ?? '');
 
-        $opd = null;
-        if ($this->selected_opd_id) {
-            $opd = Opd::find($this->selected_opd_id);
-        } else {
-            $userUnit = $this->meeting->creator?->unit_name ?? auth()->user()->unit_name;
-            if ($userUnit) {
-                $opd = Opd::where('name', $userUnit)->first();
-                if (!$opd) {
-                    $cleanUnit = str_replace([',', '.', '-'], '', $userUnit);
-                    $opd = Opd::whereRaw("REPLACE(REPLACE(REPLACE(name, ',', ''), '.', ''), '-', '') LIKE ?", ['%' . $cleanUnit . '%'])->first();
-                }
-            }
-        }
-        $this->opd = $opd;
-        $this->opdSigners = $opd ? $opd->signers()->where('is_active', true)->orderByRaw("CASE eselon WHEN 'II.a' THEN 1 WHEN 'II.b' THEN 2 WHEN 'III.a' THEN 3 WHEN 'III.b' THEN 4 ELSE 5 END, id ASC")->get() : collect();
-
+        $opd = $this->opd;
         $isKepalaOpd = false;
         if ($opd) {
             $kepalaTitle = $opd->leader_title ?: ('Kepala ' . $opd->name);
@@ -161,25 +212,31 @@ new class extends Component {
 
             $this->selected_signer_id = $matchedSigner ? (string) $matchedSigner->id : 'kepala_opd';
         }
+
+        if (empty($this->signer_rank)) {
+            if (isset($matchedSigner) && $matchedSigner && !empty($matchedSigner->rank)) {
+                $this->signer_rank = $matchedSigner->rank;
+            } elseif ($this->meeting->signer_nip) {
+                $this->signer_rank = \App\Models\User::where('nip', $this->meeting->signer_nip)->value('pangkat') ?? '';
+            }
+        }
     }
 
     public function updatedSelectedOpdId($val)
     {
         $this->selected_signer_id = 'kepala_opd';
-        $opd = !empty($val) ? Opd::find($val) : null;
-        $this->opd = $opd;
-        $this->opdSigners = $opd ? $opd->signers()->where('is_active', true)->orderByRaw("CASE eselon WHEN 'II.a' THEN 1 WHEN 'II.b' THEN 2 WHEN 'III.a' THEN 3 WHEN 'III.b' THEN 4 ELSE 5 END, id ASC")->get() : collect();
+        $opd = $this->opd;
 
         if ($opd) {
             $this->signer_title = $opd->leader_title ?: ('Kepala ' . $opd->name);
-            $this->signer_name = $opd->leader_name;
-            $this->signer_nip = $opd->leader_nip;
-            $this->signer_rank = $opd->leader_rank ?: $opd->leader_eselon;
+            $this->signer_name  = $opd->leader_name;
+            $this->signer_nip   = $opd->leader_nip;
+            $this->signer_rank  = $opd->leader_rank ?: $opd->leader_eselon;
         } else {
             $this->signer_title = '';
-            $this->signer_name = '';
-            $this->signer_nip = '';
-            $this->signer_rank = '';
+            $this->signer_name  = '';
+            $this->signer_nip   = '';
+            $this->signer_rank  = '';
         }
     }
 
@@ -198,12 +255,23 @@ new class extends Component {
                 $this->signer_rank = '';
             }
         } else {
-            $signer = OpdSigner::find($val);
-            if ($signer) {
-                $this->signer_title = $signer->title;
-                $this->signer_name = $signer->name;
-                $this->signer_nip = $signer->nip ?? '';
-                $this->signer_rank = $signer->rank ?? $signer->eselon ?? '';
+            if (str_starts_with($val, 'pimpinan_')) {
+                $userId = (int) str_replace('pimpinan_', '', $val);
+                $pimpinanUser = \App\Models\User::find($userId);
+                if ($pimpinanUser) {
+                    $this->signer_title = $pimpinanUser->jabatan ?: 'Pimpinan';
+                    $this->signer_name  = $pimpinanUser->name;
+                    $this->signer_nip   = $pimpinanUser->nip ?? '';
+                    $this->signer_rank  = $pimpinanUser->pangkat ?? '';
+                }
+            } else {
+                $signer = OpdSigner::find($val);
+                if ($signer) {
+                    $this->signer_title = $signer->title;
+                    $this->signer_name = $signer->name;
+                    $this->signer_nip = $signer->nip ?? '';
+                    $this->signer_rank = $signer->rank ?? $signer->eselon ?? '';
+                }
             }
         }
     }
@@ -275,6 +343,10 @@ new class extends Component {
 
     public function reopenMeeting()
     {
+        if (auth()->user()?->hasActiveRole('pimpinan')) {
+            abort(403, 'Akses tidak diizinkan untuk role pimpinan.');
+        }
+
         if (!$this->canManageMeeting()) {
             abort(403, 'Akses tidak diizinkan.');
         }
@@ -361,19 +433,31 @@ new class extends Component {
 
         // Sinkronisasi data penandatangan berdasarkan selected_signer_id
         if ($this->selected_signer_id && $this->selected_signer_id !== 'kepala_opd') {
-            $signer = OpdSigner::find($this->selected_signer_id);
-            if ($signer) {
-                $this->signer_title = $signer->title;
-                $this->signer_name = $signer->name;
-                $this->signer_nip = $signer->nip ?? '';
-                $this->signer_rank = $signer->rank ?? $signer->eselon ?? '';
+            if (str_starts_with($this->selected_signer_id, 'pimpinan_')) {
+                $userId = (int) str_replace('pimpinan_', '', $this->selected_signer_id);
+                $pimpinanUser = \App\Models\User::find($userId);
+                if ($pimpinanUser) {
+                    $this->signer_title = $pimpinanUser->jabatan ?: 'Pimpinan';
+                    $this->signer_name  = $pimpinanUser->name;
+                    $this->signer_nip   = $pimpinanUser->nip ?? '';
+                    $this->signer_rank  = $pimpinanUser->pangkat ?? '';
+                }
+            } else {
+                $signer = OpdSigner::find($this->selected_signer_id);
+                if ($signer) {
+                    $this->signer_title = $signer->title;
+                    $this->signer_name  = $signer->name;
+                    $this->signer_nip   = $signer->nip ?? '';
+                    $this->signer_rank  = $signer->rank ?? $signer->eselon ?? '';
+                }
             }
         } elseif ($this->opd) {
             $this->signer_title = $this->opd->leader_title ?: ('Kepala ' . $this->opd->name);
-            $this->signer_name = $this->opd->leader_name;
-            $this->signer_nip = $this->opd->leader_nip;
-            $this->signer_rank = $this->opd->leader_rank ?: $this->opd->leader_eselon;
+            $this->signer_name  = $this->opd->leader_name;
+            $this->signer_nip   = $this->opd->leader_nip;
+            $this->signer_rank  = $this->opd->leader_rank ?: $this->opd->leader_eselon;
         }
+
 
         $validated = $this->validate();
         $validated['agenda'] = $validated['title'];
@@ -406,11 +490,14 @@ new class extends Component {
         $this->redirect(route('meetings.index'), navigate: true);
     }
 
-    public function with(): array
+    public function with(BsreEsignService $esignService): array
     {
         return [
+            'opd' => $this->opd,
+            'opdSigners' => $this->opdSigners,
             'allOpds' => auth()->user()->hasActiveRole('admin') ? Opd::where('is_active', true)->orderBy('name')->get() : collect(),
             'isAdmin' => auth()->user()->hasActiveRole('admin'),
+            'tteStatus' => $esignService->checkUserStatus(auth()->user()?->nik),
         ];
     }
 }; ?>
@@ -418,8 +505,9 @@ new class extends Component {
 <div class="relative">
     <div class="flex flex-col md:flex-row md:items-start justify-between gap-5 relative z-10">
         <div class="space-y-2.5 flex-1 min-w-0">
-            <div>
+            <div class="flex flex-wrap items-center gap-2">
                 <x-meeting-status-badge :status="$meeting->status" />
+                <x-document-status-badge :meeting="$meeting" />
             </div>
 
             <h1 class="font-extrabold text-2xl sm:text-3xl text-slate-900 tracking-tight leading-tight break-words">{{ trim($meeting->title) }}</h1>
@@ -431,42 +519,13 @@ new class extends Component {
         </div>
 
         <div class="flex flex-wrap items-center gap-2.5 shrink-0 w-full md:w-auto mt-2 md:mt-0">
-            @if($meeting->status === 'completed')
-                @php $signedCount = $meeting->signedTteCount(); @endphp
-                @if(auth()->user()->hasActiveRole('pimpinan'))
-                    @if($meeting->isFullySigned())
-                    <span class="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-xl text-sm font-bold shadow-2xs">
-                        <svg class="w-4 h-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" /></svg>
-                        <span>TTE Lengkap</span>
-                    </span>
-                    @else
-                    <button type="button" x-data="" x-on:click.prevent="$dispatch('open-modal', 'sign-all-modal'); $wire.openSignModal()" class="flex-1 md:flex-none inline-flex justify-center items-center px-4 py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl font-bold text-sm transition-all shadow-sm gap-2 cursor-pointer">
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                        </svg>
-                        <span>TTE Semua Dokumen</span>
-                    </button>
-                    @endif
-                @else
-                    @if($meeting->isFullySigned())
-                    <span class="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-xl text-sm font-bold shadow-2xs">
-                        <svg class="w-4 h-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" /></svg>
-                        <span>TTE Lengkap</span>
-                    </span>
-                    @elseif($signedCount > 0)
-                    <span class="inline-flex items-center gap-2 px-4 py-2.5 bg-amber-50 text-amber-700 border border-amber-200 rounded-xl text-sm font-bold shadow-2xs">
-                        <span class="w-2 h-2 rounded-full bg-amber-500"></span>
-                        <span>{{ $signedCount }}/3 Sudah TTE</span>
-                    </span>
-                    @else
-                    <span class="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-100 text-slate-600 border border-slate-200 rounded-xl text-sm font-bold shadow-2xs">
-                        <svg class="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        <span>Menunggu TTE</span>
-                    </span>
-                    @endif
-                @endif
+            @if($meeting->status === 'completed' && auth()->user()->hasActiveRole('pimpinan') && !$meeting->isFullySigned())
+                <button type="button" x-data="" x-on:click.prevent="$dispatch('open-modal', 'sign-all-modal'); $wire.openSignModal()" class="flex-1 md:flex-none inline-flex justify-center items-center px-4 py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl font-bold text-sm transition-all shadow-sm gap-2 cursor-pointer">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                    </svg>
+                    <span>TTE Semua Dokumen</span>
+                </button>
             @endif
 
             @if($this->canManageMeeting())
@@ -500,7 +559,7 @@ new class extends Component {
                     </svg>
                     <span>QR Code</span>
                 </button>
-                @elseif($meeting->status == 'completed' && !$this->signerLocked)
+                @elseif($meeting->status == 'completed' && !$this->signerLocked && !auth()->user()?->hasActiveRole('pimpinan'))
                 <button wire:click="reopenMeeting" wire:loading.attr="disabled" wire:target="reopenMeeting" wire:confirm="Lanjutkan rapat ini ke status sedang berlangsung?" class="flex-1 md:flex-none inline-flex justify-center items-center px-4 py-2.5 bg-white hover:bg-amber-50 border border-amber-300 hover:border-amber-400 active:scale-95 text-amber-800 rounded-xl font-bold text-sm transition-all shadow-sm gap-2 cursor-pointer">
                     <svg class="w-4 h-4 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -558,7 +617,7 @@ new class extends Component {
                     @error('title') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                 </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div class="grid grid-cols-1 sm:grid-cols-[1fr_auto_auto] gap-4">
                     <div>
                         <label for="edit_date" class="block text-sm font-bold text-slate-700 mb-1">Tanggal</label>
                         <input wire:model="date" id="edit_date" type="date" class="w-full text-sm py-2.5 px-3 border border-slate-300 rounded-xl text-slate-900 shadow-sm transition-colors {{ $lockedClass }}" {{ $locked ? 'disabled' : 'required' }} />
@@ -567,10 +626,10 @@ new class extends Component {
 
                     <!-- Jam Mulai -->
                     <div>
-                        <label class="block text-sm font-bold text-slate-700 mb-1">Waktu Mulai (WITA)</label>
+                        <label class="block text-sm font-bold text-slate-700 mb-1">Waktu Mulai</label>
                         <div class="flex items-center gap-1.5">
-                            <div class="flex-1">
-                                <select wire:model="start_hour" class="w-full text-sm py-2.5 px-3 border border-slate-300 rounded-xl text-slate-900 shadow-sm transition-colors cursor-pointer {{ $lockedClass }}" {{ $locked ? 'disabled' : '' }}>
+                            <div>
+                                <select wire:model="start_hour" class="w-16 text-sm py-2.5 px-2 border border-slate-300 rounded-xl text-slate-900 shadow-sm transition-colors cursor-pointer {{ $lockedClass }}" {{ $locked ? 'disabled' : '' }}>
                                     @for($h = 8; $h <= 16; $h++)
                                         @php $hStr = sprintf('%02d', $h); @endphp
                                         <option value="{{ $hStr }}">{{ $hStr }}</option>
@@ -581,8 +640,8 @@ new class extends Component {
                                 </select>
                             </div>
                             <span class="text-slate-400 font-bold text-sm">:</span>
-                            <div class="flex-1">
-                                <select wire:model="start_minute" class="w-full text-sm py-2.5 px-3 border border-slate-300 rounded-xl text-slate-900 shadow-sm transition-colors cursor-pointer {{ $lockedClass }}" {{ $locked ? 'disabled' : '' }}>
+                            <div>
+                                <select wire:model="start_minute" class="w-16 text-sm py-2.5 px-2 border border-slate-300 rounded-xl text-slate-900 shadow-sm transition-colors cursor-pointer {{ $lockedClass }}" {{ $locked ? 'disabled' : '' }}>
                                     @foreach(['00', '15', '30', '45'] as $mOption)
                                         <option value="{{ $mOption }}">{{ $mOption }}</option>
                                     @endforeach
@@ -597,10 +656,10 @@ new class extends Component {
 
                     <!-- Jam Selesai -->
                     <div>
-                        <label class="block text-sm font-bold text-slate-700 mb-1">Waktu Selesai (WITA)</label>
+                        <label class="block text-sm font-bold text-slate-700 mb-1">Waktu Selesai</label>
                         <div class="flex items-center gap-1.5">
-                            <div class="flex-1">
-                                <select wire:model="end_hour" class="w-full text-sm py-2.5 px-3 border border-slate-300 rounded-xl text-slate-900 shadow-sm transition-colors cursor-pointer {{ $lockedClass }}" {{ $locked ? 'disabled' : '' }}>
+                            <div>
+                                <select wire:model="end_hour" class="w-16 text-sm py-2.5 px-2 border border-slate-300 rounded-xl text-slate-900 shadow-sm transition-colors cursor-pointer {{ $lockedClass }}" {{ $locked ? 'disabled' : '' }}>
                                     @for($h = 8; $h <= 16; $h++)
                                         @php $hStr = sprintf('%02d', $h); @endphp
                                         <option value="{{ $hStr }}">{{ $hStr }}</option>
@@ -611,8 +670,8 @@ new class extends Component {
                                 </select>
                             </div>
                             <span class="text-slate-400 font-bold text-sm">:</span>
-                            <div class="flex-1">
-                                <select wire:model="end_minute" class="w-full text-sm py-2.5 px-3 border border-slate-300 rounded-xl text-slate-900 shadow-sm transition-colors cursor-pointer {{ $lockedClass }}" {{ $locked ? 'disabled' : '' }}>
+                            <div>
+                                <select wire:model="end_minute" class="w-16 text-sm py-2.5 px-2 border border-slate-300 rounded-xl text-slate-900 shadow-sm transition-colors cursor-pointer {{ $lockedClass }}" {{ $locked ? 'disabled' : '' }}>
                                     @foreach(['00', '15', '30', '45'] as $mOption)
                                         <option value="{{ $mOption }}">{{ $mOption }}</option>
                                     @endforeach
@@ -790,7 +849,23 @@ new class extends Component {
                         <span class="text-slate-500 font-medium">NIK</span>
                         <span class="font-mono font-bold text-slate-800 text-right">{{ auth()->user()->nik ?: '-' }}</span>
                     </div>
+                    <div class="flex items-center justify-between text-xs sm:text-sm pt-2.5 border-t border-slate-200/70">
+                        <span class="text-slate-500 font-medium">Status TTE</span>
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold border {{ $tteStatus['badge_class'] }}">
+                            <span class="w-1.5 h-1.5 rounded-full {{ $tteStatus['dot_class'] ?? ($tteStatus['can_sign'] ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500') }}"></span>
+                            {{ $tteStatus['label'] }}
+                        </span>
+                    </div>
                 </div>
+
+                @if(!$tteStatus['can_sign'])
+                <div class="p-3 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-800 flex items-center gap-2.5">
+                    <svg class="w-4 h-4 text-amber-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span class="font-medium leading-relaxed">{{ $tteStatus['description'] }}</span>
+                </div>
+                @endif
 
                 <div x-data="{ showPassphrase: false }">
                     <label for="passphrase_header" class="block text-sm font-bold text-slate-700 mb-1">Passphrase BSrE</label>

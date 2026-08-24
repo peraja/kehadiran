@@ -317,6 +317,7 @@ class Opd extends Model
                                 'name' => trim($p['nama'] ?? $p['nip']),
                                 'unit_name' => $this->name,
                                 'jabatan' => $jobTitle ?: $this->leader_title,
+                                'pangkat' => $pangkat ?: null,
                                 'password' => null,
                             ]);
                         } else {
@@ -325,6 +326,7 @@ class Opd extends Model
                                 'nik' => $nik ?: $leaderUser->nik,
                                 'unit_name' => $this->name,
                                 'jabatan' => $jobTitle ?: $leaderUser->jabatan,
+                                'pangkat' => $pangkat ?: $leaderUser->pangkat,
                             ]);
                         }
                         if (!$leaderUser->hasRole('admin')) {
@@ -393,6 +395,7 @@ class Opd extends Model
                             'name' => trim($p['nama'] ?? $p['nip']),
                             'unit_name' => $this->name,
                             'jabatan' => $title,
+                            'pangkat' => $pangkat ?: null,
                             'password' => null,
                         ]);
                     } else {
@@ -401,6 +404,7 @@ class Opd extends Model
                             'nik' => $signerNik ?: $signerUser->nik,
                             'unit_name' => $this->name,
                             'jabatan' => $title,
+                            'pangkat' => $pangkat ?: $signerUser->pangkat,
                         ]);
                     }
                     if (!$signerUser->hasRole('admin')) {
@@ -438,6 +442,7 @@ class Opd extends Model
 
             if ($adminOpdCandidate && !empty($adminOpdCandidate['nip'])) {
                 $nip = trim($adminOpdCandidate['nip']);
+                $adminPangkat = trim((string)($adminOpdCandidate['pangkat_nama'] ?? ''));
                 $adminUser = User::where('nip', $nip)->first();
                 if (!$adminUser) {
                     $adminUser = User::create([
@@ -445,6 +450,7 @@ class Opd extends Model
                         'name' => trim($adminOpdCandidate['nama'] ?? $nip),
                         'unit_name' => $this->name,
                         'jabatan' => trim($adminOpdCandidate['jabatan_nama'] ?? ''),
+                        'pangkat' => $adminPangkat ?: null,
                         'password' => bcrypt($nip),
                     ]);
                 } else {
@@ -452,11 +458,32 @@ class Opd extends Model
                         'name' => trim($adminOpdCandidate['nama'] ?? $adminUser->name),
                         'unit_name' => $this->name,
                         'jabatan' => trim($adminOpdCandidate['jabatan_nama'] ?? $adminUser->jabatan),
+                        'pangkat' => $adminPangkat ?: $adminUser->pangkat,
                     ]);
                 }
 
                 if (!$adminUser->hasRole('admin')) {
                     $adminUser->assignRole('admin_opd');
+                }
+            }
+
+            // Sync all existing users in this OPD from the API list (refresh pangkat, jabatan, nik, name)
+            $nipsInApi = collect($pegawaiList)->filter(fn($item) => !empty($item['nip']))->keyBy('nip');
+            $opdUsers = User::where('unit_name', $this->name)->whereNotNull('nip')->get();
+            foreach ($opdUsers as $u) {
+                if ($nipsInApi->has($u->nip)) {
+                    $pData = $nipsInApi->get($u->nip);
+                    $uPangkat = trim((string)($pData['pangkat_nama'] ?? ''));
+                    $uJabatan = trim((string)($pData['jabatan_nama'] ?? ''));
+                    $uName = trim((string)($pData['nama'] ?? $pData['nama_pegawai'] ?? ''));
+                    $uNik = trim((string)($pData['nik'] ?? ($pData['no_ktp'] ?? ($pData['ktp'] ?? ($pData['no_identitas'] ?? '')))));
+
+                    $u->update([
+                        'pangkat' => $uPangkat ?: $u->pangkat,
+                        'jabatan' => $uJabatan ?: $u->jabatan,
+                        'name'    => $uName ?: $u->name,
+                        'nik'     => $uNik ?: $u->nik,
+                    ]);
                 }
             }
 
