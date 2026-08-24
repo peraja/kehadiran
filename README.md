@@ -57,7 +57,7 @@ Aplikasi tata kelola administrasi rapat resmi di lingkungan Pemerintah Kabupaten
 
 ## Panduan Deploy ke cPanel
 
-1. **Di Lokal (Build Aset):**
+1. **Di Lokal (Build Aset & Push):**
    ```bash
    npm run build
    git add .
@@ -67,8 +67,15 @@ Aplikasi tata kelola administrasi rapat resmi di lingkungan Pemerintah Kabupaten
 
 2. **Di Terminal cPanel:**
    ```bash
-   git pull origin main
-   php composer.phar install --no-dev --optimize-autoloader
+   # Clone pertama kali (atau git pull origin main untuk update)
+   git clone <URL_REPO> erapat && cd erapat
+
+   # Setup file environment
+   cp .env.example .env
+   nano .env  # sesuaikan kredensial database & URL
+
+   # Inisialisasi Laravel
+   php artisan key:generate
    php artisan migrate --seed --force
    php artisan storage:link
    php artisan optimize

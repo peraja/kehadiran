@@ -4,6 +4,17 @@ Semua perubahan penting pada proyek ini dicatat dalam berkas ini.
 
 Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/1.0.0/), dan proyek ini mematuhi [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.5] - 2026-08-25
+
+### Ditambahkan
+- **Dependensi Vendor Teroptimasi untuk cPanel**: Penyesuaian `.gitignore` untuk menyertakan folder `vendor/` hasil optimasi `composer install --no-dev --optimize-autoloader` guna mendukung deployment instan di shared hosting cPanel tanpa memerlukan Composer CLI di server.
+- **Konfigurasi Enkripsi SMTP**: Penambahan parameter `encryption` pada konfigurasi mailer SMTP [`config/mail.php`](file:///Users/abedzul/Desktop/htdocs/rapat/config/mail.php).
+
+### Diubah
+- **Standarisasi Lingkungan Produksi & `.env.example`**: Perapian kelompok variabel environment dan penambahan dokumentasi nilai konfigurasi cPanel, BSrE (`BSRE_SIGN_LOCATION`), SIMPEG, serta Google Gemini AI.
+- **Penguatan Keamanan Root `.htaccess`**: Penambahan aturan proteksi untuk memblokir akses langsung ke berkas tersembunyi (`.env`, `.git`) dan direktori sensitif (`app`, `storage`, `vendor`, dll).
+- **Pembaruan Panduan Deploy di `README.md`**: Penyederhanaan langkah instalasi cPanel langsung via `git clone`/`git pull`.
+
 ## [1.3.4] - 2026-08-25
 
 ### Ditambahkan

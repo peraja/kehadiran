@@ -1,5 +1,13 @@
 <IfModule mod_rewrite.c>
     RewriteEngine On
+
+    # 1. Blokir akses langsung ke file tersembunyi (seperti .env, .git)
+    RewriteRule (^|/)\.(?!well-known) - [F]
+
+    # 2. Blokir akses langsung ke direktori sensitif jika diletakkan di root
+    RewriteRule ^(app|bootstrap|config|database|resources|routes|storage|tests|vendor)(/.*)?$ - [F,L]
+
+    # 3. Arahkan semua request ke folder public
     RewriteRule ^$ public/index.php [L]
     RewriteRule ^((?!public/).*)$ public/$1 [L]
 </IfModule>
