@@ -3,6 +3,7 @@
 use Livewire\Volt\Component;
 use App\Models\Meeting;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\On;
 
 new #[Layout('layouts.app')] class extends Component {
     public Meeting $meeting;
@@ -19,6 +20,12 @@ new #[Layout('layouts.app')] class extends Component {
         if ($user->hasActiveRole('pegawai') && $meeting->created_by !== $user->id) {
             abort(403, 'Anda hanya dapat mengakses rapat yang Anda buat sendiri.');
         }
+    }
+
+    #[On('meeting-updated')]
+    public function refreshMeeting(): void
+    {
+        $this->meeting->refresh();
     }
 }; ?>
 

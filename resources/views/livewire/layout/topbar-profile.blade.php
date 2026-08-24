@@ -62,6 +62,7 @@ new class extends Component
                     <span>Profil</span>
                 </x-dropdown-link>
 
+                @if($hasMultipleRoles)
                 <button type="button" 
                         x-on:click="$dispatch('open-modal', 'switch-role-modal')" 
                         class="w-full flex items-center gap-2.5 px-4 py-2 text-xs sm:text-sm font-semibold text-slate-700 hover:text-primary-600 hover:bg-slate-50 transition-colors text-left cursor-pointer">
@@ -70,6 +71,7 @@ new class extends Component
                     </svg>
                     <span>Role</span>
                 </button>
+                @endif
 
                 <form method="POST" action="{{ route('logout') }}" class="w-full">
                     @csrf
@@ -86,6 +88,7 @@ new class extends Component
         </x-slot>
     </x-dropdown>
 
+    @if($hasMultipleRoles)
     <!-- Modal Switch Role Menggunakan Komponen x-modal -->
     <x-modal name="switch-role-modal" maxWidth="sm">
         <div class="p-5 sm:p-6">
@@ -101,7 +104,7 @@ new class extends Component
             </div>
 
             <div class="space-y-2">
-                @forelse($allRoles as $r)
+                @foreach($allRoles as $r)
                 @php
                 $isCurrent = $r->name === $activeRole;
                 $roleBadge = match($r->name) {
@@ -126,10 +129,9 @@ new class extends Component
                     </span>
                     @endif
                 </button>
-                @empty
-                <p class="text-xs text-slate-500 text-center py-4">Tidak ada role.</p>
-                @endforelse
+                @endforeach
             </div>
         </div>
     </x-modal>
+    @endif
 </div>

@@ -4,9 +4,14 @@ Semua perubahan penting pada proyek ini dicatat dalam berkas ini.
 
 Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/1.0.0/), dan proyek ini mematuhi [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] - 2026-08-24
+## [1.3.0] - 2026-08-24
 
 ### Ditambahkan
+- **Asisten AI Notulen Rapat (Google Gemini AI)** (`app/Services/GeminiAiService.php`): Fitur perapian catatan mentah rapat menjadi notulen kedinasan terstruktur secara otomatis dalam 1 klik berbasis Tata Naskah Dinas Pemerintah Daerah.
+- Konfigurasi Gemini API Key pada Pengaturan Sistem (`admin/settings.blade.php`) lengkap dengan tombol **Uji Koneksi API** dan mekanisme *fallback model* cerdas (`gemini-2.5-flash`, `gemini-2.0-flash`, `gemini-1.5-flash`, `gemini-1.5-pro`).
+- Modal interaktif **Bantuan AI** (`ai-minutes-modal`) yang berdimensi luas (`maxWidth="3xl"`), dengan indikator *loading* animasi berbasis Alpine.js Event Bus (`ai-loading-start` & `ai-loading-stop`).
+- Fitur **Auto-Hide** (menghilang otomatis setelah 4 detik) dan tombol tutup manual `(X)` pada komponen alert notifikasi ([`components/alert.blade.php`](resources/views/components/alert.blade.php)).
+- Suite pengujian otomatis terintegrasi untuk modul AI Notulen ([`tests/Feature/GeminiAiNotulenTest.php`](tests/Feature/GeminiAiNotulenTest.php)).
 - Arsitektur **Multirole & Role Switcher** pada model `User` (`ROLE_PRIORITIES`, `defaultRole()`, `currentRole()`, `hasActiveRole()`, `switchRole()`, `sortedRoles()`).
 - Menu dropdown profil dan modal **Role** (`switch-role-modal`) di topbar untuk pergantian peran aktif secara instan tanpa perlu *re-login*.
 - Fitur penugasan multirole pada Master Pengguna (`users/index.blade.php`) dengan seleksi tombol pil (*checkbox pills*) yang ringkas dan bebas visual *clutter*.
@@ -15,6 +20,15 @@ Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/
 - Suite pengujian fitur multirole lengkap ([`tests/Feature/MultiroleTest.php`](tests/Feature/MultiroleTest.php)).
 
 ### Diubah
+- Standardisasi luaran notulen AI dan *placeholder* editor textarea mengikuti **Tata Naskah Dinas Permendagri No. 1 Tahun 2023** (3 bab utama: `1. Pembukaan`, `2. Pembahasan (a., b., c.)`, `3. Kesimpulan (a., b., c.)`).
+- Penyelarasan format, spasi, dan tipografi seluruh dokumen cetak PDF (Notulen, Presensi, Dokumentasi):
+  - Standardisasi margin halaman `@page` seragam (`8mm 10mm 12mm 10mm`).
+  - Standardisasi tabel informasi metadata rapat (`Agenda`, `Hari / Tanggal`, `Waktu`, `Tempat`, `Pimpinan`).
+  - Penerapan *single continuous table grid* dan *hanging indent* presisi pada PDF notulen.
+  - Perbaikan urutan ekspresi reguler (*regex*) agar sub-poin huruf `c.`, `d.`, dst. tidak keliru terbaca sebagai angka romawi judul bab.
+- Peningkatan reaktivitas dan sinkronisasi status rapat (`startMeeting()`, `finishMeeting()`, dan update penandatangan) menggunakan *livewire event listener* `#[On('meeting-updated')]` dan navigasi instan SPA (`$this->redirect(..., navigate: true)`).
+- Penyesuaian hierarki pemilihan pejabat penandatangan multi-jabatan pada modal edit rapat berbasis pencocokan ganda (*Title & Name*).
+- Penghapusan badge *"Disusun dengan AI"* pada antarmuka notulen demi menjaga estetika kedinasan.
 - Penyesuaian seluruh otorisasi menu, dashboard, pembuatan rapat, workspace dokumen, dan ekspor PDF berbasis peran aktif (`hasActiveRole()`).
 - Penyesuaian sinkronisasi API SIMPEG pada model `Opd.php` menggunakan `assignRole` agar penugasan multirole pengguna tidak terhapus/tertimpa saat sinkronisasi dijalankan.
 - Penyederhanaan menu dropdown profil di topbar menjadi 3 menu utama yang bersih (*Profil, Role, Logout*).

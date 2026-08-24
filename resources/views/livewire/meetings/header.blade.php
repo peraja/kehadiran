@@ -115,10 +115,38 @@ new class extends Component {
         $this->opd = $opd;
         $this->opdSigners = $opd ? $opd->signers()->where('is_active', true)->orderByRaw("CASE eselon WHEN 'II.a' THEN 1 WHEN 'II.b' THEN 2 WHEN 'III.a' THEN 3 WHEN 'III.b' THEN 4 ELSE 5 END, id ASC")->get() : collect();
 
-        $matchedSigner = $this->opdSigners->first(function ($s) {
-            return $s->name === $this->meeting->signer_name || $s->title === $this->meeting->signer_title;
-        });
-        $this->selected_signer_id = $matchedSigner ? (string) $matchedSigner->id : 'kepala_opd';
+        $isKepalaOpd = false;
+        if ($opd) {
+            $kepalaTitle = $opd->leader_title ?: ('Kepala ' . $opd->name);
+            if ($this->meeting->signer_title === $kepalaTitle && $this->meeting->signer_name === $opd->leader_name) {
+                $isKepalaOpd = true;
+            }
+        }
+
+        if ($isKepalaOpd) {
+            $this->selected_signer_id = 'kepala_opd';
+        } else {
+            // 1. Prioritas utama: Cocokkan Jabatan (title) DAN Nama secara presisi
+            $matchedSigner = $this->opdSigners->first(function ($s) {
+                return $s->title === $this->meeting->signer_title && $s->name === $this->meeting->signer_name;
+            });
+
+            // 2. Jika tidak ditemukan, cocokkan berdasarkan Jabatan (title)
+            if (!$matchedSigner && $this->meeting->signer_title) {
+                $matchedSigner = $this->opdSigners->first(function ($s) {
+                    return $s->title === $this->meeting->signer_title;
+                });
+            }
+
+            // 3. Fallback: Cocokkan berdasarkan Nama
+            if (!$matchedSigner && $this->meeting->signer_name) {
+                $matchedSigner = $this->opdSigners->first(function ($s) {
+                    return $s->name === $this->meeting->signer_name;
+                });
+            }
+
+            $this->selected_signer_id = $matchedSigner ? (string) $matchedSigner->id : 'kepala_opd';
+        }
     }
 
     public function updatedSelectedOpdId($val)
@@ -213,7 +241,9 @@ new class extends Component {
 
         $this->meeting->update(['status' => 'ongoing']);
         $this->meeting->refresh();
+        $this->dispatch('meeting-updated');
         session()->flash('message', 'Rapat dimulai.');
+        $this->redirect(request()->header('Referer', route('meetings.overview', $this->meeting->id)), navigate: true);
     }
 
     public function finishMeeting()
@@ -224,7 +254,9 @@ new class extends Component {
 
         $this->meeting->update(['status' => 'completed']);
         $this->meeting->refresh();
+        $this->dispatch('meeting-updated');
         session()->flash('message', 'Rapat diselesaikan.');
+        $this->redirect(request()->header('Referer', route('meetings.overview', $this->meeting->id)), navigate: true);
     }
 
     public function openEditModal()
@@ -249,16 +281,40 @@ new class extends Component {
             return;
         }
 
+        // Sinkronisasi data penandatangan berdasarkan selected_signer_id
+        if ($this->selected_signer_id && $this->selected_signer_id !== 'kepala_opd') {
+            $signer = OpdSigner::find($this->selected_signer_id);
+            if ($signer) {
+                $this->signer_title = $signer->title;
+                $this->signer_name = $signer->name;
+                $this->signer_nip = $signer->nip ?? '';
+                $this->signer_rank = $signer->rank ?? $signer->eselon ?? '';
+            }
+        } elseif ($this->opd) {
+            $this->signer_title = $this->opd->leader_title ?: ('Kepala ' . $this->opd->name);
+            $this->signer_name = $this->opd->leader_name;
+            $this->signer_nip = $this->opd->leader_nip;
+            $this->signer_rank = $this->opd->leader_rank ?: $this->opd->leader_eselon;
+        }
+
         $validated = $this->validate();
+        $validated['agenda'] = $validated['title'];
+
         if (auth()->user()->hasActiveRole('admin')) {
             $validated['opd_id'] = $this->selected_opd_id ?: null;
+        } elseif ($this->opd) {
+            $validated['opd_id'] = $this->opd->id;
         }
 
         $this->meeting->update($validated);
         $this->meeting->refresh();
+        $this->loadMeetingData();
 
         $this->dispatch('close-modal', 'edit-meeting-modal');
+        $this->dispatch('meeting-updated');
         session()->flash('message', 'Rapat berhasil diperbarui.');
+
+        $this->redirect(request()->header('Referer', route('meetings.overview', $this->meeting->id)), navigate: true);
     }
 
     public function deleteMeeting()

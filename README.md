@@ -10,6 +10,7 @@ Aplikasi digitalisasi tata kelola administrasi rapat resmi untuk lingkungan Pemk
 - **Multirole & Role Switcher:** Dukungan peran ganda (Super Admin, Pimpinan/Penandatangan, Admin OPD, Pegawai) untuk satu akun ASN dengan peralihan peran aktif (*role switcher*) secara instan.
 - **Presensi Mandiri QR & Tanda Tangan Digital:** Integrasi data ASN via API Kepegawaian (NIP) dan dukungan peserta eksternal dilengkapi *signature pad* canvas HTML5.
 - **Tanda Tangan Elektronik (TTE) BSrE - BSSN:** Pengesahan digital dokumen resmi (Notulen, Daftar Hadir, Dokumentasi) via API BSrE, dilengkapi QR Code verifikasi publik dan *footer legal disclaimer* standar Permendagri No. 1 Tahun 2023.
+- **Asisten AI Notulen (Google Gemini):** Perapian otomatis catatan mentah rapat menjadi notulen kedinasan standar Tata Naskah Dinas Permendagri No. 1 Tahun 2023 dalam 1 klik dengan fallback multi-model cerdas.
 - **Notulen Rapat & Ekspor PDF:** Pencatatan ringkasan pembahasan serta cetak otomatis ke PDF resmi bertata letak kop dinas (DomPDF).
 - **Dokumentasi Terintegrasi & ZIP Archive:** Unggah multi-foto dengan kompresi otomatis (Intervention Image) serta unduh galeri dalam format berkas ZIP.
 - **Desain UI Responsif Berbasis Tailwind CSS:** Mematuhi panduan desain pada `DESIGN.md` dengan pendekatan *Mobile First*, interaksi mikro 6 kondisi, dan aksesibilitas ramah pengguna.

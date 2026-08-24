@@ -98,7 +98,7 @@
 
         .info-table {
             width: 100%;
-            margin-bottom: 16px;
+            margin-bottom: 14px;
             border-collapse: collapse;
             font-size: 9.5pt;
         }
@@ -185,6 +185,16 @@
         $opdAddress = $opd?->address ?: 'Tanassang, Kel. Alehanuae, Kec. Sinjai Utara, Kab. Sinjai 92611';
         $opdPhone = $opd?->phone;
         $opdEmail = $opd?->email;
+
+        $signerTitle = $meeting->signer_title ?: ($opd?->leader_title ?: ('Kepala ' . $unitName));
+        $signerName = $meeting->signer_name ?: ($opd?->leader_name ?: '..................................................');
+        $signerNip = $meeting->signer_nip ?: ($opd?->leader_nip ?: '..................................................');
+        $signerRank = $meeting->signer_rank ?: ($opd?->leader_rank ?: null);
+        $signedAt = $meeting->photos_signed_at;
+
+        $timeFormatted = $meeting->start_time && $meeting->end_time
+            ? $meeting->start_time->format('H:i') . ' - ' . $meeting->end_time->format('H:i') . ' WITA'
+            : ($meeting->start_time ? $meeting->start_time->format('H:i') . ' WITA' : '-');
         ?>
         @if($logoBase64)
         <img src="{{ $logoBase64 }}" class="logo" alt="Logo">
@@ -205,7 +215,7 @@
 
     <table class="info-table">
         <tr>
-            <td class="label">Agenda Rapat</td>
+            <td class="label">Agenda</td>
             <td>: {{ $meeting->title }}</td>
         </tr>
         <tr>
@@ -213,8 +223,16 @@
             <td>: {{ $meeting->date ? $meeting->date->translatedFormat('l, d F Y') : '-' }}</td>
         </tr>
         <tr>
+            <td class="label">Waktu</td>
+            <td>: {{ $timeFormatted }}</td>
+        </tr>
+        <tr>
             <td class="label">Tempat</td>
             <td>: {{ $meeting->location ?? 'Online / Menyesuaikan' }}</td>
+        </tr>
+        <tr>
+            <td class="label">Pimpinan</td>
+            <td>: {{ $signerName }} ({{ $signerTitle }})</td>
         </tr>
     </table>
 

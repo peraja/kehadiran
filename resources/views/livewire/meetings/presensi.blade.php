@@ -4,6 +4,7 @@ use Livewire\Volt\Component;
 use App\Models\Meeting;
 use App\Services\BsreEsignService;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\On;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 new #[Layout('layouts.app')] class extends Component {
@@ -35,6 +36,12 @@ new #[Layout('layouts.app')] class extends Component {
             // Pegawai biasa: hanya bisa mengelola rapat yang dibuat sendiri
             $this->canEdit = $meeting->created_by === $user->id;
         }
+    }
+
+    #[On('meeting-updated')]
+    public function refreshMeeting(): void
+    {
+        $this->meeting->refresh();
     }
 
     public function openSignModal()

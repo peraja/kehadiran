@@ -66,12 +66,13 @@ new #[Layout('layouts.app')] class extends Component {
                 <h2 class="text-base font-bold text-slate-900">
                     Survei Kepuasan Masyarakat (SKM)
                 </h2>
+                <p class="text-xs text-slate-500 font-medium">Tautan resmi survei kepuasan masyarakat dari KemenPAN-RB untuk peserta rapat.</p>
             </div>
 
             <div>
                 <label for="skm_url" class="block text-sm font-bold text-slate-700 mb-1">Link SKM</label>
                 <div class="flex flex-col sm:flex-row gap-3">
-                    <input wire:model.live="skm_url" id="skm_url" type="url" class="flex-1 text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-xs transition-colors" placeholder="https://skm.go.id/share/instansi/..." required />
+                    <input wire:model="skm_url" id="skm_url" type="url" class="flex-1 text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-xs transition-colors" placeholder="https://skm.go.id/share/instansi/..." required />
                     @if($skm_url)
                     <a href="{{ $skm_url }}" target="_blank" rel="noopener noreferrer" class="inline-flex justify-center items-center px-4 py-2.5 bg-white hover:bg-slate-50 active:scale-95 text-slate-700 border border-slate-300 rounded-xl font-bold text-xs transition-all shadow-xs gap-1.5 shrink-0">
                         <svg class="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">

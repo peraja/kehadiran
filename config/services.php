@@ -47,4 +47,8 @@ return [
         'location' => env('BSRE_SIGN_LOCATION', 'Kabupaten Sinjai'),
     ],
 
+    'gemini' => [
+        'api_key' => env('GEMINI_API_KEY', ''),
+    ],
+
 ];
