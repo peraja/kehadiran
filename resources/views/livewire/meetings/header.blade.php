@@ -19,16 +19,26 @@ new class extends Component {
     public string $passphrase = '';
     public string $errorMessage = '';
 
+    /**
+     * True jika ada dokumen yang sudah di-TTE — perubahan penandatangan diblokir.
+     */
+    public function getSignerLockedProperty(): bool
+    {
+        return !empty($this->meeting->minutes_signed_at)
+            || !empty($this->meeting->attendance_signed_at)
+            || !empty($this->meeting->photos_signed_at);
+    }
+
     public function mount(Meeting $meeting)
     {
         $this->meeting = $meeting;
 
         $user = auth()->user();
-        if ($user->hasRole('pimpinan') && !$meeting->isSigner($user)) {
+        if ($user->hasActiveRole('pimpinan') && !$meeting->isSigner($user)) {
             abort(403, 'Anda hanya dapat mengakses rapat yang penandatangannya adalah Anda sendiri.');
         }
 
-        if ($user->hasRole('pegawai') && $meeting->created_by !== $user->id) {
+        if ($user->hasActiveRole('pegawai') && $meeting->created_by !== $user->id) {
             abort(403, 'Anda hanya dapat mengakses rapat yang Anda buat sendiri.');
         }
 
@@ -53,7 +63,7 @@ new class extends Component {
 
     public function executeSign(BsreEsignService $esignService)
     {
-        if (!auth()->user()->hasRole('pimpinan') || !$this->meeting->isSigner(auth()->user())) {
+        if (!auth()->user()->hasActiveRole('pimpinan') || !$this->meeting->isSigner(auth()->user())) {
             abort(403, 'Anda bukan pejabat penandatangan yang ditunjuk untuk rapat ini.');
         }
 
@@ -187,8 +197,8 @@ new class extends Component {
     {
         $user = auth()->user();
         if (!$user) return false;
-        if ($user->hasRole('admin')) return true;
-        if ($user->hasRole('admin_opd')) {
+        if ($user->hasActiveRole('admin')) return true;
+        if ($user->hasActiveRole('admin_opd')) {
             return $user->unit_name === $this->meeting->opd?->name || $user->unit_name === $this->meeting->creator?->unit_name;
         }
         // Pegawai biasa: hanya bisa mengelola rapat yang dibuat sendiri
@@ -232,10 +242,18 @@ new class extends Component {
             abort(403, 'Akses tidak diizinkan.');
         }
 
+        // Blokir semua perubahan jika ada dokumen yang sudah TTE
+        if ($this->signerLocked) {
+            session()->flash('error', 'Rapat tidak dapat diubah karena ada dokumen yang sudah TTE. Buka revisi terlebih dahulu.');
+            $this->dispatch('close-modal', 'edit-meeting-modal');
+            return;
+        }
+
         $validated = $this->validate();
-        if (auth()->user()->hasRole('admin')) {
+        if (auth()->user()->hasActiveRole('admin')) {
             $validated['opd_id'] = $this->selected_opd_id ?: null;
         }
+
         $this->meeting->update($validated);
         $this->meeting->refresh();
 
@@ -257,8 +275,8 @@ new class extends Component {
     public function with(): array
     {
         return [
-            'allOpds' => auth()->user()->hasRole('admin') ? Opd::where('is_active', true)->orderBy('name')->get() : collect(),
-            'isAdmin' => auth()->user()->hasRole('admin'),
+            'allOpds' => auth()->user()->hasActiveRole('admin') ? Opd::where('is_active', true)->orderBy('name')->get() : collect(),
+            'isAdmin' => auth()->user()->hasActiveRole('admin'),
         ];
     }
 }; ?>
@@ -279,7 +297,7 @@ new class extends Component {
         </div>
 
         <div class="flex flex-wrap items-center gap-2.5 shrink-0 w-full md:w-auto mt-2 md:mt-0">
-            @if(auth()->user()->hasRole('pimpinan') && $meeting->status === 'completed')
+            @if(auth()->user()->hasActiveRole('pimpinan') && $meeting->status === 'completed')
                 @if($meeting->isFullySigned())
                 <span class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-100/80 text-emerald-800 rounded-xl text-xs font-bold shadow-xs">
                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" /></svg>
@@ -360,44 +378,52 @@ new class extends Component {
                 </div>
             </div>
 
+            @if($this->signerLocked)
+            <div class="flex items-center gap-2.5 p-3.5 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 font-medium mb-5">
+                <svg class="w-4 h-4 text-amber-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                <span>Rapat dikunci — ada dokumen yang sudah TTE. Buka revisi untuk mengedit.</span>
+            </div>
+            @endif
+
             <form wire:submit="updateMeeting" class="space-y-5">
+                @php $locked = $this->signerLocked; $lockedClass = $locked ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'bg-white focus:ring-primary-500 focus:border-primary-500'; @endphp
                 <div>
                     <label for="edit_title" class="block text-sm font-bold text-slate-700 mb-1">Agenda</label>
-                    <input wire:model="title" id="edit_title" type="text" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Contoh: Rapat Koordinasi SPBE" required />
-                    @error('title') <span class="text-xs text-red-600 mt-1 block font-medium">{{ $message }}</span> @enderror
+                    <input wire:model="title" id="edit_title" type="text" class="w-full text-sm py-2.5 px-3 border border-slate-300 rounded-xl text-slate-900 shadow-sm transition-colors {{ $lockedClass }}" placeholder="Contoh: Rapat Koordinasi SPBE" {{ $locked ? 'disabled' : 'required' }} />
+                    @error('title') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
                     <div>
                         <label for="edit_date" class="block text-sm font-bold text-slate-700 mb-1">Tanggal</label>
-                        <input wire:model="date" id="edit_date" type="date" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" required />
-                        @error('date') <span class="text-xs text-red-600 mt-1 block font-medium">{{ $message }}</span> @enderror
+                        <input wire:model="date" id="edit_date" type="date" class="w-full text-sm py-2.5 px-3 border border-slate-300 rounded-xl text-slate-900 shadow-sm transition-colors {{ $lockedClass }}" {{ $locked ? 'disabled' : 'required' }} />
+                        @error('date') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                     </div>
 
                     <div class="flex gap-3">
                         <div class="w-1/2">
                             <label for="edit_start_time" class="block text-sm font-bold text-slate-700 mb-1">Waktu Mulai</label>
-                            <input wire:model="start_time" id="edit_start_time" type="time" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" required />
-                            @error('start_time') <span class="text-xs text-red-600 mt-1 block font-medium">{{ $message }}</span> @enderror
+                            <input wire:model="start_time" id="edit_start_time" type="time" class="w-full text-sm py-2.5 px-3 border border-slate-300 rounded-xl text-slate-900 shadow-sm transition-colors {{ $lockedClass }}" {{ $locked ? 'disabled' : 'required' }} />
+                            @error('start_time') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                         </div>
                         <div class="w-1/2">
                             <label for="edit_end_time" class="block text-sm font-bold text-slate-700 mb-1">Waktu Selesai</label>
-                            <input wire:model="end_time" id="edit_end_time" type="time" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" required />
-                            @error('end_time') <span class="text-xs text-red-600 mt-1 block font-medium">{{ $message }}</span> @enderror
+                            <input wire:model="end_time" id="edit_end_time" type="time" class="w-full text-sm py-2.5 px-3 border border-slate-300 rounded-xl text-slate-900 shadow-sm transition-colors {{ $lockedClass }}" {{ $locked ? 'disabled' : 'required' }} />
+                            @error('end_time') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                         </div>
                     </div>
                 </div>
 
                 <div>
                     <label for="edit_location" class="block text-sm font-bold text-slate-700 mb-1">Lokasi</label>
-                    <input wire:model="location" id="edit_location" type="text" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Contoh: Ruang Pola Kantor Bupati" required />
-                    @error('location') <span class="text-xs text-red-600 mt-1 block font-medium">{{ $message }}</span> @enderror
+                    <input wire:model="location" id="edit_location" type="text" class="w-full text-sm py-2.5 px-3 border border-slate-300 rounded-xl text-slate-900 shadow-sm transition-colors {{ $lockedClass }}" placeholder="Contoh: Ruang Pola Kantor Bupati" {{ $locked ? 'disabled' : 'required' }} />
+                    @error('location') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                 </div>
 
                 @if($isAdmin)
                 <div>
                     <label for="edit_selected_opd_id" class="block text-sm font-bold text-slate-700 mb-1">OPD</label>
-                    <select wire:model.live="selected_opd_id" id="edit_selected_opd_id" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" required>
+                    <select wire:model.live="selected_opd_id" id="edit_selected_opd_id" class="w-full text-sm py-2.5 px-3 border border-slate-300 rounded-xl text-slate-900 shadow-sm transition-colors {{ $lockedClass }}" {{ $locked ? 'disabled' : 'required' }}>
                         <option value="">-- Pilih OPD --</option>
                         @foreach($allOpds as $opdItem)
                         <option value="{{ $opdItem->id }}">{{ $opdItem->name }}</option>
@@ -409,7 +435,9 @@ new class extends Component {
                 <!-- Penandatangan Dokumen -->
                 <div>
                     <label for="edit_selected_signer_id" class="block text-sm font-bold text-slate-700 mb-1">Penandatangan Dokumen</label>
-                    <select wire:model.live="selected_signer_id" id="edit_selected_signer_id" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" {{ $isAdmin && empty($selected_opd_id) ? 'disabled' : '' }}>
+                    <select wire:model.live="selected_signer_id" id="edit_selected_signer_id"
+                        class="w-full text-sm py-2.5 px-3 border border-slate-300 rounded-xl text-slate-900 shadow-sm transition-colors {{ $lockedClass }}"
+                        {{ ($isAdmin && empty($selected_opd_id)) || $locked ? 'disabled' : '' }}>
                         @php
                             $leaderTitle = $opd?->leader_title ?: ($opd ? 'Kepala ' . $opd->name : 'Kepala OPD');
                         @endphp
@@ -422,9 +450,10 @@ new class extends Component {
 
                 <div class="mt-8 pt-6 border-t border-slate-100 flex justify-end gap-3">
                     <button type="button" x-on:click="$dispatch('close')" class="px-5 py-2.5 bg-white border border-slate-300 hover:bg-slate-50 active:scale-95 text-slate-700 rounded-xl font-bold text-sm transition-all shadow-sm">
-                        Batal
+                        {{ $locked ? 'Tutup' : 'Batal' }}
                     </button>
 
+                    @if(!$locked)
                     <button type="submit" wire:loading.attr="disabled" wire:target="updateMeeting" class="inline-flex items-center justify-center px-5 py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl font-bold text-sm transition-all shadow-sm gap-2">
                         <svg wire:loading.remove wire:target="updateMeeting" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
@@ -435,6 +464,7 @@ new class extends Component {
                         </svg>
                         <span>Simpan Perubahan</span>
                     </button>
+                    @endif
                 </div>
             </form>
         </div>
@@ -577,7 +607,7 @@ new class extends Component {
                 </div>
 
                 <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
-                    <button type="button" x-on:click="$dispatch('close')" wire:click="closeSignModal" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-700 font-bold text-sm rounded-xl transition-all shadow-sm">
+                    <button type="button" x-on:click="$dispatch('close')" wire:click="closeSignModal" class="px-4 py-2.5 bg-white border border-slate-300 hover:bg-slate-50 active:scale-95 text-slate-700 font-bold text-sm rounded-xl transition-all shadow-sm">
                         Batal
                     </button>
                     <button type="submit" wire:loading.attr="disabled" wire:target="executeSign" class="inline-flex items-center justify-center px-5 py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white text-sm font-bold rounded-xl shadow-sm transition-all gap-2">

@@ -81,7 +81,7 @@ new class extends Component
                                     Daftar Rapat
                                 </a>
                             </li>
-                            @if(auth()->user()->hasRole('admin'))
+                            @if(auth()->user()->hasActiveRole('admin'))
                             <li class="mt-4">
                                 <div class="text-[10px] font-extrabold uppercase tracking-widest text-slate-500 px-3.5 mb-2">
                                     Administrator
@@ -113,7 +113,7 @@ new class extends Component
                                     Pengaturan
                                 </a>
                             </li>
-                            @elseif(auth()->user()->hasRole('admin_opd'))
+                            @elseif(auth()->user()->hasActiveRole('admin_opd'))
                             <li class="mt-4">
                                 <div class="text-[10px] font-extrabold uppercase tracking-widest text-slate-500 px-3.5 mb-2">
                                     Pengaturan
@@ -179,7 +179,7 @@ new class extends Component
                     </ul>
                 </div>
 
-                @if(auth()->user()->hasRole('admin'))
+                @if(auth()->user()->hasActiveRole('admin'))
                 <div>
                     <div class="text-[10px] font-extrabold uppercase tracking-widest text-slate-500 px-3 mb-3">
                         Administrator
@@ -215,7 +215,7 @@ new class extends Component
                         </li>
                     </ul>
                 </div>
-                @elseif(auth()->user()->hasRole('admin_opd'))
+                @elseif(auth()->user()->hasActiveRole('admin_opd'))
                 <div>
                     <div class="text-[10px] font-extrabold uppercase tracking-widest text-slate-500 px-3 mb-3">
                         Pengaturan

@@ -69,36 +69,30 @@ new #[Layout('layouts.guest')] class extends Component {
                 <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
                 Tanda Tangan Elektronik Sah
             </span>
-            <h2 class="text-xl font-extrabold text-slate-900">{{ $docTitle }}</h2>
-            <p class="text-xs text-slate-500 mt-1">Dokumen resmi Pemerintah Kabupaten Sinjai tersertifikasi BSrE</p>
         </div>
 
         <!-- Verification Detail Card -->
         <div class="bg-white border border-slate-200 rounded-2xl p-4 text-left divide-y divide-slate-100 shadow-2xs">
-            <div class="py-2.5 flex justify-between items-center gap-4">
-                <span class="text-slate-500 font-medium text-sm">Agenda Rapat</span>
-                <span class="font-bold text-slate-900 text-right">{{ $meeting->title }}</span>
-            </div>
-            <div class="py-2.5 flex justify-between items-center gap-4">
-                <span class="text-slate-500 font-medium text-sm">Instansi</span>
-                <span class="font-semibold text-slate-800 text-right">{{ $opdName }}</span>
+            <div class="py-2.5 flex justify-between items-start gap-4">
+                <span class="text-slate-500 font-medium text-sm shrink-0 pt-0.5">Instansi</span>
+                <span class="font-semibold text-slate-800 text-right leading-snug break-words">Pemerintah Kabupaten Sinjai</span>
             </div>
             <div class="py-2.5 flex justify-between items-start gap-4">
                 <span class="text-slate-500 font-medium text-sm shrink-0 pt-0.5">Penandatangan</span>
-                <div class="text-right">
-                    <span class="font-bold text-slate-900 block">{{ $signerName }}</span>
-                    <span class="text-xs text-slate-500 block">{{ $signerTitle }}</span>
+                <div class="text-right min-w-0">
+                    <span class="font-bold text-slate-900 block leading-snug break-words">{{ $signerName }}</span>
+                    <span class="text-xs text-slate-500 block mt-0.5 leading-snug break-words">{{ $signerTitle }}</span>
                     @if($signerNip && $signerNip !== '-')
-                    <span class="text-xs text-slate-400 font-mono block">NIP. {{ $signerNip }}</span>
+                    <span class="text-xs text-slate-400 font-mono block mt-0.5">NIP. {{ $signerNip }}</span>
                     @endif
                 </div>
             </div>
             <div class="py-2.5 flex justify-between items-center gap-4">
-                <span class="text-slate-500 font-medium text-sm">Waktu TTE</span>
+                <span class="text-slate-500 font-medium text-sm shrink-0">Waktu TTE</span>
                 <span class="font-bold text-emerald-700 font-mono text-right text-sm">{{ $signedAt->translatedFormat('d F Y, H:i') }} WITA</span>
             </div>
             <div class="py-2.5 flex justify-between items-center gap-4">
-                <span class="text-slate-500 font-medium text-sm">Otoritas Sertifikat</span>
+                <span class="text-slate-500 font-medium text-sm shrink-0">Sertifikat</span>
                 <span class="font-bold text-slate-800 text-right text-xs">BSrE - BSSN</span>
             </div>
         </div>
@@ -109,7 +103,7 @@ new #[Layout('layouts.guest')] class extends Component {
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
-                <span>Unduh Dokumen PDF Resmi</span>
+                <span>Unduh PDF</span>
             </a>
 
             <div>

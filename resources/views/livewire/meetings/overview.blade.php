@@ -12,11 +12,11 @@ new #[Layout('layouts.app')] class extends Component {
         $this->meeting = $meeting;
 
         $user = auth()->user();
-        if ($user->hasRole('pimpinan') && !$meeting->isSigner($user)) {
+        if ($user->hasActiveRole('pimpinan') && !$meeting->isSigner($user)) {
             abort(403, 'Anda hanya dapat mengakses rapat yang penandatangannya adalah Anda sendiri.');
         }
 
-        if ($user->hasRole('pegawai') && $meeting->created_by !== $user->id) {
+        if ($user->hasActiveRole('pegawai') && $meeting->created_by !== $user->id) {
             abort(403, 'Anda hanya dapat mengakses rapat yang Anda buat sendiri.');
         }
     }

@@ -23,17 +23,17 @@ new #[Layout('layouts.app')] class extends Component {
         $this->meeting = $meeting;
 
         $user = auth()->user();
-        if ($user->hasRole('pimpinan') && !$meeting->isSigner($user)) {
+        if ($user->hasActiveRole('pimpinan') && !$meeting->isSigner($user)) {
             abort(403, 'Anda hanya dapat mengakses dokumentasi rapat yang penandatangannya adalah Anda sendiri.');
         }
 
-        if ($user->hasRole('pegawai') && $meeting->created_by !== $user->id) {
+        if ($user->hasActiveRole('pegawai') && $meeting->created_by !== $user->id) {
             abort(403, 'Anda hanya dapat mengakses dokumentasi rapat yang Anda buat sendiri.');
         }
 
-        if ($user->hasRole('admin')) {
+        if ($user->hasActiveRole('admin')) {
             $this->canEdit = true;
-        } elseif ($user->hasRole('admin_opd')) {
+        } elseif ($user->hasActiveRole('admin_opd')) {
             $this->canEdit = $user->unit_name === $meeting->opd?->name || $user->unit_name === $meeting->creator?->unit_name;
         } else {
             // Pegawai biasa: hanya bisa mengelola rapat yang dibuat sendiri
@@ -59,7 +59,7 @@ new #[Layout('layouts.app')] class extends Component {
 
     public function executeSign(BsreEsignService $esignService)
     {
-        if (!auth()->user()->hasRole('pimpinan') || !$this->meeting->isSigner(auth()->user())) {
+        if (!auth()->user()->hasActiveRole('pimpinan') || !$this->meeting->isSigner(auth()->user())) {
             abort(403, 'Anda bukan pejabat penandatangan yang ditunjuk untuk rapat ini.');
         }
 
@@ -83,22 +83,25 @@ new #[Layout('layouts.app')] class extends Component {
 
     public function unlockForRevision(): void
     {
-        if (!$this->canEdit) {
-            abort(403, 'Akses tidak diizinkan.');
+        $user = auth()->user();
+
+        // Hanya admin, admin_opd, atau pegawai penyelenggara yang boleh membuka kunci
+        if (!$this->canEdit || $user->hasActiveRole('pimpinan')) {
+            abort(403, 'Akses tidak diizinkan. Pembukaan kunci hanya dapat dilakukan oleh penyelenggara atau admin.');
         }
 
-        if ($this->meeting->photos_pdf_path && \Illuminate\Support\Facades\Storage::disk('public')->exists($this->meeting->photos_pdf_path)) {
-            \Illuminate\Support\Facades\Storage::disk('public')->delete($this->meeting->photos_pdf_path);
+        if ($this->meeting->photos_signed_path && \Illuminate\Support\Facades\Storage::disk('public')->exists($this->meeting->photos_signed_path)) {
+            \Illuminate\Support\Facades\Storage::disk('public')->delete($this->meeting->photos_signed_path);
         }
 
         $this->meeting->update([
             'photos_signed_at' => null,
             'photos_signed_by' => null,
-            'photos_pdf_path' => null,
+            'photos_signed_path' => null,
         ]);
 
         $this->meeting->refresh();
-        session()->flash('message', 'Kunci dokumentasi dibuka untuk revisi. Status TTE telah direset, silakan perbarui foto lalu minta Pimpinan untuk menandatangani ulang.');
+        session()->flash('message', 'Kunci dokumentasi dibuka. Silakan perbarui foto, lalu minta Pimpinan untuk TTE ulang.');
     }
 
     public function updatedPhotos()
@@ -217,7 +220,7 @@ new #[Layout('layouts.app')] class extends Component {
                     <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" /></svg>
                     <span>Sudah TTE</span>
                 </span>
-                @elseif(auth()->user()->hasRole('pimpinan') && $meeting->status === 'completed')
+                @elseif(auth()->user()->hasActiveRole('pimpinan') && $meeting->status === 'completed')
                 <button type="button" x-data="" x-on:click.prevent="$dispatch('open-modal', 'sign-photos-modal'); $wire.openSignModal()" class="inline-flex justify-center items-center px-4 py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl font-bold text-sm transition-all shadow-sm gap-2">
                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
@@ -247,19 +250,17 @@ new #[Layout('layouts.app')] class extends Component {
 
         @if($meeting->photos_signed_at)
         <!-- Locked Banner & Read-Only Content (TTE Signed) -->
-        <div class="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs sm:text-sm font-medium">
+        <div class="flex items-center gap-2.5 p-3.5 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 font-medium justify-between flex-wrap">
             <div class="flex items-center gap-2.5">
-                <svg class="w-5 h-5 text-amber-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                </svg>
-                <span>Dokumentasi foto telah disahkan secara digital (TTE BSrE) dan dikunci.</span>
+                <svg class="w-4 h-4 text-amber-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                <span>Dokumentasi dikunci — sudah TTE.</span>
             </div>
             @if($canEdit)
             <button wire:click="unlockForRevision"
-                    wire:confirm="Membuka kunci dokumentasi akan membatalkan status TTE saat ini dan mewajibkan Pimpinan melakukan TTE ulang setelah perbaikan selesai. Lanjutkan revisi?"
+                    wire:confirm="Status TTE akan direset dan dokumen dibuka untuk revisi. Pimpinan perlu TTE ulang setelahnya. Lanjutkan?"
                     class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-amber-600 hover:bg-amber-700 active:scale-95 text-white rounded-xl text-xs font-bold transition-all shadow-sm shrink-0 self-start sm:self-auto">
-                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" /></svg>
-                <span>Buka Kunci untuk Revisi</span>
+            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" /></svg>
+            <span>Buka Revisi</span>
             </button>
             @endif
         </div>
@@ -312,8 +313,8 @@ new #[Layout('layouts.app')] class extends Component {
 
                     <template x-if="!clientError">
                         <div>
-                            @error('photos') <span class="text-xs text-red-600 mt-1 block font-medium">{{ $message }}</span> @enderror
-                            @error('photos.*') <span class="text-xs text-red-600 mt-1 block font-medium">{{ $message }}</span> @enderror
+                            @error('photos') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
+                            @error('photos.*') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                         </div>
                     </template>
                 </div>
@@ -536,7 +537,7 @@ new #[Layout('layouts.app')] class extends Component {
                 </div>
 
                 <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
-                    <button type="button" x-on:click="$dispatch('close')" wire:click="closeSignModal" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-700 font-bold text-sm rounded-xl transition-all shadow-sm">
+                    <button type="button" x-on:click="$dispatch('close')" wire:click="closeSignModal" class="px-4 py-2.5 bg-white border border-slate-300 hover:bg-slate-50 active:scale-95 text-slate-700 font-bold text-sm rounded-xl transition-all shadow-sm">
                         Batal
                     </button>
                     <button type="submit" wire:loading.attr="disabled" wire:target="executeSign" class="inline-flex items-center justify-center px-5 py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white text-sm font-bold rounded-xl shadow-sm transition-all gap-2">

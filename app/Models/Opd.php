@@ -328,7 +328,7 @@ class Opd extends Model
                             ]);
                         }
                         if (!$leaderUser->hasRole('admin')) {
-                            $leaderUser->syncRoles(['pimpinan']);
+                            $leaderUser->assignRole('pimpinan');
                         }
                     }
                     $headFound = true;
@@ -404,7 +404,7 @@ class Opd extends Model
                         ]);
                     }
                     if (!$signerUser->hasRole('admin')) {
-                        $signerUser->syncRoles(['pimpinan']);
+                        $signerUser->assignRole('pimpinan');
                     }
                 }
 
@@ -456,7 +456,7 @@ class Opd extends Model
                 }
 
                 if (!$adminUser->hasRole('admin')) {
-                    $adminUser->syncRoles(['admin_opd']);
+                    $adminUser->assignRole('admin_opd');
                 }
             }
 

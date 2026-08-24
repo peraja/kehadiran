@@ -19,7 +19,7 @@ new #[Layout('layouts.app')] class extends Component {
     public $name = '';
     public $nip = '';
     public $nik = '';
-    public $role = 'pegawai';
+    public array $roles = ['pegawai'];
     public $password = '';
     public $unit_name = '';
     public $jabatan = '';
@@ -31,7 +31,7 @@ new #[Layout('layouts.app')] class extends Component {
     public function mount()
     {
         // Restrict access to Super Admin only
-        if (!auth()->user()->hasRole('admin')) {
+        if (!auth()->user()->hasActiveRole('admin')) {
             abort(403, 'Akses khusus Super Admin.');
         }
     }
@@ -57,10 +57,10 @@ new #[Layout('layouts.app')] class extends Component {
     {
         $this->resetValidation();
         $this->reset(['userId', 'name', 'nip', 'nik', 'password', 'unit_name', 'jabatan', 'apiSynced', 'apiStatusMessage']);
-        $this->role = 'pegawai';
+        $this->roles = ['pegawai'];
 
         // If current user is admin_opd, prefill unit_name
-        if (auth()->user()->hasRole('admin_opd') && !auth()->user()->hasRole('admin')) {
+        if (auth()->user()->hasActiveRole('admin_opd') && !auth()->user()->hasActiveRole('admin')) {
             $this->unit_name = auth()->user()->unit_name;
         }
 
@@ -78,7 +78,10 @@ new #[Layout('layouts.app')] class extends Component {
         $this->name = $user->name;
         $this->nip = $user->nip ?? '';
         $this->nik = $user->nik ?? '';
-        $this->role = $user->roles->first()?->name ?? 'pegawai';
+        $this->roles = $user->roles->pluck('name')->toArray();
+        if (empty($this->roles)) {
+            $this->roles = ['pegawai'];
+        }
         $this->unit_name = $user->unit_name ?? '';
         $this->jabatan = $user->jabatan ?? '';
         $this->password = '';
@@ -141,31 +144,36 @@ new #[Layout('layouts.app')] class extends Component {
 
     public function saveUser()
     {
-        if ($this->isEdit) {
-            $rules = [
-                'name' => 'required|string|max:255',
-                'nip' => 'required|string|max:30|unique:users,nip,' . $this->userId,
-                'nik' => 'nullable|string|max:16',
-                'role' => 'required|in:admin,admin_opd,pimpinan,pegawai',
-                'unit_name' => 'nullable|string|max:255',
-                'jabatan' => 'nullable|string|max:255',
-            ];
+        $rules = [
+            'name' => 'required|string|max:255',
+            'nip' => 'required|string|max:30|unique:users,nip,' . ($this->isEdit ? $this->userId : 'NULL') . ',id',
+            'nik' => 'nullable|string|max:16',
+            'roles' => 'required|array|min:1',
+            'roles.*' => 'in:admin,admin_opd,pimpinan,pegawai',
+            'unit_name' => 'nullable|string|max:255',
+            'jabatan' => 'nullable|string|max:255',
+        ];
 
-            // Prevent admin_opd from elevating user to admin
-            if (!auth()->user()->hasRole('admin') && $this->role === 'admin') {
-                $this->role = 'admin_opd';
+        // Prevent non-super-admin from assigning 'admin' role
+        if (!auth()->user()->hasActiveRole('admin')) {
+            $this->roles = array_values(array_diff($this->roles, ['admin']));
+            if (empty($this->roles)) {
+                $this->roles = ['admin_opd'];
             }
+        }
 
-            $messages = [
-                'name.required' => 'Nama wajib diisi.',
-                'nip.required' => 'NIP wajib diisi.',
-                'nip.unique' => 'NIP sudah terdaftar.',
-                'role.required' => 'Role wajib dipilih.',
-                'role.in' => 'Role tidak valid.',
-            ];
+        $messages = [
+            'name.required' => 'Nama wajib diisi.',
+            'nip.required' => 'NIP wajib diisi.',
+            'nip.unique' => 'NIP sudah terdaftar.',
+            'roles.required' => 'Minimal satu peran wajib dipilih.',
+            'roles.min' => 'Minimal satu peran wajib dipilih.',
+            'roles.*.in' => 'Peran yang dipilih tidak valid.',
+        ];
 
-            $validated = $this->validate($rules, $messages);
+        $validated = $this->validate($rules, $messages);
 
+        if ($this->isEdit) {
             $user = User::findOrFail($this->userId);
             $user->update([
                 'name' => $validated['name'],
@@ -175,34 +183,10 @@ new #[Layout('layouts.app')] class extends Component {
                 'jabatan' => $validated['jabatan'],
             ]);
 
-            $user->syncRoles([$validated['role']]);
+            $user->syncRoles($validated['roles']);
 
             session()->flash('message', 'Pengguna berhasil diperbarui.');
         } else {
-            $rules = [
-                'name' => 'required|string|max:255',
-                'nip' => 'required|string|max:30|unique:users,nip',
-                'nik' => 'nullable|string|max:16',
-                'role' => 'required|in:admin,admin_opd,pimpinan,pegawai',
-                'unit_name' => 'nullable|string|max:255',
-                'jabatan' => 'nullable|string|max:255',
-            ];
-
-            // Prevent admin_opd from elevating user to admin
-            if (!auth()->user()->hasRole('admin') && $this->role === 'admin') {
-                $this->role = 'admin_opd';
-            }
-
-            $messages = [
-                'name.required' => 'Nama wajib diisi.',
-                'nip.required' => 'NIP wajib diisi.',
-                'nip.unique' => 'NIP sudah terdaftar.',
-                'role.required' => 'Role wajib dipilih.',
-                'role.in' => 'Role tidak valid.',
-            ];
-
-            $validated = $this->validate($rules, $messages);
-
             $user = User::create([
                 'name' => $validated['name'],
                 'nip' => $validated['nip'],
@@ -212,13 +196,14 @@ new #[Layout('layouts.app')] class extends Component {
                 'jabatan' => $validated['jabatan'],
             ]);
 
-            $user->assignRole($validated['role']);
+            $user->syncRoles($validated['roles']);
 
             session()->flash('message', 'Pengguna berhasil ditambahkan.');
         }
 
         $this->dispatch('close-modal', 'user-form-modal');
-        $this->reset(['userId', 'name', 'nip', 'unit_name', 'jabatan', 'password', 'apiSynced', 'apiStatusMessage']);
+        $this->reset(['userId', 'name', 'nip', 'nik', 'roles', 'unit_name', 'jabatan', 'password', 'apiSynced', 'apiStatusMessage']);
+        $this->roles = ['pegawai'];
     }
 
     public function deleteUser($id)
@@ -237,7 +222,7 @@ new #[Layout('layouts.app')] class extends Component {
     {
         $query = User::with('roles');
 
-        if (!auth()->user()->hasRole('admin')) {
+        if (!auth()->user()->hasActiveRole('admin')) {
             $query->where('unit_name', auth()->user()->unit_name);
         }
 
@@ -277,7 +262,7 @@ new #[Layout('layouts.app')] class extends Component {
                 Master Pengguna
             </h1>
             <p class="text-sm font-medium text-slate-500">
-                {{ auth()->user()->hasRole('admin') ? 'Pemerintah Kabupaten Sinjai' : (auth()->user()->unit_name ?? 'Pemkab Sinjai') }}
+                {{ auth()->user()->hasActiveRole('admin') ? 'Pemerintah Kabupaten Sinjai' : (auth()->user()->unit_name ?? 'Pemkab Sinjai') }}
             </p>
         </div>
 
@@ -389,8 +374,14 @@ new #[Layout('layouts.app')] class extends Component {
                         </td>
 
                         <!-- Peran -->
-                        <td class="py-4 px-6 text-left whitespace-nowrap">
-                            <x-user-role-badge :role="$u->roles->first()?->name ?? 'pegawai'" />
+                        <td class="py-4 px-6 text-left">
+                            <div class="flex flex-wrap gap-1.5 max-w-[220px]">
+                                @forelse($u->sortedRoles() as $roleObj)
+                                    <x-user-role-badge :role="$roleObj->name" />
+                                @empty
+                                    <x-user-role-badge role="pegawai" />
+                                @endforelse
+                            </div>
                         </td>
 
                         <!-- OPD & Jabatan -->
@@ -408,13 +399,13 @@ new #[Layout('layouts.app')] class extends Component {
                         <!-- Aksi -->
                         <td class="py-4 px-6 text-right whitespace-nowrap">
                             <div class="flex items-center justify-end gap-2">
-                                <button wire:click="openEditModal({{ $u->id }})" class="p-2 text-slate-400 hover:text-primary-700 hover:bg-primary-50 rounded-xl transition-colors" title="Edit Pengguna">
+                                <button wire:click="openEditModal({{ $u->id }})" class="p-2 text-slate-400 hover:text-primary-700 hover:bg-primary-50 rounded-xl active:scale-95 transition-all" title="Edit Pengguna">
                                     <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
                                     </svg>
                                 </button>
                                 @if($u->id !== auth()->id())
-                                <button wire:click="deleteUser({{ $u->id }})" wire:confirm="Apakah Anda yakin ingin menghapus pengguna '{{ $u->name }}'?" class="p-2 text-slate-400 hover:text-rose-700 hover:bg-rose-50 rounded-xl transition-colors" title="Hapus Pengguna">
+                                <button wire:click="deleteUser({{ $u->id }})" wire:confirm="Apakah Anda yakin ingin menghapus pengguna '{{ $u->name }}'?" class="p-2 text-slate-400 hover:text-rose-700 hover:bg-rose-50 rounded-xl active:scale-95 transition-all" title="Hapus Pengguna">
                                     <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                                     </svg>
@@ -477,10 +468,10 @@ new #[Layout('layouts.app')] class extends Component {
                 <div>
                     <label for="name" class="block text-sm font-bold text-slate-700 mb-1">Nama Lengkap</label>
                     <input wire:model="name" id="name" type="text" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Contoh: Ahmad Yani, S.Kom" required />
-                    @error('name') <span class="text-xs text-red-600 mt-1 block font-medium">{{ $message }}</span> @enderror
+                    @error('name') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                 </div>
 
-                @if($role === 'pimpinan')
+                @if(in_array('pimpinan', $roles))
                 <!-- NIP & NIK (1 Baris untuk Pimpinan) -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <!-- NIP dengan Cek SIMPEG -->
@@ -500,14 +491,14 @@ new #[Layout('layouts.app')] class extends Component {
                                 <span>Cek</span>
                             </button>
                         </div>
-                        @error('nip') <span class="text-xs text-red-600 mt-1 block font-medium">{{ $message }}</span> @enderror
+                        @error('nip') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                     </div>
 
                     <!-- NIK -->
                     <div>
                         <label for="nik" class="block text-sm font-bold text-slate-700 mb-1">NIK</label>
                         <input wire:model="nik" id="nik" type="text" maxlength="16" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 font-mono focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Contoh: 7307010101850001" />
-                        @error('nik') <span class="text-xs text-red-600 mt-1 block font-medium">{{ $message }}</span> @enderror
+                        @error('nik') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                     </div>
                 </div>
                 @else
@@ -528,7 +519,7 @@ new #[Layout('layouts.app')] class extends Component {
                             <span>Cek</span>
                         </button>
                     </div>
-                    @error('nip') <span class="text-xs text-red-600 mt-1 block font-medium">{{ $message }}</span> @enderror
+                    @error('nip') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                 </div>
                 @endif
 
@@ -551,34 +542,56 @@ new #[Layout('layouts.app')] class extends Component {
                 </div>
                 @endif
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <!-- Peran (Role) -->
-                    <div>
-                        <label for="role" class="block text-sm font-bold text-slate-700 mb-1">Role</label>
-                        <select wire:model.live="role" id="role" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors">
-                            <option value="pegawai">Pegawai</option>
-                            <option value="pimpinan">Pimpinan</option>
-                            <option value="admin_opd">Admin OPD</option>
-                            @if(auth()->user()->hasRole('admin'))
-                            <option value="admin">Super Admin</option>
-                            @endif
-                        </select>
-                        @error('role') <span class="text-xs text-red-600 mt-1 block font-medium">{{ $message }}</span> @enderror
-                    </div>
+                <!-- Penugasan Peran -->
+                <div>
+                    <label class="block text-sm font-bold text-slate-700 mb-2">
+                        Role
+                    </label>
+                    <div class="flex flex-wrap items-center gap-2 sm:gap-2.5">
+                        @if(auth()->user()->hasActiveRole('admin'))
+                        <!-- Super Admin -->
+                        <label class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border cursor-pointer select-none transition-all text-xs font-bold {{ in_array('admin', $roles) ? 'bg-purple-50 text-purple-900 border-purple-300 ring-2 ring-purple-500/20 shadow-2xs' : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:bg-slate-50' }}">
+                            <input type="checkbox" wire:model.live="roles" value="admin" class="w-4 h-4 rounded text-purple-600 focus:ring-purple-500 border-slate-300">
+                            <span>Super Admin</span>
+                        </label>
+                        @endif
 
+                        <!-- Pimpinan -->
+                        <label class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border cursor-pointer select-none transition-all text-xs font-bold {{ in_array('pimpinan', $roles) ? 'bg-indigo-50 text-indigo-900 border-indigo-300 ring-2 ring-indigo-500/20 shadow-2xs' : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:bg-slate-50' }}">
+                            <input type="checkbox" wire:model.live="roles" value="pimpinan" class="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 border-slate-300">
+                            <span>Pimpinan</span>
+                        </label>
+
+                        <!-- Admin OPD -->
+                        <label class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border cursor-pointer select-none transition-all text-xs font-bold {{ in_array('admin_opd', $roles) ? 'bg-emerald-50 text-emerald-900 border-emerald-300 ring-2 ring-emerald-500/20 shadow-2xs' : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:bg-slate-50' }}">
+                            <input type="checkbox" wire:model.live="roles" value="admin_opd" class="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 border-slate-300">
+                            <span>Admin OPD</span>
+                        </label>
+
+                        <!-- Pegawai -->
+                        <label class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border cursor-pointer select-none transition-all text-xs font-bold {{ in_array('pegawai', $roles) ? 'bg-slate-100 text-slate-900 border-slate-300 ring-2 ring-slate-400/20 shadow-2xs' : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:bg-slate-50' }}">
+                            <input type="checkbox" wire:model.live="roles" value="pegawai" class="w-4 h-4 rounded text-slate-700 focus:ring-slate-500 border-slate-300">
+                            <span>Pegawai</span>
+                        </label>
+                    </div>
+                    @error('roles') <span class="text-xs text-rose-600 mt-1.5 block font-medium">{{ $message }}</span> @enderror
+                    @error('roles.*') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <!-- Jabatan -->
                     <div>
                         <label for="jabatan" class="block text-sm font-bold text-slate-700 mb-1">Jabatan</label>
                         <input wire:model="jabatan" id="jabatan" type="text" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Contoh: Pranata Komputer Ahli Muda" />
-                        @error('jabatan') <span class="text-xs text-red-600 mt-1 block font-medium">{{ $message }}</span> @enderror
+                        @error('jabatan') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                     </div>
-                </div>
 
-                <!-- OPD -->
-                <div>
-                    <label for="unit_name" class="block text-sm font-bold text-slate-700 mb-1">OPD</label>
-                    <input wire:model="unit_name" id="unit_name" type="text" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Contoh: Dinas Komunikasi Informatika dan Persandian" />
-                    @error('unit_name') <span class="text-xs text-red-600 mt-1 block font-medium">{{ $message }}</span> @enderror
+                    <!-- OPD -->
+                    <div>
+                        <label for="unit_name" class="block text-sm font-bold text-slate-700 mb-1">OPD</label>
+                        <input wire:model="unit_name" id="unit_name" type="text" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Contoh: Dinas Komunikasi Informatika dan Persandian" />
+                        @error('unit_name') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
+                    </div>
                 </div>
 
                 <div class="mt-8 pt-6 border-t border-slate-100 flex justify-end gap-3">

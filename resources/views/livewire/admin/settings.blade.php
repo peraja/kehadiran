@@ -9,7 +9,7 @@ new #[Layout('layouts.app')] class extends Component {
 
     public function mount(): void
     {
-        if (!auth()->user()->hasRole('admin')) {
+        if (!auth()->user()->hasActiveRole('admin')) {
             abort(403, 'Akses khusus Super Admin.');
         }
 
@@ -18,7 +18,7 @@ new #[Layout('layouts.app')] class extends Component {
 
     public function saveSettings(): void
     {
-        if (!auth()->user()->hasRole('admin')) {
+        if (!auth()->user()->hasActiveRole('admin')) {
             abort(403);
         }
 
@@ -81,7 +81,7 @@ new #[Layout('layouts.app')] class extends Component {
                     </a>
                     @endif
                 </div>
-                @error('skm_url') <span class="text-xs text-red-600 mt-1 block font-medium">{{ $message }}</span> @enderror
+                @error('skm_url') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
             </div>
         </div>
 

@@ -174,7 +174,7 @@ class BsreEsignTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertSee('Tanda Tangan Elektronik Sah');
-        $response->assertSee('Rapat Koordinasi SPBE');
+        $response->assertSee('Kepala Dinas Kominfo');
         $response->assertSee('Dr. H. Contoh, M.Si');
     }
 

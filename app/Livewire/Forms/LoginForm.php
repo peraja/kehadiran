@@ -81,6 +81,7 @@ class LoginForm extends Form
                 }
 
                 \Illuminate\Support\Facades\Auth::login($user, $this->remember);
+                $user->currentRole(); // Inisialisasi session active_role berdasarkan prioritas tertinggi
                 \Illuminate\Support\Facades\RateLimiter::clear($this->throttleKey());
                 return;
             }
@@ -90,6 +91,7 @@ class LoginForm extends Form
 
         // 2. Fallback to local authentication (for default admin 'kalamangna' or users with local password)
         if (\Illuminate\Support\Facades\Auth::attempt(['nip' => $nip, 'password' => $password], $this->remember)) {
+            \Illuminate\Support\Facades\Auth::user()->currentRole(); // Inisialisasi session active_role
             \Illuminate\Support\Facades\RateLimiter::clear($this->throttleKey());
             return;
         }

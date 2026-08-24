@@ -27,23 +27,23 @@ class MeetingExportController extends Controller
             abort(403);
         }
 
-        if ($user->hasRole('admin')) {
+        if ($user->hasActiveRole('admin')) {
             return;
         }
 
-        if ($user->hasRole('admin_opd')) {
+        if ($user->hasActiveRole('admin_opd')) {
             if ($user->unit_name === $meeting->creator?->unit_name || $user->unit_name === $meeting->opd?->name) {
                 return;
             }
         }
 
-        if ($user->hasRole('pimpinan')) {
+        if ($user->hasActiveRole('pimpinan')) {
             if ($meeting->isSigner($user)) {
                 return;
             }
         }
 
-        if ($user->hasRole('pegawai')) {
+        if ($user->hasActiveRole('pegawai')) {
             if ($meeting->created_by === $user->id) {
                 return;
             }

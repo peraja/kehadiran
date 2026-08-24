@@ -256,7 +256,7 @@ new #[Layout('layouts.guest')] class extends Component {
             <div class="flex flex-col sm:flex-row sm:items-start gap-3">
                 <div class="flex-1 w-full">
                     <input wire:model="nip" id="nip" type="text"
-                        class="block w-full py-3 px-4 rounded-xl border border-slate-300 text-sm font-mono focus:ring-primary-500 focus:border-primary-500 transition-colors {{ $nip_checked ? 'bg-slate-50 text-slate-500 opacity-70' : 'bg-white' }}"
+                        class="block w-full py-2.5 px-3 rounded-xl border border-slate-300 text-sm font-mono focus:ring-primary-500 focus:border-primary-500 transition-colors {{ $nip_checked ? 'bg-slate-50 text-slate-500 opacity-70' : 'bg-white' }}"
                         placeholder="Contoh: 198501012010011001"
                         :readonly="$nip_checked"
                         wire:keydown.enter.prevent="checkNip"
@@ -358,11 +358,11 @@ new #[Layout('layouts.guest')] class extends Component {
         </div>
 
         <div class="pt-6">
-            <button type="submit" wire:loading.attr="disabled" wire:target="submitAttendance" class="w-full flex justify-center items-center px-6 py-4 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-2xl font-extrabold text-base transition-all shadow-sm gap-2">
-                <svg wire:loading.remove wire:target="submitAttendance" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <button type="submit" wire:loading.attr="disabled" wire:target="confirmCheckIn" class="w-full flex justify-center items-center px-6 py-3 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl font-bold text-sm transition-all shadow-sm gap-2">
+                <svg wire:loading.remove wire:target="confirmCheckIn" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                <svg wire:loading wire:target="submitAttendance" class="animate-spin w-5 h-5 text-white" fill="none" viewBox="0 0 24 24">
+                <svg wire:loading wire:target="confirmCheckIn" class="animate-spin w-4 h-4 text-white" fill="none" viewBox="0 0 24 24">
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
                 </svg>

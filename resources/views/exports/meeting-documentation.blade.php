@@ -165,7 +165,7 @@
 <body>
     @if($meeting->photos_signed_at)
     <footer>
-        Dokumen ini telah ditandatangani secara elektronik menggunakan sertifikat elektronik yang diterbitkan oleh Balai Sertifikasi Elektronik (BSrE), BSSN.
+        Dokumen ini telah ditandatangani secara elektronik menggunakan sertifikat elektronik yang diterbitkan oleh BSrE - BSSN.
     </footer>
     @endif
 
@@ -269,29 +269,29 @@
     $qrCodeBase64 = '';
     if ($signedAt) {
         $qrData = route('meetings.verify.tte', ['meeting' => $meeting->id, 'type' => 'dokumentasi']);
-        $qrCodeBase64 = base64_encode(\SimpleSoftwareIO\QrCode\Facades\QrCode::format('svg')->size(46)->errorCorrection('M')->generate($qrData));
+        $qrCodeBase64 = base64_encode(\SimpleSoftwareIO\QrCode\Facades\QrCode::format('svg')->size(46)->errorCorrection('H')->generate($qrData));
     }
     ?>
 
     <div style="margin-top: 25px; float: right; width: 285px; text-align: left; font-size: 9.5pt; line-height: 1.4; page-break-inside: avoid;">
         <p style="margin-bottom: 2px; font-size: 9.5pt;">Sinjai, {{ $meeting->date ? $meeting->date->translatedFormat('d F Y') : date('d F Y') }}</p>
-        <p style="font-weight: bold; margin-top: 0; margin-bottom: 4px; font-size: 9.5pt; line-height: 1.3;">
+        <p style="font-weight: bold; margin-top: 0; margin-bottom: 6px; font-size: 9.5pt; line-height: 1.3;">
             Mengetahui,<br>
             {{ $signerTitle }}
         </p>
 
         @if($signedAt && $qrCodeBase64)
-        <a href="{{ $qrData }}" target="_blank" style="text-decoration: none; color: inherit; display: block; margin: 8px 0 10px 0;">
-            <div style="border: 1px solid #cbd5e1; border-radius: 6px; padding: 6px 8px; background-color: #f8fafc; width: 270px;">
-                <table style="border-collapse: collapse; border: none; width: 100%;">
+        <a href="{{ $qrData }}" target="_blank" style="text-decoration: none; color: inherit; display: inline-block; margin: 0 0 6px 0;">
+            <div style="border: 1px solid #cbd5e1; border-radius: 6px; padding: 6px 8px; background-color: #f8fafc; display: inline-block;">
+                <table style="border-collapse: collapse; border: none; font-family: 'Helvetica', 'Arial', sans-serif;">
                     <tr>
-                        <td style="border: none; padding: 0 8px 0 0; vertical-align: middle; width: 46px;">
+                        <td style="border: none; padding: 0 8px 0 0; vertical-align: middle; width: 42px;">
                             <img src="data:image/svg+xml;base64,{{ $qrCodeBase64 }}" style="width: 42px; height: 42px; display: block;" alt="QR Code TTE">
                         </td>
-                        <td style="border: none; padding: 0; vertical-align: middle; line-height: 1.35;">
-                            <div style="font-weight: bold; color: #0f172a; font-size: 7.5pt;">Ditandatangani Secara Elektronik</div>
-                            <div style="font-weight: 600; color: #334155; font-size: 7.5pt;">Pemerintah Kabupaten Sinjai</div>
-                            <div style="color: #64748b; font-size: 7pt;">Balai Sertifikasi Elektronik (BSrE)</div>
+                        <td style="border: none; padding: 0; vertical-align: middle; line-height: 1.35; font-family: 'Helvetica', 'Arial', sans-serif; white-space: nowrap;">
+                            <div style="font-family: 'Helvetica', 'Arial', sans-serif; font-weight: bold; color: #0f172a; font-size: 7.5pt;">Ditandatangani Secara Elektronik</div>
+                            <div style="font-family: 'Helvetica', 'Arial', sans-serif; color: #334155; font-size: 7.5pt;">Pemerintah Kabupaten Sinjai</div>
+                            <div style="font-family: 'Helvetica', 'Arial', sans-serif; color: #64748b; font-size: 7pt;">BSrE - BSSN</div>
                         </td>
                     </tr>
                 </table>
@@ -301,7 +301,7 @@
         <div style="height: 50px;"></div>
         @endif
 
-        <p style="font-weight: bold; margin-bottom: 1px; font-size: 10pt;">
+        <p style="font-weight: bold; margin: 0 0 1px 0; font-size: 10pt;">
             {{ $signerName }}
         </p>
         @if($signerRank)

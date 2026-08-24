@@ -54,7 +54,7 @@ new #[Layout('layouts.app')] class extends Component {
             'selected_signer_id' => 'required',
         ];
 
-        if (auth()->user()->hasRole('admin')) {
+        if (auth()->user()->hasActiveRole('admin')) {
             $rules['selected_opd_id'] = 'required|exists:opds,id';
         }
 
@@ -78,7 +78,7 @@ new #[Layout('layouts.app')] class extends Component {
 
     public function openModal()
     {
-        if (auth()->user()->hasRole('pimpinan')) {
+        if (auth()->user()->hasActiveRole('pimpinan')) {
             return;
         }
         $this->resetValidation();
@@ -93,7 +93,7 @@ new #[Layout('layouts.app')] class extends Component {
 
     public function saveMeeting()
     {
-        if (auth()->user()->hasRole('pimpinan')) {
+        if (auth()->user()->hasActiveRole('pimpinan')) {
             abort(403, 'Pimpinan tidak memiliki akses untuk membuat rapat.');
         }
         $validated = $this->validate();
@@ -102,7 +102,7 @@ new #[Layout('layouts.app')] class extends Component {
         $validated['status'] = 'scheduled';
 
         $opd = null;
-        if (auth()->user()->hasRole('admin') && $this->selected_opd_id) {
+        if (auth()->user()->hasActiveRole('admin') && $this->selected_opd_id) {
             $opd = \App\Models\Opd::find($this->selected_opd_id);
             $validated['opd_id'] = $this->selected_opd_id;
         } else {
@@ -153,7 +153,7 @@ new #[Layout('layouts.app')] class extends Component {
         }
 
         $user = auth()->user();
-        if ($user->hasRole('pimpinan')) {
+        if ($user->hasActiveRole('pimpinan')) {
             // Pimpinan hanya melihat rapat yang penandatangannya adalah dirinya sendiri
             $query->where(function ($q) use ($user) {
                 $q->where(function ($sq) use ($user) {
@@ -171,7 +171,7 @@ new #[Layout('layouts.app')] class extends Component {
                     }
                 });
             });
-        } elseif ($user->hasRole('admin_opd')) {
+        } elseif ($user->hasActiveRole('admin_opd')) {
             // Admin OPD melihat seluruh rapat di lingkungan unit kerjanya
             $query->where(function ($q) use ($user) {
                 $q->whereHas('creator', function ($cq) use ($user) {
@@ -180,15 +180,15 @@ new #[Layout('layouts.app')] class extends Component {
                     $oq->where('name', $user->unit_name);
                 });
             });
-        } elseif ($user->hasRole('pegawai')) {
+        } elseif ($user->hasActiveRole('pegawai')) {
             // Pegawai biasa HANYA melihat rapat yang dibuatnya sendiri
             $query->where('created_by', $user->id);
         }
 
-        $allOpds = auth()->user()->hasRole('admin') ? \App\Models\Opd::where('is_active', true)->orderBy('name')->get() : collect();
+        $allOpds = auth()->user()->hasActiveRole('admin') ? \App\Models\Opd::where('is_active', true)->orderBy('name')->get() : collect();
 
         $targetOpd = null;
-        if (auth()->user()->hasRole('admin')) {
+        if (auth()->user()->hasActiveRole('admin')) {
             if ($this->selected_opd_id) {
                 $targetOpd = \App\Models\Opd::find($this->selected_opd_id);
             }
@@ -202,7 +202,7 @@ new #[Layout('layouts.app')] class extends Component {
         $opdSigners = $targetOpd ? $targetOpd->signers()->where('is_active', true)->orderByRaw("CASE eselon WHEN 'II.a' THEN 1 WHEN 'II.b' THEN 2 WHEN 'III.a' THEN 3 WHEN 'III.b' THEN 4 ELSE 5 END, id ASC")->get() : collect();
 
         $baseCountQuery = Meeting::query();
-        if (!auth()->user()->hasRole('admin')) {
+        if (!auth()->user()->hasActiveRole('admin')) {
             $baseCountQuery->where(function ($q) {
                 $q->whereHas('creator', function ($cq) {
                     $cq->where('unit_name', auth()->user()->unit_name);
@@ -228,7 +228,7 @@ new #[Layout('layouts.app')] class extends Component {
             'opd' => $targetOpd,
             'opdSigners' => $opdSigners,
             'allOpds' => $allOpds,
-            'isAdmin' => auth()->user()->hasRole('admin'),
+            'isAdmin' => auth()->user()->hasActiveRole('admin'),
         ];
     }
 }; ?>
@@ -242,10 +242,10 @@ new #[Layout('layouts.app')] class extends Component {
                 Daftar Rapat
             </h1>
             <p class="text-sm font-medium text-slate-500">
-                {{ auth()->user()->hasRole('admin') ? 'Pemerintah Kabupaten Sinjai' : (auth()->user()->unit_name ?? 'Pemkab Sinjai') }}
+                {{ auth()->user()->hasActiveRole('admin') ? 'Pemerintah Kabupaten Sinjai' : (auth()->user()->unit_name ?? 'Pemkab Sinjai') }}
             </p>
         </div>
-        @unless(auth()->user()->hasRole('pimpinan'))
+        @unless(auth()->user()->hasActiveRole('pimpinan'))
         <div class="relative z-10">
             <button x-data="" x-on:click.prevent="$dispatch('open-modal', 'add-meeting-modal'); $wire.openModal()" class="inline-flex items-center justify-center px-5 py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl font-bold text-sm shadow-sm transition-all gap-2">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -376,7 +376,7 @@ new #[Layout('layouts.app')] class extends Component {
                                 <button type="button" wire:click="resetFilters" class="mt-3 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors">
                                     Reset Filter
                                 </button>
-                                @elseif(!auth()->user()->hasRole('pimpinan'))
+                                @elseif(!auth()->user()->hasActiveRole('pimpinan'))
                                 <button x-data="" x-on:click.prevent="$dispatch('open-modal', 'add-meeting-modal'); $wire.openModal()" class="mt-3 inline-flex items-center px-4 py-2 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white text-xs font-bold rounded-xl transition-all shadow-sm gap-2">
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
@@ -395,7 +395,7 @@ new #[Layout('layouts.app')] class extends Component {
         <x-pagination :paginator="$meetings" />
     </div>
 
-    @unless(auth()->user()->hasRole('pimpinan'))
+    @unless(auth()->user()->hasActiveRole('pimpinan'))
     <!-- Modal Buat Rapat -->
     <x-modal name="add-meeting-modal" maxWidth="3xl" :show="$errors->isNotEmpty()" x-on:meeting-saved.window="show = false">
         <div class="p-6 sm:p-8">
@@ -415,7 +415,7 @@ new #[Layout('layouts.app')] class extends Component {
                 <div>
                     <label for="title" class="block text-sm font-bold text-slate-700 mb-1">Agenda</label>
                     <input wire:model="title" id="title" type="text" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Contoh: Rapat Koordinasi Evaluasi SPBE Triwulan II" />
-                    @error('title') <span class="text-xs text-red-600 mt-1 block font-medium">{{ $message }}</span> @enderror
+                    @error('title') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -423,21 +423,21 @@ new #[Layout('layouts.app')] class extends Component {
                     <div>
                         <label for="date" class="block text-sm font-bold text-slate-700 mb-1">Tanggal</label>
                         <input wire:model="date" id="date" type="date" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" />
-                        @error('date') <span class="text-xs text-red-600 mt-1 block font-medium">{{ $message }}</span> @enderror
+                        @error('date') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                     </div>
 
                     <!-- Jam Mulai -->
                     <div>
                         <label for="start_time" class="block text-sm font-bold text-slate-700 mb-1">Waktu Mulai</label>
                         <input wire:model="start_time" id="start_time" type="time" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" />
-                        @error('start_time') <span class="text-xs text-red-600 mt-1 block font-medium">{{ $message }}</span> @enderror
+                        @error('start_time') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                     </div>
 
                     <!-- Jam Selesai -->
                     <div>
                         <label for="end_time" class="block text-sm font-bold text-slate-700 mb-1">Waktu Selesai</label>
                         <input wire:model="end_time" id="end_time" type="time" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" />
-                        @error('end_time') <span class="text-xs text-red-600 mt-1 block font-medium">{{ $message }}</span> @enderror
+                        @error('end_time') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                     </div>
                 </div>
 
@@ -445,7 +445,7 @@ new #[Layout('layouts.app')] class extends Component {
                 <div>
                     <label for="location" class="block text-sm font-bold text-slate-700 mb-1">Lokasi</label>
                     <input wire:model="location" id="location" type="text" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Contoh: Ruang Pola Kantor Bupati Sinjai" />
-                    @error('location') <span class="text-xs text-red-600 mt-1 block font-medium">{{ $message }}</span> @enderror
+                    @error('location') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                 </div>
 
                 @if($isAdmin)
@@ -458,7 +458,7 @@ new #[Layout('layouts.app')] class extends Component {
                         <option value="{{ $o->id }}">{{ $o->name }}</option>
                         @endforeach
                     </select>
-                    @error('selected_opd_id') <span class="text-xs text-red-600 mt-1 block font-medium">{{ $message }}</span> @enderror
+                    @error('selected_opd_id') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                 </div>
                 @endif
 
@@ -476,7 +476,7 @@ new #[Layout('layouts.app')] class extends Component {
                         <option value="{{ $s->id }}">{{ $s->title }} — {{ $s->name }}</option>
                         @endforeach
                     </select>
-                    @error('selected_signer_id') <span class="text-xs text-red-600 mt-1 block font-medium">{{ $message }}</span> @enderror
+                    @error('selected_signer_id') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                 </div>
 
                 <div class="mt-8 pt-6 border-t border-slate-100 flex justify-end gap-3">

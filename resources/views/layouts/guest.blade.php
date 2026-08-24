@@ -45,9 +45,9 @@
                 {{ $slot }}
             </div>
             
-            <div class="mt-8 text-center text-xs font-medium text-slate-400">
-                &copy; {{ date('Y') }} Diskominfo-SP Sinjai
-            </div>
+            <footer class="mt-8 text-center text-xs font-medium text-slate-500">
+                <span>&copy; {{ date('Y') }} <strong class="text-slate-700 font-bold">Diskominfo-SP Sinjai</strong></span>
+            </footer>
         </div>
     </body>
 </html>

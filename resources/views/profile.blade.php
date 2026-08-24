@@ -1,7 +1,9 @@
 <x-app-layout>
     <div class="space-y-6 pb-10">
         @php
-        $roleName = auth()->user()->roles->first()?->name ?? 'pegawai';
+        $user = auth()->user();
+        $allRoles = $user->sortedRoles();
+        $activeRole = $user->currentRole();
         @endphp
 
         <!-- Header Section -->
@@ -12,11 +14,15 @@
                     Profil Pengguna
                 </h1>
                 <p class="text-sm font-medium text-slate-500">
-                    {{ auth()->user()->name }}
+                    {{ $user->name }}
                 </p>
             </div>
-            <div class="relative z-10">
-                <x-user-role-badge :role="$roleName" />
+            <div class="relative z-10 flex flex-wrap items-center gap-1.5">
+                @forelse($allRoles as $r)
+                    <x-user-role-badge :role="$r->name" />
+                @empty
+                    <x-user-role-badge role="pegawai" />
+                @endforelse
             </div>
         </div>
 
@@ -28,7 +34,7 @@
                     Nama Lengkap
                 </div>
                 <div class="sm:w-3/4 text-slate-900 font-extrabold text-sm">
-                    {{ auth()->user()->name }}
+                    {{ $user->name }}
                 </div>
             </div>
 
@@ -38,18 +44,18 @@
                     NIP
                 </div>
                 <div class="sm:w-3/4 text-slate-800 font-mono text-sm font-semibold">
-                    {{ auth()->user()->nip ?? '-' }}
+                    {{ $user->nip ?? '-' }}
                 </div>
             </div>
 
-            @if($roleName === 'pimpinan' || auth()->user()->hasRole('pimpinan'))
+            @if($user->hasRole('pimpinan'))
             <!-- NIK -->
             <div class="flex flex-col sm:flex-row sm:items-center py-4 px-6 gap-2 sm:gap-6 hover:bg-slate-50/50 transition-colors">
                 <div class="sm:w-1/4 text-slate-500 font-bold text-sm">
                     NIK
                 </div>
                 <div class="sm:w-3/4 text-slate-800 font-mono text-sm font-semibold">
-                    {{ auth()->user()->nik ?? '-' }}
+                    {{ $user->nik ?? '-' }}
                 </div>
             </div>
             @endif
@@ -60,7 +66,7 @@
                     Jabatan
                 </div>
                 <div class="sm:w-3/4 text-slate-800 font-semibold text-sm">
-                    {{ auth()->user()->jabatan ?? '-' }}
+                    {{ $user->jabatan ?? '-' }}
                 </div>
             </div>
 
@@ -70,7 +76,7 @@
                     OPD
                 </div>
                 <div class="sm:w-3/4 text-slate-800 font-semibold text-sm">
-                    {{ auth()->user()->unit_name ?? '-' }}
+                    {{ $user->unit_name ?? '-' }}
                 </div>
             </div>
 
@@ -80,7 +86,7 @@
                     Waktu Terdaftar
                 </div>
                 <div class="sm:w-3/4 text-slate-800 font-semibold text-sm">
-                    {{ auth()->user()->created_at ? auth()->user()->created_at->translatedFormat('d F Y, H:i') . ' WITA' : '-' }}
+                    {{ $user->created_at ? $user->created_at->translatedFormat('d F Y, H:i') . ' WITA' : '-' }}
                 </div>
             </div>
         </div>

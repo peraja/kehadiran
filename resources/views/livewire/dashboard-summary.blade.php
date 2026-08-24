@@ -16,14 +16,14 @@ new class extends Component {
         $endOfMonth = Carbon::now()->endOfMonth();
         $startOfYear = Carbon::now()->startOfYear();
         $endOfYear = Carbon::now()->endOfYear();
-        $isAdmin = auth()->user()->hasRole('admin');
+        $isAdmin = auth()->user()->hasActiveRole('admin');
 
         $query = Meeting::query();
         
         $user = auth()->user();
 
-        // Filter based on role
-        if ($user->hasRole('pimpinan')) {
+        // Filter based on active role
+        if ($user->hasActiveRole('pimpinan')) {
             $query->where(function ($q) use ($user) {
                 $q->where(function ($sq) use ($user) {
                     if (!empty($user->nip)) {
@@ -40,7 +40,7 @@ new class extends Component {
                     }
                 });
             });
-        } elseif ($user->hasRole('admin_opd')) {
+        } elseif ($user->hasActiveRole('admin_opd')) {
             $unitName = $user->unit_name;
             $query->where(function ($q) use ($unitName) {
                 $q->whereHas('creator', function ($cq) use ($unitName) {
@@ -50,7 +50,7 @@ new class extends Component {
                        ->orWhere('name', 'like', '%' . $unitName . '%');
                 });
             });
-        } elseif ($user->hasRole('pegawai')) {
+        } elseif ($user->hasActiveRole('pegawai')) {
             $query->where('created_by', $user->id);
         }
 
@@ -96,7 +96,7 @@ new class extends Component {
             ->take(5)
             ->get();
 
-        $isPimpinan = auth()->user()->hasRole('pimpinan');
+        $isPimpinan = auth()->user()->hasActiveRole('pimpinan');
 
         // Meetings waiting for TTE (for pimpinan & super admin)
         $showPendingTte = $isPimpinan || $isAdmin;
@@ -282,7 +282,7 @@ new class extends Component {
 
                     <!-- 3 Dokumen Badges -->
                     <div class="flex flex-wrap items-center gap-2 mt-2.5">
-                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold {{ $meeting->attendance_signed_at ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-600 border border-slate-200' }}">
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold {{ $meeting->attendance_signed_at ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-600 border border-slate-200' }}">
                             @if($meeting->attendance_signed_at)
                             <svg class="w-3 h-3 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" /></svg>
                             @else
@@ -291,7 +291,7 @@ new class extends Component {
                             <span>Presensi</span>
                         </span>
 
-                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold {{ $meeting->photos_signed_at ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-600 border border-slate-200' }}">
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold {{ $meeting->photos_signed_at ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-600 border border-slate-200' }}">
                             @if($meeting->photos_signed_at)
                             <svg class="w-3 h-3 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" /></svg>
                             @else
@@ -300,7 +300,7 @@ new class extends Component {
                             <span>Dokumentasi</span>
                         </span>
 
-                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold {{ $meeting->minutes_signed_at ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-600 border border-slate-200' }}">
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold {{ $meeting->minutes_signed_at ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-600 border border-slate-200' }}">
                             @if($meeting->minutes_signed_at)
                             <svg class="w-3 h-3 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" /></svg>
                             @else
@@ -375,7 +375,7 @@ new class extends Component {
             <div class="divide-y divide-slate-100 flex-1 flex flex-col">
                 @forelse($missingMinutesMeetings as $meeting)
                     @php
-                        $canEditMinute = auth()->user()->hasRole(['admin', 'admin_opd']) || $meeting->created_by === auth()->id();
+                        $canEditMinute = auth()->user()->hasActiveRole(['admin', 'admin_opd']) || $meeting->created_by === auth()->id();
                     @endphp
                     <div class="p-5 hover:bg-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-colors">
                         <div class="min-w-0 flex-1">

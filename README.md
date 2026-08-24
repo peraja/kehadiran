@@ -7,6 +7,7 @@ Aplikasi digitalisasi tata kelola administrasi rapat resmi untuk lingkungan Pemk
 ## Fitur Utama
 
 - **Manajemen Agenda Rapat:** Penjadwalan, pengaturan status rapat (*Dijadwalkan*, *Berlangsung*, *Selesai*), lokasi, serta batas akses OPD.
+- **Multirole & Role Switcher:** Dukungan peran ganda (Super Admin, Pimpinan/Penandatangan, Admin OPD, Pegawai) untuk satu akun ASN dengan peralihan peran aktif (*role switcher*) secara instan.
 - **Presensi Mandiri QR & Tanda Tangan Digital:** Integrasi data ASN via API Kepegawaian (NIP) dan dukungan peserta eksternal dilengkapi *signature pad* canvas HTML5.
 - **Tanda Tangan Elektronik (TTE) BSrE - BSSN:** Pengesahan digital dokumen resmi (Notulen, Daftar Hadir, Dokumentasi) via API BSrE, dilengkapi QR Code verifikasi publik dan *footer legal disclaimer* standar Permendagri No. 1 Tahun 2023.
 - **Notulen Rapat & Ekspor PDF:** Pencatatan ringkasan pembahasan serta cetak otomatis ke PDF resmi bertata letak kop dinas (DomPDF).

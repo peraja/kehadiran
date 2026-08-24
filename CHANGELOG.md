@@ -4,7 +4,23 @@ Semua perubahan penting pada proyek ini dicatat dalam berkas ini.
 
 Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/1.0.0/), dan proyek ini mematuhi [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] - 2026-08-23
+## [Unreleased] - 2026-08-24
+
+### Ditambahkan
+- Arsitektur **Multirole & Role Switcher** pada model `User` (`ROLE_PRIORITIES`, `defaultRole()`, `currentRole()`, `hasActiveRole()`, `switchRole()`, `sortedRoles()`).
+- Menu dropdown profil dan modal **Role** (`switch-role-modal`) di topbar untuk pergantian peran aktif secara instan tanpa perlu *re-login*.
+- Fitur penugasan multirole pada Master Pengguna (`users/index.blade.php`) dengan seleksi tombol pil (*checkbox pills*) yang ringkas dan bebas visual *clutter*.
+- Tampilan seluruh badge peran yang di-assign ke pengguna pada header halaman **Profil Pengguna** (`profile.blade.php`).
+- Dukungan *teleportation* (`<template x-teleport="body">`) pada komponen `<x-modal>` agar seluruh modal tampil presisi di tengah layar (*viewport center*) dan terbebas dari batasan elemen induk (*containing block trap*).
+- Suite pengujian fitur multirole lengkap ([`tests/Feature/MultiroleTest.php`](tests/Feature/MultiroleTest.php)).
+
+### Diubah
+- Penyesuaian seluruh otorisasi menu, dashboard, pembuatan rapat, workspace dokumen, dan ekspor PDF berbasis peran aktif (`hasActiveRole()`).
+- Penyesuaian sinkronisasi API SIMPEG pada model `Opd.php` menggunakan `assignRole` agar penugasan multirole pengguna tidak terhapus/tertimpa saat sinkronisasi dijalankan.
+- Penyederhanaan menu dropdown profil di topbar menjadi 3 menu utama yang bersih (*Profil, Role, Logout*).
+- Pembaruan label penugasan peran pada formulir pengguna menjadi *"Role"*.
+
+## [1.2.0] - 2026-08-23
 
 ### Ditambahkan
 - Integrasi modul **Tanda Tangan Elektronik (TTE) BSrE - BSSN** (`app/Services/BsreEsignService.php`) untuk pengesahan digital Notulen, Daftar Hadir, dan Dokumentasi Foto Rapat.

@@ -37,7 +37,7 @@ new #[Layout('layouts.app')] class extends Component {
 
     public function mount(): void
     {
-        if (!auth()->user()->hasRole('admin')) {
+        if (!auth()->user()->hasActiveRole('admin')) {
             abort(403, 'Akses khusus Super Admin.');
         }
     }
@@ -282,7 +282,7 @@ new #[Layout('layouts.app')] class extends Component {
                 Master OPD
             </h1>
             <p class="text-sm font-medium text-slate-500">
-                {{ auth()->user()->hasRole('admin') ? 'Pemerintah Kabupaten Sinjai' : (auth()->user()->unit_name ?? 'Pemkab Sinjai') }}
+                {{ auth()->user()->hasActiveRole('admin') ? 'Pemerintah Kabupaten Sinjai' : (auth()->user()->unit_name ?? 'Pemkab Sinjai') }}
             </p>
         </div>
 
@@ -424,13 +424,13 @@ new #[Layout('layouts.app')] class extends Component {
                         <!-- Actions -->
                         <td class="py-4 px-6 text-right whitespace-nowrap">
                             <div class="flex items-center justify-end gap-1">
-                                <button wire:click="editOpd({{ $opd->id }})" class="p-2 text-slate-400 hover:text-primary-600 hover:bg-primary-50 rounded-xl transition-colors" title="Edit OPD">
+                                <button wire:click="editOpd({{ $opd->id }})" class="p-2 text-slate-400 hover:text-primary-600 hover:bg-primary-50 rounded-xl active:scale-95 transition-all" title="Edit OPD">
                                     <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
                                     </svg>
                                 </button>
 
-                                <button wire:click="deleteOpd({{ $opd->id }})" wire:confirm="Apakah Anda yakin ingin menghapus OPD '{{ $opd->name }}'?" class="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors" title="Hapus OPD">
+                                <button wire:click="deleteOpd({{ $opd->id }})" wire:confirm="Apakah Anda yakin ingin menghapus OPD '{{ $opd->name }}'?" class="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl active:scale-95 transition-all" title="Hapus OPD">
                                     <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                                     </svg>
@@ -500,32 +500,32 @@ new #[Layout('layouts.app')] class extends Component {
                         <div class="grid grid-cols-3 gap-3">
                             <div>
                                 <label for="unit_id" class="block text-xs font-bold text-slate-700 mb-1">Kode Unit</label>
-                                <input wire:model="unit_id" id="unit_id" type="text" class="w-full text-sm py-2 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 font-mono focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Contoh: 730701" />
-                                @error('unit_id') <span class="text-xs text-red-600 mt-1 block font-medium">{{ $message }}</span> @enderror
+                                <input wire:model="unit_id" id="unit_id" type="text" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 font-mono focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Contoh: 730701" />
+                                @error('unit_id') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                             </div>
                             <div class="col-span-2">
                                 <label for="name" class="block text-xs font-bold text-slate-700 mb-1">Nama OPD</label>
-                                <input wire:model="name" id="name" type="text" class="w-full text-sm py-2 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Contoh: Dinas Komunikasi dan Informatika" required />
-                                @error('name') <span class="text-xs text-red-600 mt-1 block font-medium">{{ $message }}</span> @enderror
+                                <input wire:model="name" id="name" type="text" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Contoh: Dinas Komunikasi dan Informatika" required />
+                                @error('name') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                             </div>
                         </div>
 
                         <div>
                             <label for="address" class="block text-xs font-bold text-slate-700 mb-1">Alamat Kantor</label>
-                            <textarea wire:model="address" id="address" rows="2" class="w-full text-sm py-2 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors resize-none" placeholder="Contoh: Jl. Persatuan Raya No. 1, Sinjai"></textarea>
-                            @error('address') <span class="text-xs text-red-600 mt-1 block font-medium">{{ $message }}</span> @enderror
+                            <textarea wire:model="address" id="address" rows="2" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors resize-none" placeholder="Contoh: Jl. Persatuan Raya No. 1, Sinjai"></textarea>
+                            @error('address') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                         </div>
 
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div>
                                 <label for="phone" class="block text-xs font-bold text-slate-700 mb-1">Telepon</label>
-                                <input wire:model="phone" id="phone" type="text" class="w-full text-sm py-2 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Contoh: (0482) 21123" />
-                                @error('phone') <span class="text-xs text-red-600 mt-1 block font-medium">{{ $message }}</span> @enderror
+                                <input wire:model="phone" id="phone" type="text" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Contoh: (0482) 21123" />
+                                @error('phone') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                             </div>
                             <div>
                                 <label for="email" class="block text-xs font-bold text-slate-700 mb-1">Email</label>
-                                <input wire:model="email" id="email" type="email" class="w-full text-sm py-2 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Contoh: diskominfo@sinjaikab.go.id" />
-                                @error('email') <span class="text-xs text-red-600 mt-1 block font-medium">{{ $message }}</span> @enderror
+                                <input wire:model="email" id="email" type="email" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Contoh: diskominfo@sinjaikab.go.id" />
+                                @error('email') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                             </div>
                         </div>
 
@@ -545,26 +545,26 @@ new #[Layout('layouts.app')] class extends Component {
 
                         <div>
                             <label for="leader_name" class="block text-xs font-bold text-slate-700 mb-1">Nama Lengkap & Gelar</label>
-                            <input wire:model="leader_name" id="leader_name" type="text" class="w-full text-sm py-2 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Contoh: Dr. H. Muh. Saleh, M.Si" />
-                            @error('leader_name') <span class="text-xs text-red-600 mt-1 block font-medium">{{ $message }}</span> @enderror
+                            <input wire:model="leader_name" id="leader_name" type="text" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Contoh: Dr. H. Muh. Saleh, M.Si" />
+                            @error('leader_name') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                         </div>
 
                         <div>
                             <label for="leader_title" class="block text-xs font-bold text-slate-700 mb-1">Jabatan</label>
-                            <input wire:model="leader_title" id="leader_title" type="text" class="w-full text-sm py-2 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Contoh: Kepala Dinas Kominfo" />
-                            @error('leader_title') <span class="text-xs text-red-600 mt-1 block font-medium">{{ $message }}</span> @enderror
+                            <input wire:model="leader_title" id="leader_title" type="text" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Contoh: Kepala Dinas Kominfo" />
+                            @error('leader_title') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                         </div>
 
                         <div>
                             <label for="leader_nip" class="block text-xs font-bold text-slate-700 mb-1">NIP</label>
-                            <input wire:model="leader_nip" id="leader_nip" type="text" class="w-full text-sm py-2 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 font-mono focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Contoh: 197501012000031001" />
-                            @error('leader_nip') <span class="text-xs text-red-600 mt-1 block font-medium">{{ $message }}</span> @enderror
+                            <input wire:model="leader_nip" id="leader_nip" type="text" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 font-mono focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Contoh: 197501012000031001" />
+                            @error('leader_nip') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                         </div>
 
                         <div>
                             <label for="leader_rank" class="block text-xs font-bold text-slate-700 mb-1">Pangkat</label>
-                            <input wire:model="leader_rank" id="leader_rank" type="text" class="w-full text-sm py-2 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Contoh: Pembina Utama Muda (IV/c)" />
-                            @error('leader_rank') <span class="text-xs text-red-600 mt-1 block font-medium">{{ $message }}</span> @enderror
+                            <input wire:model="leader_rank" id="leader_rank" type="text" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Contoh: Pembina Utama Muda (IV/c)" />
+                            @error('leader_rank') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                         </div>
                     </div>
                 </div>
