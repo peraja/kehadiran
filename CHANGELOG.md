@@ -24,6 +24,10 @@ Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/
   - Perluasan *spacing* dan *padding* sebelum dan sesudah blok informasi rapat agar dokumen lebih lega dan estetis.
   - Penyelarasan indentasi bertingkat (*step-aligned*) pada isi notulen sehingga teks judul bab sejajar dengan anak penomoran (`22px`, `44px`, `66px`).
   - Standardisasi *line-height* dokumen PDF secara konsisten (`1.45` – `1.5`).
+- **Penyelarasan Tabel Riwayat Rapat (`meetings/history.blade.php`)**:
+  - Penataan *toolbar* filter menjadi 1 baris terpadu horizontal (*fluid search bar*, *compact date range container*, dropdown OPD, dan tombol reset).
+  - Penyesuaian label header kolom aksi dari *Unduh Dokumen* menjadi *Download*.
+  - Penataan nama Perangkat Daerah (OPD) di bawah lokasi rapat pada kolom Agenda & Lokasi dengan *clean text badge*, proteksi *truncate*, dan *tooltip*.
 - **Penyelarasan Fitur Notulen**:
   - Perubahan nama dan tombol aksi dari **Bantuan AI** menjadi **Notulen AI** pada antarmuka editor dan modal hasil AI.
   - Penyempurnaan penyelarasan nama pada tombol dropdown profil di topbar dengan lebar otomatis (`whitespace-nowrap`).

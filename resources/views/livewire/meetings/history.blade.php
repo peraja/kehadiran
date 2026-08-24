@@ -135,58 +135,70 @@ new #[Layout('layouts.app')] class extends Component {
     <div class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
 
         <!-- Toolbar -->
-        <div class="p-4 border-b border-slate-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-slate-50/50">
-            <!-- Filter Left: OPD Dropdown / Date Range -->
-            <div class="flex flex-wrap items-center gap-2 w-full md:w-auto">
-                @if(auth()->user()->hasActiveRole('admin'))
-                <select wire:model.live="selected_opd_id"
-                    class="rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm font-semibold text-slate-700 focus:border-primary-500 focus:ring-primary-500 shadow-sm transition-colors">
-                    <option value="">Semua OPD</option>
-                    @foreach($allOpds as $opd)
-                    <option value="{{ $opd->id }}">{{ $opd->name }}</option>
-                    @endforeach
-                </select>
-                @endif
-
-                <div class="flex items-center gap-1.5 bg-white px-3 py-1.5 rounded-xl border border-slate-200 shadow-sm text-xs font-medium text-slate-600">
-                    <span class="text-slate-400 font-bold">Dari:</span>
-                    <input wire:model.live="date_from" type="date"
-                        class="border-0 p-0 text-xs font-semibold text-slate-700 focus:ring-0 bg-transparent" />
-                </div>
-
-                <div class="flex items-center gap-1.5 bg-white px-3 py-1.5 rounded-xl border border-slate-200 shadow-sm text-xs font-medium text-slate-600">
-                    <span class="text-slate-400 font-bold">Sampai:</span>
-                    <input wire:model.live="date_to" type="date"
-                        class="border-0 p-0 text-xs font-semibold text-slate-700 focus:ring-0 bg-transparent" />
-                </div>
-
-                @if($search || $selected_opd_id || $date_from || $date_to)
-                <button wire:click="resetFilters"
-                    class="inline-flex items-center gap-1 px-3 py-2 rounded-xl text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 transition-colors border border-rose-200">
-                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                    Reset
-                </button>
-                @endif
-            </div>
-
-            <!-- Search Field -->
-            <div class="w-full md:w-80">
-                <div class="relative">
+        <div class="p-3.5 sm:p-4 border-b border-slate-100 bg-slate-50/50">
+            <div class="flex flex-col lg:flex-row items-stretch lg:items-center gap-2.5">
+                <!-- Search Field (Fluid width) -->
+                <div class="relative flex-1 min-w-[200px]">
                     <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                        <svg class="h-5 w-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg class="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                         </svg>
                     </div>
                     <input wire:model.live.debounce.300ms="search" type="text"
-                        class="block w-full rounded-xl border border-slate-200 pl-10 pr-10 py-2.5 text-sm focus:border-primary-500 focus:ring-primary-500 shadow-sm transition-colors"
+                        class="block w-full h-10 rounded-xl border border-slate-200 pl-9 pr-9 py-2 text-xs sm:text-sm focus:border-primary-500 focus:ring-primary-500 shadow-2xs transition-colors bg-white placeholder:text-slate-400 placeholder:text-xs sm:placeholder:text-sm"
                         placeholder="Cari agenda atau lokasi rapat...">
                     @if($search)
-                    <button wire:click="$set('search', '')" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 transition-colors">
-                        <svg class="w-5 h-5 bg-slate-100 rounded-full p-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <button wire:click="$set('search', '')" class="absolute inset-y-0 right-0 pr-2.5 flex items-center text-slate-400 hover:text-slate-600 transition-colors" title="Hapus pencarian">
+                        <svg class="w-4 h-4 bg-slate-100 rounded-full p-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                         </svg>
+                    </button>
+                    @endif
+                </div>
+
+                <!-- Right Side Filters (1 Row) -->
+                <div class="flex flex-wrap sm:flex-nowrap items-center gap-2.5 shrink-0">
+                    @if(auth()->user()->hasActiveRole('admin'))
+                    <!-- OPD Dropdown -->
+                    <div class="relative min-w-[160px] sm:min-w-[180px] max-w-[240px]">
+                        <select wire:model.live="selected_opd_id"
+                            class="w-full h-10 rounded-xl border border-slate-200 bg-white pl-3 pr-8 py-2 text-xs sm:text-sm font-semibold text-slate-700 focus:border-primary-500 focus:ring-primary-500 shadow-2xs transition-colors cursor-pointer appearance-none truncate">
+                            <option value="">Semua OPD</option>
+                            @foreach($allOpds as $opd)
+                            <option value="{{ $opd->id }}">{{ $opd->name }}</option>
+                            @endforeach
+                        </select>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2.5 text-slate-400">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </div>
+                    </div>
+                    @endif
+
+                    <!-- Date Range Container -->
+                    <div class="inline-flex items-center bg-white border border-slate-200 rounded-xl shadow-2xs overflow-hidden h-10 divide-x divide-slate-200 shrink-0">
+                        <div class="flex items-center px-2.5 py-1 gap-1.5">
+                            <span class="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Dari</span>
+                            <input wire:model.live="date_from" type="date"
+                                class="border-0 p-0 text-xs font-semibold text-slate-700 focus:ring-0 bg-transparent cursor-pointer" />
+                        </div>
+                        <div class="flex items-center px-2.5 py-1 gap-1.5">
+                            <span class="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Sampai</span>
+                            <input wire:model.live="date_to" type="date"
+                                class="border-0 p-0 text-xs font-semibold text-slate-700 focus:ring-0 bg-transparent cursor-pointer" />
+                        </div>
+                    </div>
+
+                    @if($search || $selected_opd_id || $date_from || $date_to)
+                    <!-- Reset Button -->
+                    <button wire:click="resetFilters"
+                        class="h-10 inline-flex items-center gap-1.5 px-3 rounded-xl text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 active:scale-95 transition-all border border-rose-200/80 shadow-2xs cursor-pointer shrink-0"
+                        title="Reset semua filter">
+                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                        <span>Reset</span>
                     </button>
                     @endif
                 </div>
@@ -201,7 +213,7 @@ new #[Layout('layouts.app')] class extends Component {
                         <th class="py-4 px-6 text-left">Agenda & Lokasi</th>
                         <th class="py-4 px-6 text-left">Tanggal & Waktu</th>
                         <th class="py-4 px-6 text-left">Penandatangan</th>
-                        <th class="py-4 px-6 text-center">Unduh Dokumen</th>
+                        <th class="py-4 px-6 text-center">Download</th>
                     </tr>
                 </thead>
                 <tbody class="text-slate-700 text-sm divide-y divide-slate-100">
@@ -209,18 +221,25 @@ new #[Layout('layouts.app')] class extends Component {
                     <tr class="hover:bg-slate-50/80 transition-colors group">
                         <!-- Agenda & Lokasi -->
                         <td class="py-4 px-6 text-left">
-                            <div class="font-extrabold text-slate-900 block text-base leading-tight mb-1.5">
+                            <div class="font-extrabold text-slate-900 block text-sm sm:text-base leading-snug">
                                 {{ $meeting->title }}
                             </div>
-                            <div class="text-xs text-slate-500 font-medium flex flex-wrap items-center gap-2">
-                                @if(auth()->user()->hasActiveRole('admin'))
-                                <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
-                                    {{ $meeting->opd?->name ?? ($meeting->creator?->unit_name ?? 'Pemerintah Kabupaten Sinjai') }}
-                                </span>
-                                <span>&bull;</span>
-                                @endif
-                                <span>{{ $meeting->location ?: 'Ruang Rapat' }}</span>
+
+                            <div class="text-xs text-slate-500 font-medium mt-1">
+                                <span class="truncate max-w-[240px] sm:max-w-none">{{ $meeting->location ?: 'Ruang Rapat' }}</span>
                             </div>
+
+                            @if(auth()->user()->hasActiveRole('admin'))
+                            @php
+                                $opdName = $meeting->opd?->name ?? ($meeting->creator?->unit_name ?? 'Pemerintah Kabupaten Sinjai');
+                            @endphp
+                            <div class="mt-1.5 flex items-center">
+                                <span class="inline-flex items-center text-[11px] font-bold text-slate-600 bg-slate-100 hover:bg-slate-200/80 transition-colors border border-slate-200/80 px-2 py-0.5 rounded-md max-w-[280px] sm:max-w-md truncate cursor-default shadow-2xs"
+                                    title="{{ $opdName }}">
+                                    <span class="truncate">{{ $opdName }}</span>
+                                </span>
+                            </div>
+                            @endif
                         </td>
 
                         <!-- Tanggal & Waktu -->
@@ -249,7 +268,7 @@ new #[Layout('layouts.app')] class extends Component {
                                 <!-- 1. Presensi -->
                                 <a href="{{ route('meetings.export.attendance', ['meeting' => $meeting->id, 'action' => 'download']) }}" download
                                     class="inline-flex items-center gap-1 px-2.5 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-xl text-xs font-bold transition-all shadow-sm active:scale-95"
-                                    title="Unduh Presensi">
+                                    title="Download Presensi">
                                     <svg class="w-3.5 h-3.5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                                     </svg>
@@ -259,7 +278,7 @@ new #[Layout('layouts.app')] class extends Component {
                                 <!-- 2. Dokumentasi -->
                                 <a href="{{ route('meetings.export.photos', ['meeting' => $meeting->id, 'action' => 'download']) }}" download
                                     class="inline-flex items-center gap-1 px-2.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-xl text-xs font-bold transition-all shadow-sm active:scale-95"
-                                    title="Unduh Dokumentasi">
+                                    title="Download Dokumentasi">
                                     <svg class="w-3.5 h-3.5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                     </svg>
@@ -269,7 +288,7 @@ new #[Layout('layouts.app')] class extends Component {
                                 <!-- 3. Notulen -->
                                 <a href="{{ route('meetings.export.minutes', ['meeting' => $meeting->id, 'action' => 'download']) }}" download
                                     class="inline-flex items-center gap-1 px-2.5 py-1.5 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 rounded-xl text-xs font-bold transition-all shadow-sm active:scale-95"
-                                    title="Unduh Notulen">
+                                    title="Download Notulen">
                                     <svg class="w-3.5 h-3.5 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                     </svg>
