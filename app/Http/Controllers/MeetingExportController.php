@@ -60,10 +60,10 @@ class MeetingExportController extends Controller
     /**
      * Serve document either from authentic signed PDF storage or generated preview.
      */
-    protected function serveDocument(Meeting $meeting, string $prefix, ?string $signedPath, string $viewName)
+    protected function serveDocument(Meeting $meeting, string $prefix, ?string $signedPath, string $viewName, bool $forceDownload = false)
     {
         $fileName = $this->generateFileName($meeting, $prefix);
-        $isDownload = request()->query('action') === 'download' || request()->query('download');
+        $isDownload = $forceDownload || request()->query('action') === 'download' || request()->query('download');
 
         // If document is already electronically signed and stored on disk, serve the real signed file
         if ($signedPath && \Illuminate\Support\Facades\Storage::disk('public')->exists($signedPath)) {
@@ -135,14 +135,14 @@ class MeetingExportController extends Controller
                 if (!$meeting->attendance_signed_at) {
                     abort(404, 'Dokumen presensi belum ditandatangani secara elektronik.');
                 }
-                return $this->serveDocument($meeting, 'Presensi', $meeting->attendance_signed_path, 'exports.meeting-attendance');
+                return $this->serveDocument($meeting, 'Presensi', $meeting->attendance_signed_path, 'exports.meeting-attendance', true);
 
             case 'dokumentasi':
             case 'photos':
                 if (!$meeting->photos_signed_at) {
                     abort(404, 'Dokumen dokumentasi belum ditandatangani secara elektronik.');
                 }
-                return $this->serveDocument($meeting, 'Dokumentasi', $meeting->photos_signed_path, 'exports.meeting-documentation');
+                return $this->serveDocument($meeting, 'Dokumentasi', $meeting->photos_signed_path, 'exports.meeting-documentation', true);
 
             case 'notulen':
             case 'minutes':
@@ -150,7 +150,7 @@ class MeetingExportController extends Controller
                 if (!$meeting->minutes_signed_at) {
                     abort(404, 'Dokumen notulen rapat belum ditandatangani secara elektronik.');
                 }
-                return $this->serveDocument($meeting, 'Notulen', $meeting->minutes_signed_path, 'exports.meeting-minutes');
+                return $this->serveDocument($meeting, 'Notulen', $meeting->minutes_signed_path, 'exports.meeting-minutes', true);
         }
     }
 }

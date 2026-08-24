@@ -187,10 +187,11 @@ class BsreEsignTest extends TestCase
 
         $response = $this->get(route('meetings.verify.tte', ['meeting' => $meeting->id, 'type' => 'notulen']));
 
-        $response->assertStatus(200);
         $response->assertSee('Tanda Tangan Elektronik Sah');
         $response->assertSee('Kepala Dinas Kominfo');
         $response->assertSee('Dr. H. Contoh, M.Si');
+        $response->assertSee('BSrE - Badan Siber dan Sandi Negara');
+        $response->assertSee('Download PDF');
     }
 
     public function test_public_can_download_verified_signed_pdf(): void

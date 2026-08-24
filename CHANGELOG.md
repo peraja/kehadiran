@@ -27,6 +27,9 @@ Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/
   - Perbaikan render QR Code dan *footer* resmi BSrE pada template PDF sebelum dokumen dikirim ke mesin penandatanganan BSrE.
 - **Standardisasi Payload `reason` TTE**:
   - Format `reason` TTE distandardisasi menjadi: `TTE Notulen - {Judul Rapat}`, `TTE Presensi - {Judul Rapat}`, dan `TTE Dokumentasi - {Judul Rapat}`.
+- **Penyelarasan & Minimalisasi Halaman Verifikasi Publik (`verify-tte.blade.php`)**:
+  - Tampilan difokuskan pada keaslian dokumen dan identitas penandatangan dengan tata letak minimalis dan elegan.
+  - Tombol **`Download PDF`** disesuaikan untuk langsung mengunduh berkas fisik PDF bertandatangan digital resmi tanpa melalui pratinjau (*direct attachment download*).
 
 ## [1.3.2] - 2026-08-25
 
