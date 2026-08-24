@@ -24,6 +24,9 @@
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
     <body class="h-full font-sans text-slate-900 antialiased selection:bg-primary-500 selection:text-white relative">
+        <!-- Top Loading Bar indicator for Livewire -->
+        <div wire:loading.delay.shortest class="fixed top-0 left-0 right-0 z-[100] h-1 bg-gradient-to-r from-primary-400 via-primary-600 to-indigo-600 animate-pulse pointer-events-none"></div>
+
         <!-- Ambient Background Pattern -->
         <div class="fixed inset-0 z-[-1] bg-[radial-gradient(#e2e8f0_1px,transparent_1px)] [background-size:20px_20px] opacity-40"></div>
         <div class="fixed top-0 inset-x-0 h-[500px] bg-gradient-to-b from-primary-50 to-transparent -z-10"></div>

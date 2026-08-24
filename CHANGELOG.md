@@ -4,6 +4,12 @@ Semua perubahan penting pada proyek ini dicatat dalam berkas ini.
 
 Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/1.0.0/), dan proyek ini mematuhi [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.6] - 2026-08-25
+
+### Ditambahkan
+- **Indikator Loading State Tombol Login**: Penambahan animasi spinner `animate-spin` pada ikon tombol login dan atribut `wire:loading.attr="disabled"` untuk mencegah klik ganda saat proses otentikasi SIMPEG berjalan.
+- **Top Loading Progress Bar Guest Layout**: Penambahan bilah animasi progress bar Livewire (`wire:loading.delay.shortest`) di bagian atas pada [`layouts/guest.blade.php`](file:///Users/abedzul/Desktop/htdocs/rapat/resources/views/layouts/guest.blade.php).
+
 ## [1.3.5] - 2026-08-25
 
 ### Ditambahkan
