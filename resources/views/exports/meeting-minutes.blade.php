@@ -22,7 +22,7 @@
 
         body {
             font-size: 10pt;
-            line-height: 1.45;
+            line-height: 1.5;
             color: #111827;
         }
 
@@ -89,7 +89,7 @@
 
         .doc-title {
             text-align: center;
-            margin: 14px 0;
+            margin: 20px 0 16px 0;
             font-size: 12pt;
             font-weight: bold;
             text-decoration: underline;
@@ -99,54 +99,78 @@
 
         .info-table {
             width: 100%;
-            margin-bottom: 14px;
+            margin-bottom: 20px;
             border-collapse: collapse;
             font-size: 9.5pt;
+            line-height: 1.5;
         }
 
         .info-table td {
-            padding: 3px 4px;
+            padding: 4px 2px;
             vertical-align: top;
+            line-height: 1.5;
         }
 
         .info-table .label {
             font-weight: bold;
-            width: 130px;
+            width: 125px;
+            color: #111827;
+        }
+
+        .info-table .colon {
+            width: 12px;
+            text-align: left;
             color: #111827;
         }
 
         .divider {
             border-bottom: 1px solid #cbd5e1;
-            margin-bottom: 14px;
+            margin-bottom: 20px;
         }
 
         .content {
             font-size: 10pt;
             line-height: 1.5;
             color: #111827;
-            padding: 0 0 14px 0;
+            padding: 0 0 10px 0;
         }
 
-        .section-block {
-            margin-bottom: 10px;
+        .section-title-table {
+            width: 100%;
+            border-collapse: collapse;
+            border: none;
+            margin-top: 14px;
+            margin-bottom: 6px;
         }
 
-        .section-title {
-            font-size: 10pt;
-            font-weight: bold;
-            color: #000;
-            margin-top: 10px;
-            margin-bottom: 5px;
-            text-transform: uppercase;
-        }
-
-        .section-title:first-child {
+        .section-title-table:first-child {
             margin-top: 0;
         }
 
+        .section-title-table td {
+            border: none;
+            padding: 0;
+            vertical-align: top;
+            font-size: 10pt;
+            line-height: 1.5;
+            font-weight: bold;
+            color: #0f172a;
+        }
+
+        .section-title-table .col-sec-num {
+            width: 22px;
+            text-align: left;
+        }
+
+        .section-title-table .col-sec-title {
+            text-align: left;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
         .section-para {
-            margin: 0 0 6px 0;
-            padding-left: 18px;
+            margin: 0 0 8px 0;
+            padding-left: 22px;
             line-height: 1.5;
             text-align: justify;
             color: #111827;
@@ -156,35 +180,41 @@
             width: 100%;
             border-collapse: collapse;
             border: none;
-            margin: 0 0 5px 0;
+            margin: 0 0 6px 0;
         }
 
         .point-table td {
             border: none;
-            padding: 2px 0 3px 0;
+            padding: 2.5px 0 3.5px 0;
             vertical-align: top;
             font-size: 10pt;
             line-height: 1.5;
         }
 
         .point-table .col-indent-lvl1 {
-            width: 18px;
+            width: 22px;
         }
 
         .point-table .col-indent-lvl2 {
-            width: 36px;
+            width: 44px;
+        }
+
+        .point-table .col-indent-lvl3 {
+            width: 66px;
         }
 
         .point-table .col-num {
-            width: 18px;
+            width: 22px;
             text-align: left;
             vertical-align: top;
             color: #111827;
+            line-height: 1.5;
         }
 
         .point-table .col-text {
             text-align: justify;
             color: #111827;
+            line-height: 1.5;
         }
     </style>
 </head>
@@ -196,34 +226,31 @@
     </footer>
     @endif
 
-    <?php
-    $logoPath = public_path('img/logo.png');
-    $logoBase64 = '';
-    if (file_exists($logoPath)) {
-        $logoBase64 = 'data:image/png;base64,' . base64_encode(file_get_contents($logoPath));
-    }
-    $opd = $meeting->opd;
-    $unitName = $opd?->name ?? $meeting->creator?->unit_name ?? 'Sekretariat Daerah';
-    if (!$opd && $unitName) {
-        $cleanUnit = str_replace([',', '.', '-'], '', $unitName);
-        $opd = \App\Models\Opd::whereRaw("REPLACE(REPLACE(REPLACE(name, ',', ''), '.', ''), '-', '') LIKE ?", ['%' . $cleanUnit . '%'])->first();
-    }
-    $opdAddress = $opd?->address ?: 'Tanassang, Kel. Alehanuae, Kec. Sinjai Utara, Kab. Sinjai 92611';
-    $opdPhone = $opd?->phone;
-    $opdEmail = $opd?->email;
-
-    $signerTitle = $meeting->signer_title ?: ($opd?->leader_title ?: ('Kepala ' . $unitName));
-    $signerName = $meeting->signer_name ?: ($opd?->leader_name ?: '..................................................');
-    $signerNip = $meeting->signer_nip ?: ($opd?->leader_nip ?: '..................................................');
-    $signerRank = $meeting->signer_rank ?: ($opd?->leader_rank ?: null);
-    $signedAt = $meeting->minutes_signed_at;
-
-    $timeFormatted = $meeting->start_time && $meeting->end_time
-        ? $meeting->start_time->format('H:i') . ' - ' . $meeting->end_time->format('H:i') . ' WITA'
-        : ($meeting->start_time ? $meeting->start_time->format('H:i') . ' WITA' : '-');
-    ?>
-
     <div class="kop-surat">
+        <?php
+        $logoPath = public_path('img/logo.png');
+        $logoBase64 = '';
+        if (file_exists($logoPath)) {
+            $logoData = file_get_contents($logoPath);
+            $logoBase64 = 'data:image/png;base64,' . base64_encode($logoData);
+        }
+
+        $opd = $meeting->opd ?: \App\Models\Opd::where('name', $meeting->creator?->unit_name)->first();
+        $unitName = $opd?->name ?? ($meeting->creator?->unit_name ?? 'Pemerintah Kabupaten Sinjai');
+        $opdAddress = $opd?->address ?: 'Kabupaten Sinjai, Sulawesi Selatan';
+        $opdPhone = $opd?->phone ?: null;
+        $opdEmail = $opd?->email ?: null;
+
+        $signerName = $meeting->signer_name ?: ($opd?->leader_name ?: '..................................................');
+        $signerNip = $meeting->signer_nip ?: ($opd?->leader_nip ?: '..................................................');
+        $signerRank = $meeting->signer_rank ?: ($opd?->leader_rank ?: null);
+        $signerTitle = $meeting->signer_title ?: ($opd?->leader_title ?: ('Kepala ' . $unitName));
+        $signedAt = $meeting->minutes_signed_at;
+
+        $timeFormatted = $meeting->start_time && $meeting->end_time
+            ? $meeting->start_time->format('H:i') . ' - ' . $meeting->end_time->format('H:i') . ' WITA'
+            : ($meeting->start_time ? $meeting->start_time->format('H:i') . ' WITA' : '-');
+        ?>
         @if($logoBase64)
         <img src="{{ $logoBase64 }}" class="logo" alt="Logo">
         @endif
@@ -244,23 +271,33 @@
     <table class="info-table">
         <tr>
             <td class="label">Agenda</td>
-            <td>: {{ $meeting->title }}</td>
+            <td class="colon">:</td>
+            <td>{{ $meeting->title }}</td>
         </tr>
         <tr>
             <td class="label">Hari / Tanggal</td>
-            <td>: {{ $meeting->date ? $meeting->date->translatedFormat('l, d F Y') : '-' }}</td>
+            <td class="colon">:</td>
+            <td>{{ $meeting->date ? $meeting->date->translatedFormat('l, d F Y') : '-' }}</td>
         </tr>
         <tr>
             <td class="label">Waktu</td>
-            <td>: {{ $timeFormatted }}</td>
+            <td class="colon">:</td>
+            <td>{{ $timeFormatted }}</td>
         </tr>
         <tr>
             <td class="label">Tempat</td>
-            <td>: {{ $meeting->location ?? 'Online / Menyesuaikan' }}</td>
+            <td class="colon">:</td>
+            <td>{{ $meeting->location ?? 'Online / Menyesuaikan' }}</td>
         </tr>
         <tr>
             <td class="label">Pimpinan</td>
-            <td>: {{ $signerName }} ({{ $signerTitle }})</td>
+            <td class="colon">:</td>
+            <td>
+                <div>{{ $signerName }}</div>
+                @if($signerTitle)
+                <div style="font-size: 8.5pt; color: #475569; margin-top: 1.5px; line-height: 1.5;">{{ $signerTitle }}</div>
+                @endif
+            </td>
         </tr>
     </table>
 
@@ -282,8 +319,23 @@
                     continue;
                 }
 
-                // 1. Deteksi Sub-Poin Huruf (Level 2: a. s/d z.)
-                if (preg_match('/^([a-z]\.)\s+(.+)$/i', $trimmed, $matches)) {
+                // 1. Deteksi Judul Bagian Utama (Level 1: 1. Pembukaan, 2. Pembahasan, 3. Kesimpulan, I. PEMBUKAAN, dst.)
+                if (preg_match('/^(\d+\.|(?:I|II|III|IV|V|VI|VII|VIII|IX|X)\.)\s+([a-zA-Z\s\/\-\&]+)$/', $trimmed, $matches) && mb_strlen(trim($matches[2])) <= 40) {
+                    if ($inTable) {
+                        echo '</tbody></table>';
+                        $inTable = false;
+                    }
+                    $secNum = htmlspecialchars($matches[1]);
+                    $secTitle = htmlspecialchars(strtoupper(trim($matches[2])));
+                    echo '<table class="section-title-table"><tr>'
+                        . '<td class="col-sec-num">' . $secNum . '</td>'
+                        . '<td class="col-sec-title">' . $secTitle . '</td>'
+                        . '</tr></table>';
+                    continue;
+                }
+
+                // 2. Deteksi Sub-Poin Huruf (Level 2: a. s/d z. atau A. s/d Z.)
+                if (preg_match('/^([a-zA-Z]\.)\s+(.+)$/', $trimmed, $matches)) {
                     if (!$inTable) {
                         echo '<table class="point-table"><tbody>';
                         $inTable = true;
@@ -298,13 +350,13 @@
                     continue;
                 }
 
-                // 2. Deteksi Sub-Sub-Poin (Level 3: 1), 2), -, *)
-                if (preg_match('/^(\d+\)|\-|\*)\s+(.+)$/', $trimmed, $matches)) {
+                // 3. Deteksi Sub-Sub-Poin Angka Kurung / Huruf Kurung (Level 3: 1), 2), a), b), (1), (a))
+                if (preg_match('/^(\(?\d+\)|\(?[a-zA-Z]\))\s+(.+)$/', $trimmed, $matches)) {
                     if (!$inTable) {
                         echo '<table class="point-table"><tbody>';
                         $inTable = true;
                     }
-                    $bullet = ($matches[1] === '-' || $matches[1] === '*') ? '&bull;' : $matches[1];
+                    $bullet = $matches[1];
                     $text = htmlspecialchars(trim($matches[2]));
                     echo '<tr>'
                         . '<td class="col-indent-lvl2"></td>'
@@ -314,17 +366,23 @@
                     continue;
                 }
 
-                // 3. Deteksi Judul Bagian Utama (Level 1: 1. Pembukaan, 2. Pembahasan, 3. Kesimpulan, I. ...)
-                if (preg_match('/^(\d+\.|(?:I|II|III|IV|V|VI|VII|VIII|IX|X)\.)\s+(.+)$/', $trimmed, $matches)) {
-                    if ($inTable) {
-                        echo '</tbody></table>';
-                        $inTable = false;
+                // 4. Deteksi Sub-Sub-Poin Bullet / Strip (Level 3: -, *, •, –)
+                if (preg_match('/^(\-|\*|•|–)\s+(.+)$/', $trimmed, $matches)) {
+                    if (!$inTable) {
+                        echo '<table class="point-table"><tbody>';
+                        $inTable = true;
                     }
-                    echo '<div class="section-title">' . htmlspecialchars($matches[1] . ' ' . strtoupper($matches[2])) . '</div>';
+                    $bullet = '&bull;';
+                    $text = htmlspecialchars(trim($matches[2]));
+                    echo '<tr>'
+                        . '<td class="col-indent-lvl2"></td>'
+                        . '<td class="col-num">' . $bullet . '</td>'
+                        . '<td class="col-text">' . $text . '</td>'
+                        . '</tr>';
                     continue;
                 }
 
-                // 4. Paragraf Narasi Biasa (Pengantar / Pembuka)
+                // 5. Paragraf Narasi Biasa (Pengantar / Pembuka / Narasi Umum)
                 if ($inTable) {
                     echo '</tbody></table>';
                     $inTable = false;
@@ -349,9 +407,9 @@
     }
     ?>
 
-    <div style="margin-top: 25px; float: right; width: 285px; text-align: left; font-size: 9.5pt; line-height: 1.4; page-break-inside: avoid;">
-        <p style="margin-bottom: 2px; font-size: 9.5pt;">Sinjai, {{ $meeting->date ? $meeting->date->translatedFormat('d F Y') : date('d F Y') }}</p>
-        <p style="font-weight: bold; margin-top: 0; margin-bottom: 6px; font-size: 9.5pt; line-height: 1.3;">
+    <div style="margin-top: 25px; float: right; width: 285px; text-align: left; font-size: 9.5pt; line-height: 1.45; page-break-inside: avoid;">
+        <p style="margin-bottom: 2px; font-size: 9.5pt; line-height: 1.45;">Sinjai, {{ $meeting->date ? $meeting->date->translatedFormat('d F Y') : date('d F Y') }}</p>
+        <p style="font-weight: bold; margin-top: 0; margin-bottom: 6px; font-size: 9.5pt; line-height: 1.4;">
             Mengetahui,<br>
             {{ $signerTitle }}
         </p>

@@ -11,13 +11,18 @@ class MeetingExportController extends Controller
 {
     /**
      * Generate a standardized, clean filename for exports.
+     * Example: Notulen - Judul Agenda - 2026-08-24.pdf
      */
     protected function generateFileName(Meeting $meeting, string $prefix, string $extension = 'pdf'): string
     {
         $date = $meeting->date ? $meeting->date->format('Y-m-d') : date('Y-m-d');
-        $slug = Str::limit(Str::slug($meeting->title, '_'), 60, '');
+        // Clean title: remove illegal filename characters, condense whitespace, and limit length
+        $cleanTitle = trim(preg_replace('/[\/\\\\:*?"<>|]+/', ' ', $meeting->title));
+        $cleanTitle = preg_replace('/\s+/', ' ', $cleanTitle);
+        $cleanTitle = Str::limit($cleanTitle, 60, '');
+        $cleanTitle = trim($cleanTitle, " -_");
 
-        return "{$prefix}_{$date}_{$slug}.{$extension}";
+        return "{$prefix} - {$cleanTitle} - {$date}.{$extension}";
     }
 
     protected function authorizeExport(Meeting $meeting): void
@@ -62,7 +67,11 @@ class MeetingExportController extends Controller
         }
 
         $pdf = Pdf::loadView('exports.meeting-minutes', compact('meeting'))->setPaper('a4', 'portrait');
-        $fileName = $this->generateFileName($meeting, 'Notulen_Rapat');
+        $fileName = $this->generateFileName($meeting, 'Notulen');
+
+        if (request()->query('action') === 'download' || request()->query('download')) {
+            return $pdf->download($fileName);
+        }
 
         return $pdf->stream($fileName);
     }
@@ -73,11 +82,15 @@ class MeetingExportController extends Controller
 
         // Dokumen hanya dapat diekspor jika rapat telah diselesaikan
         if ($meeting->status !== 'completed') {
-            abort(403, 'Daftar hadir hanya dapat diekspor setelah status rapat diselesaikan.');
+            abort(403, 'Presensi hanya dapat diekspor setelah status rapat diselesaikan.');
         }
 
         $pdf = Pdf::loadView('exports.meeting-attendance', compact('meeting'))->setPaper('a4', 'portrait');
-        $fileName = $this->generateFileName($meeting, 'Daftar_Hadir');
+        $fileName = $this->generateFileName($meeting, 'Presensi');
+
+        if (request()->query('action') === 'download' || request()->query('download')) {
+            return $pdf->download($fileName);
+        }
 
         return $pdf->stream($fileName);
     }
@@ -86,13 +99,17 @@ class MeetingExportController extends Controller
     {
         $this->authorizeExport($meeting);
 
-        // Dokumentasi foto hanya dapat diekspor jika rapat telah diselesaikan
+        // Dokumentasi hanya dapat diekspor jika rapat telah diselesaikan
         if ($meeting->status !== 'completed') {
-            abort(403, 'Dokumentasi foto hanya dapat diekspor setelah status rapat diselesaikan.');
+            abort(403, 'Dokumentasi hanya dapat diekspor setelah status rapat diselesaikan.');
         }
 
         $pdf = Pdf::loadView('exports.meeting-documentation', compact('meeting'))->setPaper('a4', 'portrait');
-        $fileName = $this->generateFileName($meeting, 'Dokumentasi_Foto');
+        $fileName = $this->generateFileName($meeting, 'Dokumentasi');
+
+        if (request()->query('action') === 'download' || request()->query('download')) {
+            return $pdf->download($fileName);
+        }
 
         return $pdf->stream($fileName);
     }
@@ -108,20 +125,20 @@ class MeetingExportController extends Controller
             case 'presensi':
             case 'attendance':
                 if (!$meeting->attendance_signed_at) {
-                    abort(404, 'Dokumen daftar hadir belum ditandatangani secara elektronik.');
+                    abort(404, 'Dokumen presensi belum ditandatangani secara elektronik.');
                 }
                 $pdf = Pdf::loadView('exports.meeting-attendance', compact('meeting'))->setPaper('a4', 'portrait');
-                $fileName = $this->generateFileName($meeting, 'Daftar_Hadir_TTE');
-                return $pdf->stream($fileName);
+                $fileName = $this->generateFileName($meeting, 'Presensi');
+                break;
 
             case 'dokumentasi':
             case 'photos':
                 if (!$meeting->photos_signed_at) {
-                    abort(404, 'Dokumen dokumentasi foto belum ditandatangani secara elektronik.');
+                    abort(404, 'Dokumen dokumentasi belum ditandatangani secara elektronik.');
                 }
                 $pdf = Pdf::loadView('exports.meeting-documentation', compact('meeting'))->setPaper('a4', 'portrait');
-                $fileName = $this->generateFileName($meeting, 'Dokumentasi_Foto_TTE');
-                return $pdf->stream($fileName);
+                $fileName = $this->generateFileName($meeting, 'Dokumentasi');
+                break;
 
             case 'notulen':
             case 'minutes':
@@ -130,9 +147,15 @@ class MeetingExportController extends Controller
                     abort(404, 'Dokumen notulen rapat belum ditandatangani secara elektronik.');
                 }
                 $pdf = Pdf::loadView('exports.meeting-minutes', compact('meeting'))->setPaper('a4', 'portrait');
-                $fileName = $this->generateFileName($meeting, 'Notulen_Rapat_TTE');
-                return $pdf->stream($fileName);
+                $fileName = $this->generateFileName($meeting, 'Notulen');
+                break;
         }
+
+        if (request()->query('action') === 'download' || request()->query('download')) {
+            return $pdf->download($fileName);
+        }
+
+        return $pdf->stream($fileName);
     }
 }
 

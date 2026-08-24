@@ -258,8 +258,8 @@ class BsreEsignService
     {
         return match ($type) {
             'minutes' => 'Notulen Rapat',
-            'attendance' => 'Daftar Hadir',
-            'photos', 'documentation' => 'Dokumentasi Foto',
+            'attendance' => 'Presensi',
+            'photos', 'documentation' => 'Dokumentasi',
             default => 'Dokumen Rapat',
         };
     }

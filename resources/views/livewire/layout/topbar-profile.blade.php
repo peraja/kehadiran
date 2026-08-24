@@ -39,7 +39,7 @@ new class extends Component
                     {{ strtoupper(substr($user->name, 0, 2)) }}
                 </div>
                 <div class="text-left pr-1">
-                    <div class="text-xs font-bold text-slate-900 truncate max-w-[150px] sm:max-w-[190px] leading-tight">{{ $user->name }}</div>
+                    <div class="text-xs font-bold text-slate-900 whitespace-nowrap leading-tight">{{ $user->name }}</div>
                     <div class="text-[10px] font-semibold text-slate-500 leading-tight mt-0.5 flex items-center gap-1.5">
                         <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-bold border {{ $roleBadgeColors }}">
                             {{ $roleLabel }}

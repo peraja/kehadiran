@@ -99,7 +99,7 @@ new #[Layout('layouts.app')] class extends Component {
         <!-- Action Header Toolbar -->
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
             <div class="flex items-center gap-2.5">
-                <h3 class="text-lg font-extrabold text-slate-900 tracking-tight">Daftar Hadir Rapat</h3>
+                <h3 class="text-lg font-extrabold text-slate-900 tracking-tight">Presensi Rapat</h3>
                 <span class="px-2.5 py-0.5 bg-primary-50 text-primary-700 border border-primary-200/60 rounded-full text-xs font-bold">{{ $meeting->attendances->count() }} Orang</span>
             </div>
 
@@ -142,7 +142,7 @@ new #[Layout('layouts.app')] class extends Component {
         <!-- Locked Banner (TTE Signed) -->
         <div class="flex items-center gap-2.5 p-3.5 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 font-medium">
             <svg class="w-4 h-4 text-amber-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-            <span>Daftar hadir dikunci — sudah TTE.</span>
+            <span>Presensi dikunci — sudah TTE.</span>
         </div>
         @endif
 
@@ -249,7 +249,7 @@ new #[Layout('layouts.app')] class extends Component {
                 <div class="p-4 bg-slate-50 border border-slate-200/80 rounded-2xl space-y-2.5 text-sm">
                     <div class="flex items-center justify-between text-xs sm:text-sm">
                         <span class="text-slate-500 font-medium">Dokumen</span>
-                        <span class="font-extrabold text-slate-900 text-right">Daftar Hadir</span>
+                        <span class="font-extrabold text-slate-900 text-right">Presensi</span>
                     </div>
                     <div class="flex items-center justify-between text-xs sm:text-sm">
                         <span class="text-slate-500 font-medium">Penandatangan</span>

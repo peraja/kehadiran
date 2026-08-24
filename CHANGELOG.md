@@ -4,6 +4,31 @@ Semua perubahan penting pada proyek ini dicatat dalam berkas ini.
 
 Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/1.0.0/), dan proyek ini mematuhi [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.1] - 2026-08-24
+
+### Ditambahkan
+- Halaman **Riwayat Rapat** (`meetings/history.blade.php`) terpadu untuk peran Admin OPD dan Super Admin lengkap dengan filter pencarian instan, filter rentang tanggal, filter OPD (Super Admin), dan status TTE dokumen.
+- Metode pembantu `signedTteCount()` pada model `Meeting` untuk menghitung dokumen yang telah sah ditandatangani.
+- Suite pengujian otorisasi dan akses halaman riwayat rapat (`tests/Feature/MeetingHistoryTest.php`).
+
+### Diubah
+- **Penyelarasan Dashboard Pimpinan**:
+  - Penanganan kartu antrean **Menunggu TTE** dengan *empty state* bersih *"Tidak Ada Dokumen yang Menunggu TTE"* jika seluruh dokumen telah ditandatangani.
+  - Penghapusan kartu *Rapat Mendatang* pada dasbor Pimpinan untuk antarmuka yang lebih ringkas dan fokus.
+- **Penyelarasan Tampilan Daftar Rapat (`meetings/index.blade.php`)**:
+  - Penyembunyian filter status (*Semua Status, Dijadwalkan, Berlangsung, Selesai*) khusus bagi peran Pimpinan.
+  - Kolom status tabel bagi peran Pimpinan diubah menjadi **Status Dokumen** (`TTE Lengkap`, `X/3 TTE`, `Menunggu TTE`, `Draft`) tanpa badge status siklus rapat.
+- **Penyelarasan Berkas Ekspor PDF (Notulen, Presensi, Dokumentasi)**:
+  - Penanganan baris informasi **Pimpinan** dengan subline nama jabatan proporsional agar nama jabatan yang panjang tidak merusak tata letak.
+  - Penataan ulang tabel informasi rapat menjadi 3 kolom dengan kolom titik dua (`:`) presisi (`12px`) untuk penjajaran vertikal sempurna.
+  - Perluasan *spacing* dan *padding* sebelum dan sesudah blok informasi rapat agar dokumen lebih lega dan estetis.
+  - Penyelarasan indentasi bertingkat (*step-aligned*) pada isi notulen sehingga teks judul bab sejajar dengan anak penomoran (`22px`, `44px`, `66px`).
+  - Standardisasi *line-height* dokumen PDF secara konsisten (`1.45` – `1.5`).
+- **Penyelarasan Fitur Notulen**:
+  - Perubahan nama dan tombol aksi dari **Bantuan AI** menjadi **Notulen AI** pada antarmuka editor dan modal hasil AI.
+  - Penyempurnaan penyelarasan nama pada tombol dropdown profil di topbar dengan lebar otomatis (`whitespace-nowrap`).
+  - Standardisasi label badge dokumen menjadi **`TTE Lengkap`** di seluruh aplikasi.
+
 ## [1.3.0] - 2026-08-24
 
 ### Ditambahkan

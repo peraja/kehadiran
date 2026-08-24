@@ -505,7 +505,7 @@ new #[Layout('layouts.app')] class extends Component {
                 <div class="p-4 bg-slate-50 border border-slate-200/80 rounded-2xl space-y-2.5 text-sm">
                     <div class="flex items-center justify-between text-xs sm:text-sm">
                         <span class="text-slate-500 font-medium">Dokumen</span>
-                        <span class="font-extrabold text-slate-900 text-right">Dokumentasi Foto</span>
+                        <span class="font-extrabold text-slate-900 text-right">Dokumentasi</span>
                     </div>
                     <div class="flex items-center justify-between text-xs sm:text-sm">
                         <span class="text-slate-500 font-medium">Penandatangan</span>

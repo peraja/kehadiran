@@ -34,12 +34,12 @@ new #[Layout('layouts.guest')] class extends Component {
         switch ($this->type) {
             case 'presensi':
             case 'attendance':
-                $this->docTitle = 'Daftar Hadir Rapat';
+                $this->docTitle = 'Presensi Rapat';
                 $this->signedAt = $this->meeting->attendance_signed_at;
                 break;
             case 'dokumentasi':
             case 'photos':
-                $this->docTitle = 'Dokumentasi Foto Rapat';
+                $this->docTitle = 'Dokumentasi Rapat';
                 $this->signedAt = $this->meeting->photos_signed_at;
                 break;
             case 'notulen':

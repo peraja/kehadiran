@@ -74,13 +74,24 @@ new class extends Component
                             </li>
                             <li>
                                 <a href="{{ route('meetings.index') }}" wire:navigate
-                                    class="group flex gap-x-3 rounded-xl p-3.5 text-sm font-bold leading-6 transition-all {{ request()->routeIs('meetings.*') ? 'bg-primary-500/10 text-primary-400 shadow-inner ring-1 ring-primary-500/20' : 'text-slate-300 hover:bg-white/5 hover:text-white' }}">
-                                    <svg class="h-5 w-5 shrink-0 {{ request()->routeIs('meetings.*') ? 'text-primary-400' : 'text-slate-400 group-hover:text-white' }}" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                    class="group flex gap-x-3 rounded-xl p-3.5 text-sm font-bold leading-6 transition-all {{ (request()->routeIs('meetings.*') && !request()->routeIs('meetings.history')) ? 'bg-primary-500/10 text-primary-400 shadow-inner ring-1 ring-primary-500/20' : 'text-slate-300 hover:bg-white/5 hover:text-white' }}">
+                                    <svg class="h-5 w-5 shrink-0 {{ (request()->routeIs('meetings.*') && !request()->routeIs('meetings.history')) ? 'text-primary-400' : 'text-slate-400 group-hover:text-white' }}" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
                                     </svg>
                                     Daftar Rapat
                                 </a>
                             </li>
+                            @if(auth()->user()->hasAnyActiveRole(['admin', 'admin_opd']))
+                            <li>
+                                <a href="{{ route('meetings.history') }}" wire:navigate
+                                    class="group flex gap-x-3 rounded-xl p-3.5 text-sm font-bold leading-6 transition-all {{ request()->routeIs('meetings.history') ? 'bg-primary-500/10 text-primary-400 shadow-inner ring-1 ring-primary-500/20' : 'text-slate-300 hover:bg-white/5 hover:text-white' }}">
+                                    <svg class="h-5 w-5 shrink-0 {{ request()->routeIs('meetings.history') ? 'text-primary-400' : 'text-slate-400 group-hover:text-white' }}" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                                    </svg>
+                                    Riwayat Rapat
+                                </a>
+                            </li>
+                            @endif
                             @if(auth()->user()->hasActiveRole('admin'))
                             <li class="mt-4">
                                 <div class="text-[10px] font-extrabold uppercase tracking-widest text-slate-500 px-3.5 mb-2">
@@ -169,13 +180,24 @@ new class extends Component
                         </li>
                         <li>
                             <a href="{{ route('meetings.index') }}" wire:navigate
-                                class="group flex items-center gap-x-3 rounded-xl px-4 py-3 text-sm font-bold transition-all {{ request()->routeIs('meetings.*') ? 'bg-primary-500/10 text-primary-400 shadow-inner ring-1 ring-primary-500/20' : 'text-slate-400 hover:bg-white/5 hover:text-white' }}">
-                                <svg class="h-5 w-5 shrink-0 {{ request()->routeIs('meetings.*') ? 'text-primary-400' : 'text-slate-500 group-hover:text-slate-300' }}" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                class="group flex items-center gap-x-3 rounded-xl px-4 py-3 text-sm font-bold transition-all {{ (request()->routeIs('meetings.*') && !request()->routeIs('meetings.history')) ? 'bg-primary-500/10 text-primary-400 shadow-inner ring-1 ring-primary-500/20' : 'text-slate-400 hover:bg-white/5 hover:text-white' }}">
+                                <svg class="h-5 w-5 shrink-0 {{ (request()->routeIs('meetings.*') && !request()->routeIs('meetings.history')) ? 'text-primary-400' : 'text-slate-500 group-hover:text-slate-300' }}" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
                                 </svg>
                                 Daftar Rapat
                             </a>
                         </li>
+                        @if(auth()->user()->hasAnyActiveRole(['admin', 'admin_opd']))
+                        <li>
+                            <a href="{{ route('meetings.history') }}" wire:navigate
+                                class="group flex items-center gap-x-3 rounded-xl px-4 py-3 text-sm font-bold transition-all {{ request()->routeIs('meetings.history') ? 'bg-primary-500/10 text-primary-400 shadow-inner ring-1 ring-primary-500/20' : 'text-slate-400 hover:bg-white/5 hover:text-white' }}">
+                                <svg class="h-5 w-5 shrink-0 {{ request()->routeIs('meetings.history') ? 'text-primary-400' : 'text-slate-500 group-hover:text-slate-300' }}" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                                </svg>
+                                Riwayat Rapat
+                            </a>
+                        </li>
+                        @endif
                     </ul>
                 </div>
 

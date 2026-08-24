@@ -246,19 +246,21 @@ new class extends Component {
     @endif
 
     <!-- Menunggu TTE Widget (Khusus Pimpinan & Super Admin) -->
-    @if(($isPimpinan || $isAdmin) && $pendingTteMeetings->isNotEmpty())
+    @if($isPimpinan || ($isAdmin && $pendingTteMeetings->isNotEmpty()))
     <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
         <div class="px-6 py-5 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
             <div class="flex items-center gap-2">
                 <span class="w-2 h-2 rounded-full bg-amber-500"></span>
                 <h3 class="font-extrabold text-slate-900 text-sm">Menunggu TTE</h3>
             </div>
+            @if($pendingTteMeetings->isNotEmpty())
             <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-extrabold bg-amber-100 text-amber-800">
                 {{ $pendingTteMeetings->count() }}
             </span>
+            @endif
         </div>
         <div class="divide-y divide-slate-100">
-            @foreach($pendingTteMeetings as $meeting)
+            @forelse($pendingTteMeetings as $meeting)
             <div class="p-5 hover:bg-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-colors group">
                 <div class="min-w-0 flex-1">
                     <a href="{{ route('meetings.overview', $meeting->id) }}" wire:navigate class="font-extrabold text-sm text-slate-900 group-hover:text-primary-600 transition-colors truncate block">
@@ -330,13 +332,22 @@ new class extends Component {
                     @endif
                 </div>
             </div>
-            @endforeach
+            @empty
+            <div class="py-14 px-6 text-center flex flex-col items-center justify-center h-full">
+                <div class="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center mb-2.5">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                </div>
+                <p class="text-sm font-extrabold text-slate-900">Tidak Ada Dokumen yang Menunggu TTE</p>
+            </div>
+            @endforelse
         </div>
     </div>
     @endif
 
     @unless($isPimpinan)
-    <!-- Lists -->
+    <!-- Lists (Admin OPD & Super Admin & Pegawai) -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <!-- Rapat Mendatang -->
         <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">

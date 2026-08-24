@@ -21,7 +21,7 @@
 
         body {
             font-size: 10pt;
-            line-height: 1.45;
+            line-height: 1.5;
             color: #111827;
         }
 
@@ -88,7 +88,7 @@
 
         .doc-title {
             text-align: center;
-            margin: 14px 0;
+            margin: 20px 0 16px 0;
             font-size: 12pt;
             font-weight: bold;
             text-decoration: underline;
@@ -98,25 +98,33 @@
 
         .info-table {
             width: 100%;
-            margin-bottom: 14px;
+            margin-bottom: 20px;
             border-collapse: collapse;
             font-size: 9.5pt;
+            line-height: 1.5;
         }
 
         .info-table td {
-            padding: 3px 4px;
+            padding: 4px 2px;
             vertical-align: top;
+            line-height: 1.5;
         }
 
         .info-table .label {
             font-weight: bold;
-            width: 130px;
+            width: 125px;
+            color: #111827;
+        }
+
+        .info-table .colon {
+            width: 12px;
+            text-align: left;
             color: #111827;
         }
 
         .divider {
             border-bottom: 1px solid #cbd5e1;
-            margin-bottom: 14px;
+            margin-bottom: 20px;
         }
 
         .photo-table {
@@ -211,28 +219,38 @@
         </div>
     </div>
 
-    <div class="doc-title">DOKUMENTASI FOTO RAPAT</div>
+    <div class="doc-title">DOKUMENTASI RAPAT</div>
 
     <table class="info-table">
         <tr>
             <td class="label">Agenda</td>
-            <td>: {{ $meeting->title }}</td>
+            <td class="colon">:</td>
+            <td>{{ $meeting->title }}</td>
         </tr>
         <tr>
             <td class="label">Hari / Tanggal</td>
-            <td>: {{ $meeting->date ? $meeting->date->translatedFormat('l, d F Y') : '-' }}</td>
+            <td class="colon">:</td>
+            <td>{{ $meeting->date ? $meeting->date->translatedFormat('l, d F Y') : '-' }}</td>
         </tr>
         <tr>
             <td class="label">Waktu</td>
-            <td>: {{ $timeFormatted }}</td>
+            <td class="colon">:</td>
+            <td>{{ $timeFormatted }}</td>
         </tr>
         <tr>
             <td class="label">Tempat</td>
-            <td>: {{ $meeting->location ?? 'Online / Menyesuaikan' }}</td>
+            <td class="colon">:</td>
+            <td>{{ $meeting->location ?? 'Online / Menyesuaikan' }}</td>
         </tr>
         <tr>
             <td class="label">Pimpinan</td>
-            <td>: {{ $signerName }} ({{ $signerTitle }})</td>
+            <td class="colon">:</td>
+            <td>
+                <div>{{ $signerName }}</div>
+                @if($signerTitle)
+                <div style="font-size: 8.5pt; color: #475569; margin-top: 1.5px; line-height: 1.5;">{{ $signerTitle }}</div>
+                @endif
+            </td>
         </tr>
     </table>
 
@@ -291,9 +309,9 @@
     }
     ?>
 
-    <div style="margin-top: 25px; float: right; width: 285px; text-align: left; font-size: 9.5pt; line-height: 1.4; page-break-inside: avoid;">
-        <p style="margin-bottom: 2px; font-size: 9.5pt;">Sinjai, {{ $meeting->date ? $meeting->date->translatedFormat('d F Y') : date('d F Y') }}</p>
-        <p style="font-weight: bold; margin-top: 0; margin-bottom: 6px; font-size: 9.5pt; line-height: 1.3;">
+    <div style="margin-top: 25px; float: right; width: 285px; text-align: left; font-size: 9.5pt; line-height: 1.45; page-break-inside: avoid;">
+        <p style="margin-bottom: 2px; font-size: 9.5pt; line-height: 1.45;">Sinjai, {{ $meeting->date ? $meeting->date->translatedFormat('d F Y') : date('d F Y') }}</p>
+        <p style="font-weight: bold; margin-top: 0; margin-bottom: 6px; font-size: 9.5pt; line-height: 1.4;">
             Mengetahui,<br>
             {{ $signerTitle }}
         </p>

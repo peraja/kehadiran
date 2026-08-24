@@ -13,6 +13,10 @@ Volt::route('meetings', 'meetings.index')
     ->middleware(['auth'])
     ->name('meetings.index');
 
+Volt::route('meetings/history', 'meetings.history')
+    ->middleware(['auth'])
+    ->name('meetings.history');
+
 Route::middleware(['auth'])->group(function () {
     Volt::route('meetings/{meeting}/overview', 'meetings.overview')->name('meetings.overview');
     Volt::route('meetings/{meeting}/presensi', 'meetings.presensi')->name('meetings.presensi');

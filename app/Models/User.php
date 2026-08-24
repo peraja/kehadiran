@@ -106,6 +106,14 @@ class User extends Authenticatable
     }
 
     /**
+     * Alias helper untuk hasActiveRole yang menerima satu atau banyak peran.
+     */
+    public function hasAnyActiveRole(string|array $roles): bool
+    {
+        return $this->hasActiveRole($roles);
+    }
+
+    /**
      * Beralih ke peran tertentu jika pengguna memiliki peran tersebut.
      */
     public function switchRole(string $role): bool

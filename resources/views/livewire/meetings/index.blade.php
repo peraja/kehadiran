@@ -269,6 +269,7 @@ new #[Layout('layouts.app')] class extends Component {
         <!-- Toolbar -->
         <div class="p-4 border-b border-slate-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-slate-50/50">
             <!-- Filter Pills -->
+            @unless(auth()->user()->hasActiveRole('pimpinan'))
             <div class="flex flex-wrap items-center gap-2">
                 <button wire:click="$set('statusFilter','')"
                     class="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold transition-all {{ $statusFilter === '' ? 'bg-slate-800 text-white shadow-sm' : 'bg-white border border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900' }}">
@@ -291,6 +292,7 @@ new #[Layout('layouts.app')] class extends Component {
                     <span class="inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-[10px] {{ $statusFilter === 'completed' ? 'bg-primary-700 text-primary-100' : 'bg-primary-100 text-primary-700' }}">{{ $counts['completed'] }}</span>
                 </button>
             </div>
+            @endunless
 
             <!-- Search Field -->
             <div class="w-full md:w-80">
@@ -319,7 +321,9 @@ new #[Layout('layouts.app')] class extends Component {
                     <tr class="text-[11px] font-extrabold uppercase tracking-wider">
                         <th class="py-4 px-6 text-left">Agenda & Lokasi</th>
                         <th class="py-4 px-6 text-left">Tanggal & Waktu</th>
-                        <th class="py-4 px-6 text-center w-32">Status</th>
+                        <th class="py-4 px-6 text-center {{ auth()->user()->hasActiveRole('pimpinan') ? 'w-36' : 'w-32' }}">
+                            {{ auth()->user()->hasActiveRole('pimpinan') ? 'Status Dokumen' : 'Status' }}
+                        </th>
                         <th class="py-4 px-6 text-right w-24">Aksi</th>
                     </tr>
                 </thead>
@@ -346,9 +350,67 @@ new #[Layout('layouts.app')] class extends Component {
                             </div>
                         </td>
 
-                        <!-- Status -->
+                        <!-- Status / Status Dokumen -->
                         <td class="py-4 px-6 text-center whitespace-nowrap">
-                            <x-meeting-status-badge :status="$meeting->status" />
+                            @if(auth()->user()->hasActiveRole('pimpinan'))
+                                <!-- Khusus Pimpinan: Hanya Status Dokumen -->
+                                @if($meeting->status === 'completed')
+                                    @php $signedCount = $meeting->signedTteCount(); @endphp
+                                    @if($meeting->isFullySigned())
+                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200" title="Notulen, Presensi & Dokumentasi telah TTE">
+                                        <svg class="w-3.5 h-3.5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+                                        </svg>
+                                        <span>TTE Lengkap</span>
+                                    </span>
+                                    @elseif($signedCount > 0)
+                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200" title="{{ $signedCount }} dari 3 dokumen telah di-TTE">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                                        <span>{{ $signedCount }}/3 TTE</span>
+                                    </span>
+                                    @else
+                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 border border-slate-200" title="Belum ada dokumen yang di-TTE">
+                                        <svg class="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                        <span>Menunggu TTE</span>
+                                    </span>
+                                    @endif
+                                @else
+                                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium text-slate-400 bg-slate-50 border border-slate-200/70" title="Dokumen disahkan setelah status rapat diselesaikan">
+                                        <span>Draft</span>
+                                    </span>
+                                @endif
+                            @else
+                                <!-- Non-Pimpinan: Status Rapat + Status Dokumen -->
+                                <div class="flex flex-col items-center gap-1.5">
+                                    <x-meeting-status-badge :status="$meeting->status" />
+
+                                    @if($meeting->status === 'completed')
+                                        @php $signedCount = $meeting->signedTteCount(); @endphp
+                                        @if($meeting->isFullySigned())
+                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200" title="Notulen, Presensi & Dokumentasi telah TTE">
+                                            <svg class="w-3 h-3 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+                                            </svg>
+                                            <span>TTE Lengkap</span>
+                                        </span>
+                                        @elseif($signedCount > 0)
+                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200" title="{{ $signedCount }} dari 3 dokumen telah di-TTE">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                                            <span>{{ $signedCount }}/3 TTE</span>
+                                        </span>
+                                        @else
+                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-500 border border-slate-200" title="Belum ada dokumen yang di-TTE">
+                                            <svg class="w-3 h-3 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
+                                            <span>Menunggu TTE</span>
+                                        </span>
+                                        @endif
+                                    @endif
+                                </div>
+                            @endif
                         </td>
 
                         <!-- Aksi -->

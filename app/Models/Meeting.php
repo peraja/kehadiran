@@ -140,4 +140,16 @@ class Meeting extends Model
         if (empty($this->photos_signed_at)) $count++;
         return $count;
     }
+
+    /**
+     * Count how many documents have already been signed with TTE.
+     */
+    public function signedTteCount(): int
+    {
+        $count = 0;
+        if (!empty($this->attendance_signed_at)) $count++;
+        if (!empty($this->photos_signed_at)) $count++;
+        if (!empty($this->minutes_signed_at)) $count++;
+        return $count;
+    }
 }

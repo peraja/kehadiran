@@ -226,21 +226,20 @@ new #[Layout('layouts.app')] class extends Component {
                 <h3 class="text-lg font-extrabold text-slate-900 tracking-tight">Notulen Rapat</h3>
             </div>
 
-            <div class="flex flex-wrap items-center gap-2.5 self-start sm:self-auto">
+            <div class="flex flex-wrap items-center gap-3 self-start sm:self-auto">
                 @if($canEdit && !$meeting->minutes_signed_at)
-                <!-- Tombol Bantuan AI (Langsung Buka Modal & Jalankan AI) -->
+                <!-- Tombol Notulen AI (Langsung Buka Modal & Jalankan AI) -->
                 <button type="button"
                     x-data=""
                     x-on:click.prevent="$dispatch('open-modal', 'ai-minutes-modal'); $dispatch('ai-loading-start'); $wire.processAi().finally(() => $dispatch('ai-loading-stop'))"
-                    class="inline-flex items-center gap-2 px-3.5 py-2.5 bg-purple-50 hover:bg-purple-100 active:scale-95 text-purple-700 border border-purple-200/80 rounded-xl font-bold text-xs transition-all shadow-2xs cursor-pointer">
+                    class="inline-flex items-center gap-2 px-4 py-2.5 bg-purple-50 hover:bg-purple-100 active:scale-95 text-purple-700 border border-purple-200/80 rounded-xl font-bold text-sm transition-all shadow-sm cursor-pointer">
                     <svg class="w-4 h-4 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
                     </svg>
-                    <span>Bantuan AI</span>
+                    <span>Notulen AI</span>
                 </button>
                 @endif
 
-                @if($minutes && !empty($minutes->content))
                 @if($meeting->minutes_signed_at)
                 <span class="inline-flex items-center gap-1.5 px-3 py-2 bg-emerald-100/80 text-emerald-800 rounded-xl text-xs font-bold">
                     <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -248,7 +247,7 @@ new #[Layout('layouts.app')] class extends Component {
                     </svg>
                     <span>Sudah TTE</span>
                 </span>
-                @elseif(auth()->user()->hasActiveRole('pimpinan') && $meeting->status === 'completed')
+                @elseif(auth()->user()->hasActiveRole('pimpinan') && $meeting->status === 'completed' && $minutes && !empty($minutes->content))
                 <button type="button" x-data="" x-on:click.prevent="$dispatch('open-modal', 'sign-minutes-modal'); $wire.openSignModal()" class="inline-flex justify-center items-center px-4 py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl font-bold text-sm transition-all shadow-sm gap-2">
                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
@@ -271,7 +270,6 @@ new #[Layout('layouts.app')] class extends Component {
                     </svg>
                     <span>Cetak PDF</span>
                 </button>
-                @endif
                 @endif
             </div>
         </div>
@@ -307,7 +305,7 @@ new #[Layout('layouts.app')] class extends Component {
             <div class="relative">
                 <textarea wire:model="content" id="content" rows="18"
                     class="block w-full p-4 sm:p-5 rounded-2xl border border-slate-300 font-normal leading-relaxed text-slate-800 text-sm shadow-xs transition-colors duration-150 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 focus:outline-none resize-y min-h-[380px] bg-white"
-                    placeholder="1. Pembukaan&#10;&#10;2. Pembahasan&#10;&#10;3. Kesimpulan&#10;&#10;(Tuliskan catatan rapat di sini dan gunakan tombol 'Bantuan AI' di atas untuk merapikan notulen)"></textarea>
+                    placeholder="1. Pembukaan&#10;&#10;2. Pembahasan&#10;&#10;3. Kesimpulan&#10;&#10;(Tuliskan catatan rapat di sini dan gunakan tombol 'Notulen AI' di atas untuk merapikan notulen)"></textarea>
             </div>
             @error('content') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
 
@@ -358,7 +356,7 @@ new #[Layout('layouts.app')] class extends Component {
             <!-- Header Modal -->
             <div class="flex justify-between items-center pb-3 border-b border-slate-100">
                 <h2 class="text-base font-extrabold text-slate-900">
-                    Bantuan AI
+                    Notulen AI
                 </h2>
                 <button type="button" x-on:click="show = false" wire:click="closeAiModal" class="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer" title="Tutup">
                     <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
