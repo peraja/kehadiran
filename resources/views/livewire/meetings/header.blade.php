@@ -9,8 +9,10 @@ use App\Services\BsreEsignService;
 new class extends Component {
     public Meeting $meeting;
     public $title, $date, $start_time, $end_time, $location;
+    public $start_hour = '09', $start_minute = '00';
+    public $end_hour = '11', $end_minute = '00';
     public $signer_title, $signer_name, $signer_nip, $signer_rank;
-    public $selected_signer_id = '';
+    public $selected_signer_id = 'kepala_opd';
     public $selected_opd_id = '';
     public $opd;
     public $opdSigners = [];
@@ -90,8 +92,20 @@ new class extends Component {
     {
         $this->title = $this->meeting->title;
         $this->date = $this->meeting->date ? $this->meeting->date->format('Y-m-d') : '';
-        $this->start_time = $this->meeting->start_time ? $this->meeting->start_time->format('H:i') : '';
-        $this->end_time = $this->meeting->end_time ? $this->meeting->end_time->format('H:i') : '';
+        
+        $startTime = $this->meeting->start_time ? $this->meeting->start_time->format('H:i') : '09:00';
+        $endTime = $this->meeting->end_time ? $this->meeting->end_time->format('H:i') : '11:00';
+        $this->start_time = $startTime;
+        $this->end_time = $endTime;
+
+        $startParts = explode(':', $startTime);
+        $this->start_hour = $startParts[0] ?? '09';
+        $this->start_minute = $startParts[1] ?? '00';
+
+        $endParts = explode(':', $endTime);
+        $this->end_hour = $endParts[0] ?? '11';
+        $this->end_minute = $endParts[1] ?? '00';
+
         $this->location = $this->meeting->location;
         $this->signer_title = $this->meeting->signer_title ?? '';
         $this->signer_name = $this->meeting->signer_name ?? '';
@@ -259,6 +273,23 @@ new class extends Component {
         $this->redirect(request()->header('Referer', route('meetings.overview', $this->meeting->id)), navigate: true);
     }
 
+    public function reopenMeeting()
+    {
+        if (!$this->canManageMeeting()) {
+            abort(403, 'Akses tidak diizinkan.');
+        }
+
+        if ($this->signerLocked) {
+            abort(403, 'Rapat tidak dapat dilanjutkan karena dokumen telah ditandatangani.');
+        }
+
+        $this->meeting->update(['status' => 'ongoing']);
+        $this->meeting->refresh();
+        $this->dispatch('meeting-updated');
+        session()->flash('message', 'Rapat dilanjutkan.');
+        $this->redirect(request()->header('Referer', route('meetings.overview', $this->meeting->id)), navigate: true);
+    }
+
     public function openEditModal()
     {
         if (!$this->canManageMeeting()) {
@@ -266,6 +297,51 @@ new class extends Component {
         }
         $this->resetValidation();
         $this->loadMeetingData();
+    }
+
+    public function updatedStartTime($val): void
+    {
+        if (!empty($val)) {
+            try {
+                $c = \Carbon\Carbon::parse($val);
+                $this->start_hour = $c->format('H');
+                $this->start_minute = $c->format('i');
+            } catch (\Throwable $e) {}
+        }
+    }
+
+    public function updatedEndTime($val): void
+    {
+        if (!empty($val)) {
+            try {
+                $c = \Carbon\Carbon::parse($val);
+                $this->end_hour = $c->format('H');
+                $this->end_minute = $c->format('i');
+            } catch (\Throwable $e) {}
+        }
+    }
+
+    protected function normalizeTimes(): void
+    {
+        if ($this->start_hour !== '' && $this->start_minute !== '') {
+            $this->start_time = sprintf('%02d:%02d', (int) $this->start_hour, (int) $this->start_minute);
+        } elseif (!empty($this->start_time)) {
+            try {
+                $this->start_time = \Carbon\Carbon::parse($this->start_time)->format('H:i');
+            } catch (\Throwable $e) {
+                // Keep original to let validator catch invalid format
+            }
+        }
+
+        if ($this->end_hour !== '' && $this->end_minute !== '') {
+            $this->end_time = sprintf('%02d:%02d', (int) $this->end_hour, (int) $this->end_minute);
+        } elseif (!empty($this->end_time)) {
+            try {
+                $this->end_time = \Carbon\Carbon::parse($this->end_time)->format('H:i');
+            } catch (\Throwable $e) {
+                // Keep original to let validator catch invalid format
+            }
+        }
     }
 
     public function updateMeeting()
@@ -276,10 +352,12 @@ new class extends Component {
 
         // Blokir semua perubahan jika ada dokumen yang sudah TTE
         if ($this->signerLocked) {
-            session()->flash('error', 'Rapat tidak dapat diubah karena ada dokumen yang sudah TTE. Buka revisi terlebih dahulu.');
+            session()->flash('error', 'Rapat tidak dapat diubah karena dokumen telah ditandatangani. Buka kunci dokumen terlebih dahulu.');
             $this->dispatch('close-modal', 'edit-meeting-modal');
             return;
         }
+
+        $this->normalizeTimes();
 
         // Sinkronisasi data penandatangan berdasarkan selected_signer_id
         if ($this->selected_signer_id && $this->selected_signer_id !== 'kepala_opd') {
@@ -357,12 +435,12 @@ new class extends Component {
                 @php $signedCount = $meeting->signedTteCount(); @endphp
                 @if(auth()->user()->hasActiveRole('pimpinan'))
                     @if($meeting->isFullySigned())
-                    <span class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-xl text-xs font-bold shadow-2xs">
+                    <span class="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-xl text-sm font-bold shadow-2xs">
                         <svg class="w-4 h-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" /></svg>
                         <span>TTE Lengkap</span>
                     </span>
                     @else
-                    <button type="button" x-data="" x-on:click.prevent="$dispatch('open-modal', 'sign-all-modal'); $wire.openSignModal()" class="flex-1 md:flex-none inline-flex justify-center items-center px-4 py-2 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl font-bold text-sm transition-all shadow-sm gap-2">
+                    <button type="button" x-data="" x-on:click.prevent="$dispatch('open-modal', 'sign-all-modal'); $wire.openSignModal()" class="flex-1 md:flex-none inline-flex justify-center items-center px-4 py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl font-bold text-sm transition-all shadow-sm gap-2 cursor-pointer">
                         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                         </svg>
@@ -371,17 +449,17 @@ new class extends Component {
                     @endif
                 @else
                     @if($meeting->isFullySigned())
-                    <span class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-xl text-xs font-bold shadow-2xs">
+                    <span class="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-xl text-sm font-bold shadow-2xs">
                         <svg class="w-4 h-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" /></svg>
                         <span>TTE Lengkap</span>
                     </span>
                     @elseif($signedCount > 0)
-                    <span class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-amber-50 text-amber-700 border border-amber-200 rounded-xl text-xs font-bold shadow-2xs">
+                    <span class="inline-flex items-center gap-2 px-4 py-2.5 bg-amber-50 text-amber-700 border border-amber-200 rounded-xl text-sm font-bold shadow-2xs">
                         <span class="w-2 h-2 rounded-full bg-amber-500"></span>
-                        <span>{{ $signedCount }}/3 TTE</span>
+                        <span>{{ $signedCount }}/3 Sudah TTE</span>
                     </span>
                     @else
-                    <span class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-slate-100 text-slate-600 border border-slate-200 rounded-xl text-xs font-bold shadow-2xs">
+                    <span class="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-100 text-slate-600 border border-slate-200 rounded-xl text-sm font-bold shadow-2xs">
                         <svg class="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
@@ -393,7 +471,7 @@ new class extends Component {
 
             @if($this->canManageMeeting())
                 @if($meeting->status == 'scheduled')
-                <button wire:click="startMeeting" wire:loading.attr="disabled" wire:target="startMeeting" wire:confirm="Mulai rapat ini?" class="flex-1 md:flex-none inline-flex justify-center items-center px-4 py-2 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl font-bold text-sm transition-all shadow-sm hover:shadow-md gap-1.5">
+                <button wire:click="startMeeting" wire:loading.attr="disabled" wire:target="startMeeting" wire:confirm="Mulai rapat ini?" class="flex-1 md:flex-none inline-flex justify-center items-center px-4 py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl font-bold text-sm transition-all shadow-sm hover:shadow-md gap-2 cursor-pointer">
                     <svg wire:loading.remove wire:target="startMeeting" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path>
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
@@ -405,7 +483,7 @@ new class extends Component {
                     <span>Mulai Rapat</span>
                 </button>
                 @elseif($meeting->status == 'ongoing')
-                <button wire:click="finishMeeting" wire:loading.attr="disabled" wire:target="finishMeeting" wire:confirm="Selesaikan rapat ini?" class="flex-1 md:flex-none inline-flex justify-center items-center px-4 py-2 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-xl font-bold text-sm transition-all shadow-sm hover:shadow-md gap-1.5">
+                <button wire:click="finishMeeting" wire:loading.attr="disabled" wire:target="finishMeeting" wire:confirm="Selesaikan rapat ini?" class="flex-1 md:flex-none inline-flex justify-center items-center px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-xl font-bold text-sm transition-all shadow-sm hover:shadow-md gap-2 cursor-pointer">
                     <svg wire:loading.remove wire:target="finishMeeting" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                     </svg>
@@ -415,21 +493,28 @@ new class extends Component {
                     </svg>
                     <span>Selesaikan</span>
                 </button>
+
+                <button x-data="" x-on:click.prevent="$dispatch('open-modal', 'qr-presensi-modal')" class="flex-1 md:flex-none inline-flex justify-center items-center px-4 py-2.5 bg-white hover:bg-slate-50 border border-slate-300 hover:border-slate-400 active:scale-95 text-slate-700 rounded-xl font-bold text-sm transition-all shadow-sm gap-2 cursor-pointer">
+                    <svg class="w-4 h-4 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
+                    </svg>
+                    <span>QR Code</span>
+                </button>
+                @elseif($meeting->status == 'completed' && !$this->signerLocked)
+                <button wire:click="reopenMeeting" wire:loading.attr="disabled" wire:target="reopenMeeting" wire:confirm="Lanjutkan rapat ini ke status sedang berlangsung?" class="flex-1 md:flex-none inline-flex justify-center items-center px-4 py-2.5 bg-white hover:bg-amber-50 border border-amber-300 hover:border-amber-400 active:scale-95 text-amber-800 rounded-xl font-bold text-sm transition-all shadow-sm gap-2 cursor-pointer">
+                    <svg class="w-4 h-4 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    <span>Lanjutkan Rapat</span>
+                </button>
                 @endif
 
                 @if($meeting->status !== 'completed')
-                <button x-data="" x-on:click.prevent="$dispatch('open-modal', 'qr-presensi-modal')" class="flex-1 md:flex-none inline-flex justify-center items-center px-4 py-2 bg-primary-50 hover:bg-primary-100 border border-primary-200 active:scale-95 text-primary-700 rounded-xl font-bold text-sm transition-all shadow-sm">
-                    <svg class="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
-                    </svg>
-                    QR Code
-                </button>
-
-                <button x-data="" x-on:click.prevent="$dispatch('open-modal', 'edit-meeting-modal'); $wire.openEditModal()" class="flex-1 md:flex-none inline-flex justify-center items-center px-4 py-2 bg-white border border-slate-300 hover:bg-slate-50 hover:border-slate-400 active:scale-95 text-slate-700 rounded-xl font-bold text-sm transition-all shadow-sm">
-                    <svg class="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <button x-data="" x-on:click.prevent="$dispatch('open-modal', 'edit-meeting-modal'); $wire.openEditModal()" class="flex-1 md:flex-none inline-flex justify-center items-center px-4 py-2.5 bg-white border border-slate-300 hover:bg-slate-50 hover:border-slate-400 active:scale-95 text-slate-700 rounded-xl font-bold text-sm transition-all shadow-sm gap-2 cursor-pointer">
+                    <svg class="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
                     </svg>
-                    Edit
+                    <span>Edit</span>
                 </button>
                 @endif
             @endif
@@ -444,7 +529,7 @@ new class extends Component {
                     Edit Rapat
                 </h2>
                 <div class="flex items-center gap-2">
-                    <button wire:click="deleteMeeting" wire:confirm="Apakah Anda yakin ingin menghapus rapat ini? Data presensi, foto, dan notulen terkait akan terhapus secara permanen." class="inline-flex items-center px-3 py-1.5 bg-rose-50 text-rose-600 hover:bg-rose-100 rounded-xl text-xs font-bold transition-colors">
+                    <button wire:click="deleteMeeting" wire:confirm="Hapus rapat ini? Seluruh data presensi, dokumentasi, dan notulen terkait akan dihapus." class="inline-flex items-center px-3 py-1.5 bg-rose-50 text-rose-600 hover:bg-rose-100 rounded-xl text-xs font-bold transition-colors">
                         <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                         </svg>
@@ -473,24 +558,71 @@ new class extends Component {
                     @error('title') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                 </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div>
                         <label for="edit_date" class="block text-sm font-bold text-slate-700 mb-1">Tanggal</label>
                         <input wire:model="date" id="edit_date" type="date" class="w-full text-sm py-2.5 px-3 border border-slate-300 rounded-xl text-slate-900 shadow-sm transition-colors {{ $lockedClass }}" {{ $locked ? 'disabled' : 'required' }} />
                         @error('date') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                     </div>
 
-                    <div class="flex gap-3">
-                        <div class="w-1/2">
-                            <label for="edit_start_time" class="block text-sm font-bold text-slate-700 mb-1">Waktu Mulai</label>
-                            <input wire:model="start_time" id="edit_start_time" type="time" class="w-full text-sm py-2.5 px-3 border border-slate-300 rounded-xl text-slate-900 shadow-sm transition-colors {{ $lockedClass }}" {{ $locked ? 'disabled' : 'required' }} />
-                            @error('start_time') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
+                    <!-- Jam Mulai -->
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-1">Waktu Mulai (WITA)</label>
+                        <div class="flex items-center gap-1.5">
+                            <div class="flex-1">
+                                <select wire:model="start_hour" class="w-full text-sm py-2.5 px-3 border border-slate-300 rounded-xl text-slate-900 shadow-sm transition-colors cursor-pointer {{ $lockedClass }}" {{ $locked ? 'disabled' : '' }}>
+                                    @for($h = 8; $h <= 16; $h++)
+                                        @php $hStr = sprintf('%02d', $h); @endphp
+                                        <option value="{{ $hStr }}">{{ $hStr }}</option>
+                                    @endfor
+                                    @if(!in_array((int)$start_hour, range(8, 16)) && $start_hour !== '')
+                                        <option value="{{ $start_hour }}">{{ $start_hour }}</option>
+                                    @endif
+                                </select>
+                            </div>
+                            <span class="text-slate-400 font-bold text-sm">:</span>
+                            <div class="flex-1">
+                                <select wire:model="start_minute" class="w-full text-sm py-2.5 px-3 border border-slate-300 rounded-xl text-slate-900 shadow-sm transition-colors cursor-pointer {{ $lockedClass }}" {{ $locked ? 'disabled' : '' }}>
+                                    @foreach(['00', '15', '30', '45'] as $mOption)
+                                        <option value="{{ $mOption }}">{{ $mOption }}</option>
+                                    @endforeach
+                                    @if(!in_array($start_minute, ['00', '15', '30', '45']) && $start_minute !== '')
+                                        <option value="{{ $start_minute }}">{{ $start_minute }}</option>
+                                    @endif
+                                </select>
+                            </div>
                         </div>
-                        <div class="w-1/2">
-                            <label for="edit_end_time" class="block text-sm font-bold text-slate-700 mb-1">Waktu Selesai</label>
-                            <input wire:model="end_time" id="edit_end_time" type="time" class="w-full text-sm py-2.5 px-3 border border-slate-300 rounded-xl text-slate-900 shadow-sm transition-colors {{ $lockedClass }}" {{ $locked ? 'disabled' : 'required' }} />
-                            @error('end_time') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
+                        @error('start_time') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
+                    </div>
+
+                    <!-- Jam Selesai -->
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-1">Waktu Selesai (WITA)</label>
+                        <div class="flex items-center gap-1.5">
+                            <div class="flex-1">
+                                <select wire:model="end_hour" class="w-full text-sm py-2.5 px-3 border border-slate-300 rounded-xl text-slate-900 shadow-sm transition-colors cursor-pointer {{ $lockedClass }}" {{ $locked ? 'disabled' : '' }}>
+                                    @for($h = 8; $h <= 16; $h++)
+                                        @php $hStr = sprintf('%02d', $h); @endphp
+                                        <option value="{{ $hStr }}">{{ $hStr }}</option>
+                                    @endfor
+                                    @if(!in_array((int)$end_hour, range(8, 16)) && $end_hour !== '')
+                                        <option value="{{ $end_hour }}">{{ $end_hour }}</option>
+                                    @endif
+                                </select>
+                            </div>
+                            <span class="text-slate-400 font-bold text-sm">:</span>
+                            <div class="flex-1">
+                                <select wire:model="end_minute" class="w-full text-sm py-2.5 px-3 border border-slate-300 rounded-xl text-slate-900 shadow-sm transition-colors cursor-pointer {{ $lockedClass }}" {{ $locked ? 'disabled' : '' }}>
+                                    @foreach(['00', '15', '30', '45'] as $mOption)
+                                        <option value="{{ $mOption }}">{{ $mOption }}</option>
+                                    @endforeach
+                                    @if(!in_array($end_minute, ['00', '15', '30', '45']) && $end_minute !== '')
+                                        <option value="{{ $end_minute }}">{{ $end_minute }}</option>
+                                    @endif
+                                </select>
+                            </div>
                         </div>
+                        @error('end_time') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                     </div>
                 </div>
 

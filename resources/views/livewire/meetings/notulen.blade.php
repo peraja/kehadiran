@@ -63,7 +63,7 @@ new #[Layout('layouts.app')] class extends Component {
 
     public function processAi(GeminiAiService $aiService): void
     {
-        if (!$this->canEdit || $this->meeting->minutes_signed_at) {
+        if (!$this->canEdit || $this->meeting->status !== 'completed' || $this->meeting->minutes_signed_at) {
             abort(403, 'Akses tidak diizinkan.');
         }
 
@@ -73,14 +73,14 @@ new #[Layout('layouts.app')] class extends Component {
         $this->dispatch('open-modal', 'ai-minutes-modal');
 
         if (!$aiService->isConfigured()) {
-            $this->aiErrorMessage = 'API Key Google Gemini belum diatur di server (.env). Hubungi Administrator.';
+            $this->aiErrorMessage = 'API Key Gemini belum dikonfigurasi.';
             return;
         }
 
         $rawText = trim((string) $this->content);
 
         if (empty($rawText) || mb_strlen($rawText) < 5) {
-            $this->aiErrorMessage = 'Editor notulen masih kosong. Silakan tuliskan catatan atau poin-poin rapat di editor terlebih dahulu.';
+            $this->aiErrorMessage = 'Editor notulen masih kosong. Uraikan catatan rapat terlebih dahulu.';
             return;
         }
 
@@ -102,7 +102,7 @@ new #[Layout('layouts.app')] class extends Component {
 
     public function applyAiMinutes(): void
     {
-        if (!$this->canEdit || $this->meeting->minutes_signed_at) {
+        if (!$this->canEdit || $this->meeting->status !== 'completed' || $this->meeting->minutes_signed_at) {
             abort(403, 'Akses tidak diizinkan.');
         }
 
@@ -123,7 +123,7 @@ new #[Layout('layouts.app')] class extends Component {
         $this->lastSaved = now()->format('H:i') . ' WITA';
         $this->aiResult = '';
         $this->closeAiModal();
-        session()->flash('message', 'Hasil notulen AI berhasil diterapkan ke editor dan disimpan.');
+        session()->flash('message', 'Notulen AI berhasil diterapkan.');
     }
 
     public function openSignModal()
@@ -187,7 +187,7 @@ new #[Layout('layouts.app')] class extends Component {
         ]);
 
         $this->meeting->refresh();
-        session()->flash('message', 'Kunci notulen dibuka. Silakan lakukan perbaikan, lalu minta Pimpinan untuk TTE ulang.');
+        session()->flash('message', 'Kunci notulen dibuka untuk revisi.');
     }
 
     public function saveMinutes()
@@ -200,14 +200,13 @@ new #[Layout('layouts.app')] class extends Component {
             'content' => 'nullable|string',
         ]);
 
-        $this->minutes = $this->meeting->minutes()->updateOrCreate(
+        $this->meeting->minutes()->updateOrCreate(
             ['meeting_id' => $this->meeting->id],
-            [
-                'content' => $this->content,
-            ]
+            ['content' => $this->content]
         );
 
         $this->lastSaved = now()->format('H:i') . ' WITA';
+        $this->meeting->refresh();
         session()->flash('message', 'Notulen berhasil disimpan.');
     }
 }; ?>
@@ -220,14 +219,14 @@ new #[Layout('layouts.app')] class extends Component {
     @endif
 
     <div class="space-y-6">
-        <!-- Toolbar Header -->
+        <!-- Header Toolbar Notulen -->
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
             <div class="flex items-center gap-3">
                 <h3 class="text-lg font-extrabold text-slate-900 tracking-tight">Notulen Rapat</h3>
             </div>
 
             <div class="flex flex-wrap items-center gap-3 self-start sm:self-auto">
-                @if($canEdit && !$meeting->minutes_signed_at)
+                @if($canEdit && $meeting->status === 'completed' && !$meeting->minutes_signed_at)
                 <!-- Tombol Notulen AI (Langsung Buka Modal & Jalankan AI) -->
                 <button type="button"
                     x-data=""
@@ -248,34 +247,27 @@ new #[Layout('layouts.app')] class extends Component {
                     <span>Sudah TTE</span>
                 </span>
                 @elseif(auth()->user()->hasActiveRole('pimpinan') && $meeting->status === 'completed' && $minutes && !empty($minutes->content))
-                <button type="button" x-data="" x-on:click.prevent="$dispatch('open-modal', 'sign-minutes-modal'); $wire.openSignModal()" class="inline-flex justify-center items-center px-4 py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl font-bold text-sm transition-all shadow-sm gap-2">
+                <button type="button" wire:click="openSignModal" class="inline-flex items-center gap-2 px-4 py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl font-bold text-sm shadow-sm transition-all cursor-pointer">
                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                     </svg>
-                    <span>TTE Notulen</span>
+                    <span>TTE Dokumen</span>
                 </button>
                 @endif
 
-                @if($meeting->status === 'completed')
+                @if($meeting->status === 'completed' && $minutes && !empty($minutes->content))
                 <a href="{{ route('meetings.export.minutes', $meeting->id) }}" target="_blank" class="inline-flex justify-center items-center px-4 py-2.5 bg-white hover:bg-slate-50 border border-slate-300 hover:border-slate-400 active:scale-95 text-slate-700 rounded-xl font-bold text-sm transition-all shadow-sm gap-2">
                     <svg class="w-4 h-4 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
-                    <span>Cetak PDF</span>
+                    <span>Lihat PDF</span>
                 </a>
-                @else
-                <button type="button" disabled class="inline-flex justify-center items-center px-4 py-2.5 bg-slate-100 border border-slate-200 text-slate-400 rounded-xl font-bold text-sm cursor-not-allowed gap-2" title="Ekspor PDF hanya dapat dilakukan setelah status rapat diselesaikan">
-                    <svg class="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                    </svg>
-                    <span>Cetak PDF</span>
-                </button>
                 @endif
             </div>
         </div>
 
         @if($meeting->minutes_signed_at)
-        <!-- Locked Banner & Read-Only Content (TTE Signed) -->
+        <!-- Locked Banner (TTE Signed) -->
         <div class="flex items-center gap-2.5 p-3.5 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 font-medium justify-between flex-wrap">
             <div class="flex items-center gap-2.5">
                 <svg class="w-4 h-4 text-amber-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -285,7 +277,7 @@ new #[Layout('layouts.app')] class extends Component {
             </div>
             @if($canEdit)
             <button wire:click="unlockForRevision"
-                wire:confirm="Status TTE akan direset dan dokumen dibuka untuk revisi. Pimpinan perlu TTE ulang setelahnya. Lanjutkan?"
+                wire:confirm="Buka kunci notulen untuk revisi? Dokumen perlu ditandatangani ulang setelahnya."
                 class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-amber-600 hover:bg-amber-700 active:scale-95 text-white rounded-xl text-xs font-bold transition-all shadow-sm shrink-0 self-start sm:self-auto">
                 <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
@@ -305,7 +297,7 @@ new #[Layout('layouts.app')] class extends Component {
             <div class="relative">
                 <textarea wire:model="content" id="content" rows="18"
                     class="block w-full p-4 sm:p-5 rounded-2xl border border-slate-300 font-normal leading-relaxed text-slate-800 text-sm shadow-xs transition-colors duration-150 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 focus:outline-none resize-y min-h-[380px] bg-white"
-                    placeholder="1. Pembukaan&#10;&#10;2. Pembahasan&#10;&#10;3. Kesimpulan&#10;&#10;(Tuliskan catatan rapat di sini dan gunakan tombol 'Notulen AI' di atas untuk merapikan notulen)"></textarea>
+                    placeholder="1. Pembukaan&#10;&#10;2. Pembahasan&#10;&#10;3. Kesimpulan&#10;&#10;(Uraikan catatan rapat dan klik Notulen AI untuk merapikan)"></textarea>
             </div>
             @error('content') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
 
@@ -395,7 +387,7 @@ new #[Layout('layouts.app')] class extends Component {
                         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                         </svg>
-                        <span>Terapkan ke Editor</span>
+                        <span>Terapkan</span>
                     </button>
                 </div>
                 @endif

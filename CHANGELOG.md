@@ -4,6 +4,32 @@ Semua perubahan penting pada proyek ini dicatat dalam berkas ini.
 
 Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/1.0.0/), dan proyek ini mematuhi [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.2] - 2026-08-25
+
+### Ditambahkan
+- **Rollback Status Rapat (`Lanjutkan Rapat`)**: Fitur pengembalian status rapat dari *Selesai* (`completed`) ke *Sedang Berlangsung* (`ongoing`) di header rapat dengan proteksi pembatalan otomatis jika salah satu dokumen telah di-TTE BSrE.
+- **Buka Revisi Presensi (`unlockForRevision`)**: Kemampuan membuka kunci presensi ber-TTE untuk revisi/perbaikan presensi oleh penyelenggara/admin.
+- **Card Antrean Menunggu TTE**: Widget daftar rapat menunggu TTE diaktifkan pada dasbor **Admin OPD** dan **Pegawai** pembuat rapat.
+- Suite pengujian validasi jam/menit dan pembukaan kembali rapat (`tests/Feature/MeetingValidationTest.php`).
+
+### Diubah
+- **Pilihan Waktu Rapat 24 Jam**: Seleksi jam kerja (`08` s/d `16`) dan menit interval 15 menit (`00`, `15`, `30`, `45`) pada modal Buat dan Edit Rapat.
+- **Integrasi Konteks & AI Notulen**: Notulen AI memadukan konteks pimpinan, agenda, dan peserta pada Pembukaan secara proporsional serta menyusun Pembahasan & Kesimpulan berbasis catatan asli editor.
+- **Visibilitas Tombol Header Rapat**:
+  - Tombol **`QR Code`** presensi hanya muncul saat rapat sedang berlangsung (*status `ongoing`*).
+  - Tombol **`Lihat PDF`** (Presensi, Dokumentasi, Notulen) dan **`Notulen AI`** hanya tampil setelah rapat diselesaikan (*status `completed`*).
+  - Standardisasi dimensi seluruh tombol dan badge toolbar header rapat menjadi `px-4 py-2.5 text-sm font-bold rounded-xl gap-2`.
+- **Penyelarasan Halaman Verifikasi TTE (`verify-tte.blade.php`)**:
+  - Penandatangan ditempatkan di baris teratas tanpa NIP.
+  - Label instansi disesuaikan menjadi **OPD** dengan penanganan teks panjang (*wrapping* rapi).
+  - Penghapusan tautan kembali ke beranda dan tombol unduh agar tampilan murni sebagai bukti verifikasi keabsahan dokumen.
+- **Standardisasi Badge & Pesan TTE**:
+  - Label badge status sebagian diubah menjadi **`1/3 Sudah TTE`** dan **`2/3 Sudah TTE`**.
+  - Standardisasi salinan (*copy*) alert sukses dan pesan kesalahan TTE BSrE menjadi ringkas, jelas, dan profesional.
+
+### Dihapus
+- Data akun pengguna dan pejabat penandatangan pengujian (*Testing TTE / NIP 123456*) dari `RoleAndUserSeeder.php` dan `OpdSeeder.php`.
+
 ## [1.3.1] - 2026-08-24
 
 ### Ditambahkan

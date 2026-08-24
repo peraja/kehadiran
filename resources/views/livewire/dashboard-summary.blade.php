@@ -97,10 +97,10 @@ new class extends Component {
             ->get();
 
         $isPimpinan = auth()->user()->hasActiveRole('pimpinan');
+        $isAdminOpd = auth()->user()->hasActiveRole('admin_opd');
 
-        // Meetings waiting for TTE (for pimpinan & super admin)
-        $showPendingTte = $isPimpinan || $isAdmin;
-        $pendingTteMeetings = $showPendingTte ? (clone $query)
+        // Meetings waiting for TTE (pimpinan, super admin, admin OPD, & pegawai creator)
+        $pendingTteMeetings = (clone $query)
             ->where('status', 'completed')
             ->where(function($q) {
                 $q->whereNull('minutes_signed_at')
@@ -110,10 +110,11 @@ new class extends Component {
             ->with(['opd', 'creator', 'attendances', 'photos', 'minutes'])
             ->orderBy('date', 'desc')
             ->take(6)
-            ->get() : collect();
+            ->get();
 
         return compact(
             'isAdmin',
+            'isAdminOpd',
             'isPimpinan',
             'meetingsToday',
             'meetingsThisWeek',
@@ -245,8 +246,8 @@ new class extends Component {
     </div>
     @endif
 
-    <!-- Menunggu TTE Widget (Khusus Pimpinan & Super Admin) -->
-    @if($isPimpinan || ($isAdmin && $pendingTteMeetings->isNotEmpty()))
+    <!-- Menunggu TTE Widget (Pimpinan, Super Admin, Admin OPD, & Pegawai) -->
+    @if($isPimpinan || $pendingTteMeetings->isNotEmpty())
     <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
         <div class="px-6 py-5 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
             <div class="flex items-center gap-2">
@@ -278,6 +279,10 @@ new class extends Component {
                         @if($meeting->start_time)
                         <span>&bull;</span>
                         <span>{{ $meeting->start_time->format('H:i') }} - {{ $meeting->end_time ? $meeting->end_time->format('H:i') : 'Selesai' }} WITA</span>
+                        @endif
+                        @if($meeting->signer_name)
+                        <span>&bull;</span>
+                        <span>Penandatangan: <span class="font-bold text-slate-700">{{ $meeting->signer_name }}</span></span>
                         @endif
                         @endif
                     </div>

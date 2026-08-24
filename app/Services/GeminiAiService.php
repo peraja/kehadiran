@@ -87,7 +87,7 @@ class GeminiAiService
                     return [
                         'success' => true,
                         'model' => $modelName,
-                        'message' => "Koneksi ke Google Gemini API berhasil terhubung (Model: {$modelName})!",
+                        'message' => "Koneksi ke Google Gemini API berhasil (Model: {$modelName}).",
                     ];
                 }
 
@@ -102,7 +102,7 @@ class GeminiAiService
 
         return [
             'success' => false,
-            'message' => 'Gagal terhubung ke seluruh fallback model Gemini API: ' . $lastError,
+            'message' => 'Gagal terhubung ke Gemini API: ' . $lastError,
         ];
     }
 
@@ -114,21 +114,26 @@ class GeminiAiService
         if (!$this->isConfigured()) {
             return [
                 'success' => false,
-                'message' => 'Gemini API Key belum dikonfigurasi. Hubungi Super Admin.',
+                'message' => 'API Key Gemini belum dikonfigurasi.',
             ];
         }
 
         if (empty(trim($rawNotes))) {
             return [
                 'success' => false,
-                'message' => 'Catatan mentah rapat wajib diisi.',
+                'message' => 'Catatan rapat wajib diisi.',
             ];
         }
 
         $context = $this->buildContextPrompt($meeting);
-        $userPrompt = "Berikut adalah catatan mentah rapat yang ditulis oleh notulis:\n\n"
+        $userPrompt = "Berikut adalah data konteks rapat dan catatan dari notulis:\n\n"
+            . "[KONTEKS RAPAT]\n" . $context . "\n\n"
+            . "[CATATAN DARI EDITOR]\n"
             . "\"\"\"\n" . trim($rawNotes) . "\n\"\"\"\n\n"
-            . "Tolong rapikan menjadi isi notulen kedinasan resmi (1. Pembukaan, 2. Pembahasan, 3. Kesimpulan) dengan sub-poin huruf kecil (a., b., c.). Jangan gunakan tanda hubung (-) dan jangan sertakan header rapat atau tanda tangan penandatangan.";
+            . "Instruksi:\n"
+            . "1. Susun menjadi notulen kedinasan resmi dalam 3 bagian: 1. Pembukaan, 2. Pembahasan, 3. Kesimpulan.\n"
+            . "2. Manfaatkan konteks rapat (pimpinan rapat, agenda, OPD, unsur peserta) pada Pembukaan dan kaitkan dengan pembahasan jika relevan.\n"
+            . "3. Rapikan catatan dari editor menjadi poin-poin pembahasan (a., b., c.) dan kesimpulan yang baku dan jelas tanpa mengarang isu yang tidak relevan.";
 
         return $this->callGeminiApi($context, $userPrompt);
     }
@@ -141,39 +146,31 @@ class GeminiAiService
         if (!$this->isConfigured()) {
             return [
                 'success' => false,
-                'message' => 'Gemini API Key belum dikonfigurasi. Hubungi Super Admin.',
-            ];
-        }
-
-        if (!$audioFile) {
-            return [
-                'success' => false,
-                'message' => 'Berkas rekaman audio rapat wajib diunggah.',
+                'message' => 'API Key Gemini belum dikonfigurasi.',
             ];
         }
 
         try {
             $mimeType = $audioFile->getMimeType() ?: 'audio/mp3';
-            $audioData = base64_encode(file_get_contents($audioFile->getRealPath()));
-
-            $context = $this->buildContextPrompt($meeting);
-            $userPrompt = "Berikut terlampir rekaman audio jalannya rapat.\n";
-            if (!empty(trim((string)$additionalNotes))) {
-                $userPrompt .= "Catatan/petunjuk tambahan dari notulis: " . trim($additionalNotes) . "\n\n";
-            }
-            $userPrompt .= "Tolong rapikan menjadi isi notulen (1. Pembukaan, 2. Pembahasan, 3. Kesimpulan) dalam format poin-poin tanda hubung (-). Jangan sertakan informasi header rapat atau tanda tangan penandatangan.";
+            $fileContent = file_get_contents($audioFile->getRealPath());
+            $base64Audio = base64_encode($fileContent);
 
             $inlineAudio = [
                 'mime_type' => $mimeType,
-                'data' => $audioData,
+                'data' => $base64Audio,
             ];
+
+            $context = $this->buildContextPrompt($meeting);
+            $userPrompt = "Dengarkan rekaman audio rapat terlampir"
+                . (!empty($additionalNotes) ? " beserta catatan pendukung berikut:\n\"\"\"" . trim($additionalNotes) . "\"\"\"" : "")
+                . ".\n\nSusun notulen kedinasan resmi (1. Pembukaan, 2. Pembahasan, 3. Kesimpulan) dengan memanfaatkan data konteks rapat secara proporsional.";
 
             return $this->callGeminiApi($context, $userPrompt, $inlineAudio);
         } catch (\Exception $e) {
             Log::error('Gemini generateMinutesFromAudio error: ' . $e->getMessage());
             return [
                 'success' => false,
-                'message' => 'Gagal memproses berkas audio: ' . $e->getMessage(),
+                'message' => 'Gagal memproses audio.',
             ];
         }
     }
@@ -196,7 +193,7 @@ class GeminiAiService
             ];
         }
 
-        $fullPrompt = (!empty($context) ? "[Konteks: {$context}]\n\n" : "") . $userPrompt;
+        $fullPrompt = (!empty($context) ? "[Konteks Rapat: {$context}]\n\n" : "") . $userPrompt;
         $parts[] = ['text' => $fullPrompt];
 
         $payload = [
@@ -256,9 +253,16 @@ class GeminiAiService
             }
         }
 
+        $userFriendlyMessage = 'Gagal menyusun notulen AI. Silakan coba lagi.';
+        if (str_contains($lastError, 'quota') || str_contains($lastError, 'RESOURCE_EXHAUSTED')) {
+            $userFriendlyMessage = 'Kuota API Gemini telah habis. Silakan coba beberapa saat lagi.';
+        } elseif (str_contains($lastError, 'API key') || str_contains($lastError, 'INVALID_ARGUMENT')) {
+            $userFriendlyMessage = 'API Key Gemini tidak valid.';
+        }
+
         return [
             'success' => false,
-            'message' => 'Gagal memproses AI pada seluruh fallback model: ' . $lastError,
+            'message' => $userFriendlyMessage,
         ];
     }
 
@@ -268,31 +272,23 @@ class GeminiAiService
     protected function buildSystemInstruction(): string
     {
         return <<<INSTRUCTION
-Anda adalah Asisten Notulis Pemerintah Kabupaten Sinjai. Tugas Anda adalah merapikan catatan mentah rapat menjadi isi notulen kedinasan yang baku, terstruktur, dan sesuai dengan Tata Naskah Dinas Pemerintahan.
+Anda adalah Asisten Notulis Resmi Pemerintah Kabupaten Sinjai. Tugas Anda adalah merapikan catatan mentah rapat dari pengguna ke dalam format notulen kedinasan resmi (1. Pembukaan, 2. Pembahasan, 3. Kesimpulan) yang baku, lugas, dan terstruktur.
 
-PANDUAN KONTEKS RAPAT:
-- Manfaatkan data agenda, pimpinan rapat, dan unsur instansi peserta rapat untuk memperkaya konteks notulen secara wajar dan proporsional.
+PANDUAN PEMANFAATAN KONTEKS & CATATAN:
+1. Bagian 1 (Pembukaan):
+   - Manfaatkan data konteks rapat (Pimpinan rapat, agenda/topik rapat, instansi penyelenggara/OPD, dan unsur instansi peserta yang hadir) untuk menyusun kalimat pengantar pembukaan jalannya rapat kedinasan secara wajar dan formal.
+2. Bagian 2 (Pembahasan):
+   - Ambil materi pokok, bahasan teknis, saran, dan masukan dari CATATAN PENGGUNA.
+   - Rapikan ejaan dan tata bahasa kedinasan, lalu susun dalam sub-poin huruf kecil (a., b., c., dst).
+   - Hubungkan secara proporsional dengan konteks instansi/peserta terkait yang relevan.
+3. Bagian 3 (Kesimpulan):
+   - Rumuskan kesepakatan, arahan pimpinan, atau rencana tindak lanjut dari hasil catatan rapat ke dalam sub-poin huruf kecil (a., b., dst).
 
-PEDOMAN PENYUSUNAN NOTULEN DINAS:
-Susun HANYA dalam 3 bagian utama berikut dengan penomoran hierarki resmi (gunakan sub-poin huruf kecil a., b., c. — JANGAN gunakan tanda hubung/strip '-' atau bullet '*'):
-
-1. Pembukaan
-Uraian pengantar pembukaan jalannya rapat oleh Pimpinan/Penyelenggara serta maksud dan tujuan diselenggarakannya rapat dalam kalimat kedinasan yang jelas dan lugas.
-
-2. Pembahasan
-a. Poin pokok materi atau isu utama yang dibahas.
-b. Tanggapan, saran, atau masukan dari peserta rapat / instansi terkait.
-c. Pokok bahasan teknis lainnya yang relevan.
-
-3. Kesimpulan
-a. Keputusan dan kesepakatan bersama yang dihasilkan dalam rapat.
-b. Arahan atau rencana tindak lanjut yang disepakati.
-
-ATURAN KETAT:
-- JANGAN gunakan tanda hubung/strip (-) atau tanda bintang (*) untuk poin-poin; gunakan selalu huruf kecil berurutan (a., b., c., dst).
-- JANGAN menyertakan informasi header rapat (seperti judul rapat, agenda, hari/tanggal, waktu, tempat, atau tabel daftar hadir).
-- JANGAN menyertakan nama penandatangan, NIK, atau kolom tanda tangan di akhir teks.
-- Tulis langsung teks isi tanpa membungkus dengan blok kode ```markdown atau ```.
+ATURAN FORMAT:
+- JANGAN gunakan tanda hubung/strip (-) atau bintang (*); gunakan selalu sub-poin huruf kecil (a., b., c., dst).
+- JANGAN menyertakan informasi header (judul, hari/tanggal, waktu, tempat, tabel presensi).
+- JANGAN menyertakan kolom tanda tangan atau nama pejabat penandatangan di akhir teks.
+- Tulis langsung isi teks tanpa membungkus dengan blok kode markdown.
 INSTRUCTION;
     }
 

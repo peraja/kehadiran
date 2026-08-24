@@ -74,18 +74,15 @@ new #[Layout('layouts.guest')] class extends Component {
         <!-- Verification Detail Card -->
         <div class="bg-white border border-slate-200 rounded-2xl p-4 text-left divide-y divide-slate-100 shadow-2xs">
             <div class="py-2.5 flex justify-between items-start gap-4">
-                <span class="text-slate-500 font-medium text-sm shrink-0 pt-0.5">Instansi</span>
-                <span class="font-semibold text-slate-800 text-right leading-snug break-words">Pemerintah Kabupaten Sinjai</span>
-            </div>
-            <div class="py-2.5 flex justify-between items-start gap-4">
                 <span class="text-slate-500 font-medium text-sm shrink-0 pt-0.5">Penandatangan</span>
-                <div class="text-right min-w-0">
+                <div class="text-right min-w-0 max-w-[65%]">
                     <span class="font-bold text-slate-900 block leading-snug break-words">{{ $signerName }}</span>
                     <span class="text-xs text-slate-500 block mt-0.5 leading-snug break-words">{{ $signerTitle }}</span>
-                    @if($signerNip && $signerNip !== '-')
-                    <span class="text-xs text-slate-400 font-mono block mt-0.5">NIP. {{ $signerNip }}</span>
-                    @endif
                 </div>
+            </div>
+            <div class="py-2.5 flex justify-between items-start gap-4">
+                <span class="text-slate-500 font-medium text-sm shrink-0 pt-0.5">OPD</span>
+                <span class="font-semibold text-slate-800 text-right text-sm leading-snug break-words max-w-[65%]">{{ $opdName }}</span>
             </div>
             <div class="py-2.5 flex justify-between items-center gap-4">
                 <span class="text-slate-500 font-medium text-sm shrink-0">Waktu TTE</span>
@@ -94,22 +91,6 @@ new #[Layout('layouts.guest')] class extends Component {
             <div class="py-2.5 flex justify-between items-center gap-4">
                 <span class="text-slate-500 font-medium text-sm shrink-0">Sertifikat</span>
                 <span class="font-bold text-slate-800 text-right text-xs">BSrE - BSSN</span>
-            </div>
-        </div>
-
-        <!-- Action Button -->
-        <div class="pt-2 space-y-3">
-            <a href="{{ route('meetings.verify.download', ['meeting' => $meeting->id, 'type' => $type]) }}" target="_blank" class="w-full flex justify-center items-center px-6 py-3.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl font-extrabold text-sm transition-all shadow-sm gap-2">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                <span>Unduh PDF</span>
-            </a>
-
-            <div>
-                <a href="/" wire:navigate class="text-xs text-slate-400 hover:text-slate-700 transition-colors font-semibold">
-                    &larr; Kembali ke Beranda
-                </a>
             </div>
         </div>
     </div>
@@ -126,12 +107,6 @@ new #[Layout('layouts.guest')] class extends Component {
             </span>
             <h2 class="text-xl font-extrabold text-slate-900">{{ $docTitle }}</h2>
             <p class="text-sm font-medium text-slate-500 mt-1">Dokumen untuk rapat "{{ $meeting->title }}" belum dibubuhi TTE.</p>
-        </div>
-
-        <div>
-            <a href="/" wire:navigate class="inline-flex justify-center items-center px-6 py-3 bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-700 rounded-xl font-bold text-sm transition-all shadow-sm">
-                &larr; Kembali ke Beranda
-            </a>
         </div>
     </div>
     @endif

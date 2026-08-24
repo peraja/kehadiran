@@ -132,7 +132,7 @@ class GeminiAiNotulenTest extends TestCase
         $result = $service->testConnection('test-key');
 
         $this->assertTrue($result['success']);
-        $this->assertStringContainsString('berhasil terhubung', $result['message']);
+        $this->assertStringContainsString('berhasil', $result['message']);
     }
 
     public function test_notulen_component_can_generate_and_apply_ai_content(): void
@@ -165,7 +165,7 @@ class GeminiAiNotulenTest extends TestCase
             'start_time' => '09:00',
             'end_time' => '11:00',
             'location' => 'Ruang Pola',
-            'status' => 'ongoing',
+            'status' => 'completed',
             'created_by' => $user->id,
         ]);
 
@@ -184,5 +184,29 @@ class GeminiAiNotulenTest extends TestCase
         $this->assertNotNull($meeting->minutes);
         $this->assertTrue($meeting->minutes->ai_generated);
         $this->assertStringContainsString('Rapat koordinasi eRapat', $meeting->minutes->content);
+    }
+
+    public function test_notulen_ai_is_forbidden_if_meeting_not_completed(): void
+    {
+        $user = User::factory()->create();
+        $user->assignRole('pegawai');
+
+        $meeting = Meeting::create([
+            'title' => 'Rapat Ongoing',
+            'agenda' => 'Pembahasan',
+            'date' => now()->toDateString(),
+            'start_time' => '09:00',
+            'end_time' => '11:00',
+            'location' => 'Ruang Pola',
+            'status' => 'ongoing',
+            'created_by' => $user->id,
+        ]);
+
+        $this->actingAs($user);
+
+        Volt::test('meetings.notulen', ['meeting' => $meeting])
+            ->set('content', 'Catatan sementara.')
+            ->call('processAi')
+            ->assertStatus(403);
     }
 }

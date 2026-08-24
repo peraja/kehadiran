@@ -69,25 +69,5 @@ class OpdSeeder extends Seeder
                 ]
             );
         }
-
-        // Daftarkan akun pengujian TTE sebagai Pejabat Penandatangan di Diskominfo
-        $diskominfo = Opd::where('unit_id', '730714')->first();
-        if ($diskominfo) {
-            \App\Models\OpdSigner::updateOrCreate(
-                [
-                    'opd_id' => $diskominfo->id,
-                    'nip' => '123456',
-                ],
-                [
-                    'bidang_name' => 'Bidang eGov',
-                    'title' => 'Kepala Bidang eGov',
-                    'name' => 'Testing TTE',
-                    'nik' => '7307010101800001',
-                    'rank' => 'Pembina',
-                    'eselon' => 'III.b',
-                    'is_active' => true,
-                ]
-            );
-        }
     }
 }

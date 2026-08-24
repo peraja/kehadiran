@@ -48,7 +48,7 @@
             @foreach($tabs as $key => $tab)
                 <a href="{{ route('meetings.'.$key, $meeting->id) }}"
                    wire:navigate
-                   class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all shadow-sm {{ $activeTab === $key ? 'bg-slate-900 text-white hover:bg-slate-800' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 hover:text-slate-900 hover:border-slate-300' }}">
+                   class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all shadow-sm whitespace-nowrap shrink-0 {{ $activeTab === $key ? 'bg-slate-900 text-white hover:bg-slate-800' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 hover:text-slate-900 hover:border-slate-300' }}">
                     {!! $tab['icon'] !!}
                     <span>{{ $tab['label'] }}</span>
                     @if($tab['count'] !== null)

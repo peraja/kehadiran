@@ -13,12 +13,18 @@ new #[Layout('layouts.app')] class extends Component {
 
     // Form fields
     public $title, $date, $start_time, $end_time, $location;
+    public $start_hour = '09', $start_minute = '00';
+    public $end_hour = '11', $end_minute = '00';
     public $selected_opd_id = '';
     public $selected_signer_id = 'kepala_opd';
 
     public function mount()
     {
         $this->selected_signer_id = 'kepala_opd';
+        $this->start_hour = '09';
+        $this->start_minute = '00';
+        $this->end_hour = '11';
+        $this->end_minute = '00';
     }
 
     public function updatingSearch()
@@ -82,8 +88,36 @@ new #[Layout('layouts.app')] class extends Component {
             return;
         }
         $this->resetValidation();
-        $this->reset(['title', 'date', 'start_time', 'end_time', 'location', 'selected_opd_id']);
+        $this->reset(['title', 'date', 'location', 'selected_opd_id']);
+        $this->start_hour = '09';
+        $this->start_minute = '00';
+        $this->end_hour = '11';
+        $this->end_minute = '00';
+        $this->start_time = '09:00';
+        $this->end_time = '11:00';
         $this->selected_signer_id = 'kepala_opd';
+    }
+
+    public function updatedStartTime($val): void
+    {
+        if (!empty($val)) {
+            try {
+                $c = \Carbon\Carbon::parse($val);
+                $this->start_hour = $c->format('H');
+                $this->start_minute = $c->format('i');
+            } catch (\Throwable $e) {}
+        }
+    }
+
+    public function updatedEndTime($val): void
+    {
+        if (!empty($val)) {
+            try {
+                $c = \Carbon\Carbon::parse($val);
+                $this->end_hour = $c->format('H');
+                $this->end_minute = $c->format('i');
+            } catch (\Throwable $e) {}
+        }
     }
 
     public function closeModal()
@@ -91,11 +125,36 @@ new #[Layout('layouts.app')] class extends Component {
         // Now handled by Alpine
     }
 
+    protected function normalizeTimes(): void
+    {
+        if ($this->start_hour !== '' && $this->start_minute !== '') {
+            $this->start_time = sprintf('%02d:%02d', (int) $this->start_hour, (int) $this->start_minute);
+        } elseif (!empty($this->start_time)) {
+            try {
+                $this->start_time = \Carbon\Carbon::parse($this->start_time)->format('H:i');
+            } catch (\Throwable $e) {
+                // Keep original to let validator catch invalid format
+            }
+        }
+
+        if ($this->end_hour !== '' && $this->end_minute !== '') {
+            $this->end_time = sprintf('%02d:%02d', (int) $this->end_hour, (int) $this->end_minute);
+        } elseif (!empty($this->end_time)) {
+            try {
+                $this->end_time = \Carbon\Carbon::parse($this->end_time)->format('H:i');
+            } catch (\Throwable $e) {
+                // Keep original to let validator catch invalid format
+            }
+        }
+    }
+
     public function saveMeeting()
     {
         if (auth()->user()->hasActiveRole('pimpinan')) {
             abort(403, 'Pimpinan tidak memiliki akses untuk membuat rapat.');
         }
+
+        $this->normalizeTimes();
         $validated = $this->validate();
         $validated['agenda'] = $validated['title']; // Fallback for DB constraint
         $validated['created_by'] = auth()->id();
@@ -366,7 +425,7 @@ new #[Layout('layouts.app')] class extends Component {
                                     @elseif($signedCount > 0)
                                     <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200" title="{{ $signedCount }} dari 3 dokumen telah di-TTE">
                                         <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
-                                        <span>{{ $signedCount }}/3 TTE</span>
+                                        <span>{{ $signedCount }}/3 Sudah TTE</span>
                                     </span>
                                     @else
                                     <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 border border-slate-200" title="Belum ada dokumen yang di-TTE">
@@ -398,7 +457,7 @@ new #[Layout('layouts.app')] class extends Component {
                                         @elseif($signedCount > 0)
                                         <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200" title="{{ $signedCount }} dari 3 dokumen telah di-TTE">
                                             <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
-                                            <span>{{ $signedCount }}/3 TTE</span>
+                                            <span>{{ $signedCount }}/3 Sudah TTE</span>
                                         </span>
                                         @else
                                         <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-500 border border-slate-200" title="Belum ada dokumen yang di-TTE">
@@ -490,15 +549,55 @@ new #[Layout('layouts.app')] class extends Component {
 
                     <!-- Jam Mulai -->
                     <div>
-                        <label for="start_time" class="block text-sm font-bold text-slate-700 mb-1">Waktu Mulai</label>
-                        <input wire:model="start_time" id="start_time" type="time" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" />
+                        <label class="block text-sm font-bold text-slate-700 mb-1">Waktu Mulai (WITA)</label>
+                        <div class="flex items-center gap-1.5">
+                            <div class="flex-1">
+                                <select wire:model="start_hour" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors cursor-pointer">
+                                    @for($h = 8; $h <= 16; $h++)
+                                        @php $hStr = sprintf('%02d', $h); @endphp
+                                        <option value="{{ $hStr }}">{{ $hStr }}</option>
+                                    @endfor
+                                </select>
+                            </div>
+                            <span class="text-slate-400 font-bold text-sm">:</span>
+                            <div class="flex-1">
+                                <select wire:model="start_minute" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors cursor-pointer">
+                                    @foreach(['00', '15', '30', '45'] as $mOption)
+                                        <option value="{{ $mOption }}">{{ $mOption }}</option>
+                                    @endforeach
+                                    @if(!in_array($start_minute, ['00', '15', '30', '45']) && $start_minute !== '')
+                                        <option value="{{ $start_minute }}">{{ $start_minute }}</option>
+                                    @endif
+                                </select>
+                            </div>
+                        </div>
                         @error('start_time') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                     </div>
 
                     <!-- Jam Selesai -->
                     <div>
-                        <label for="end_time" class="block text-sm font-bold text-slate-700 mb-1">Waktu Selesai</label>
-                        <input wire:model="end_time" id="end_time" type="time" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" />
+                        <label class="block text-sm font-bold text-slate-700 mb-1">Waktu Selesai (WITA)</label>
+                        <div class="flex items-center gap-1.5">
+                            <div class="flex-1">
+                                <select wire:model="end_hour" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors cursor-pointer">
+                                    @for($h = 8; $h <= 16; $h++)
+                                        @php $hStr = sprintf('%02d', $h); @endphp
+                                        <option value="{{ $hStr }}">{{ $hStr }}</option>
+                                    @endfor
+                                </select>
+                            </div>
+                            <span class="text-slate-400 font-bold text-sm">:</span>
+                            <div class="flex-1">
+                                <select wire:model="end_minute" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors cursor-pointer">
+                                    @foreach(['00', '15', '30', '45'] as $mOption)
+                                        <option value="{{ $mOption }}">{{ $mOption }}</option>
+                                    @endforeach
+                                    @if(!in_array($end_minute, ['00', '15', '30', '45']) && $end_minute !== '')
+                                        <option value="{{ $end_minute }}">{{ $end_minute }}</option>
+                                    @endif
+                                </select>
+                            </div>
+                        </div>
                         @error('end_time') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                     </div>
                 </div>

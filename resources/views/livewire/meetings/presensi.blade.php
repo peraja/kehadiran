@@ -84,7 +84,27 @@ new #[Layout('layouts.app')] class extends Component {
         }
     }
 
+    public function unlockForRevision(): void
+    {
+        $user = auth()->user();
 
+        if (!$this->canEdit || $user->hasActiveRole('pimpinan')) {
+            abort(403, 'Akses tidak diizinkan. Pembukaan kunci hanya dapat dilakukan oleh penyelenggara atau admin.');
+        }
+
+        if ($this->meeting->attendance_signed_path && \Illuminate\Support\Facades\Storage::disk('public')->exists($this->meeting->attendance_signed_path)) {
+            \Illuminate\Support\Facades\Storage::disk('public')->delete($this->meeting->attendance_signed_path);
+        }
+
+        $this->meeting->update([
+            'attendance_signed_at' => null,
+            'attendance_signed_by' => null,
+            'attendance_signed_path' => null,
+        ]);
+
+        $this->meeting->refresh();
+        session()->flash('message', 'Kunci presensi dibuka untuk revisi.');
+    }
 
 }; ?>
 
@@ -124,15 +144,8 @@ new #[Layout('layouts.app')] class extends Component {
                     <svg class="w-4 h-4 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
-                    <span>Cetak PDF</span>
+                    <span>Lihat PDF</span>
                 </a>
-                @else
-                <button type="button" disabled class="inline-flex justify-center items-center px-4 py-2.5 bg-slate-100 border border-slate-200 text-slate-400 rounded-xl font-bold text-sm cursor-not-allowed gap-2" title="Ekspor PDF hanya dapat dilakukan setelah status rapat diselesaikan">
-                    <svg class="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                    </svg>
-                    <span>Cetak PDF</span>
-                </button>
                 @endif
             </div>
             @endif
@@ -140,9 +153,21 @@ new #[Layout('layouts.app')] class extends Component {
 
         @if($meeting->attendance_signed_at)
         <!-- Locked Banner (TTE Signed) -->
-        <div class="flex items-center gap-2.5 p-3.5 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 font-medium">
-            <svg class="w-4 h-4 text-amber-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-            <span>Presensi dikunci — sudah TTE.</span>
+        <div class="flex items-center gap-2.5 p-3.5 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 font-medium justify-between flex-wrap">
+            <div class="flex items-center gap-2.5">
+                <svg class="w-4 h-4 text-amber-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                <span>Presensi dikunci — sudah TTE.</span>
+            </div>
+            @if($canEdit)
+            <button wire:click="unlockForRevision"
+                wire:confirm="Buka kunci presensi untuk revisi? Dokumen perlu ditandatangani ulang setelahnya."
+                class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-amber-600 hover:bg-amber-700 active:scale-95 text-white rounded-xl text-xs font-bold transition-all shadow-sm shrink-0 self-start sm:self-auto">
+                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
+                </svg>
+                <span>Buka Revisi</span>
+            </button>
+            @endif
         </div>
         @endif
 

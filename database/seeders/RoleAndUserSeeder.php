@@ -28,19 +28,6 @@ class RoleAndUserSeeder extends Seeder
             ]
         );
         $admin->syncRoles(['admin']);
-
-        // Akun Pimpinan (Testing TTE)
-        $pimpinanTesting = User::updateOrCreate(
-            ['nip' => '123456'],
-            [
-                'name' => 'Testing TTE',
-                'nik' => '7307010101800001',
-                'jabatan' => 'Kepala Bidang eGov',
-                'unit_name' => 'Dinas Komunikasi Informatika dan Persandian',
-                'password' => bcrypt('password'),
-            ]
-        );
-        $pimpinanTesting->syncRoles(['pimpinan']);
     }
 }
 

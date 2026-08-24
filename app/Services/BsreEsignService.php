@@ -96,7 +96,7 @@ class BsreEsignService
 
                 return [
                     'success' => true,
-                    'message' => "Dokumen {$documentName} berhasil ditandatangani secara elektronik (BSrE).",
+                    'message' => "Dokumen {$documentName} berhasil ditandatangani.",
                     'path' => $filename,
                 ];
             }
@@ -109,18 +109,18 @@ class BsreEsignService
             if ($statusCode === 400 || $statusCode === 401 || $statusCode === 403) {
                 $errorMessage = $apiMessage ?: 'Passphrase tidak valid atau akun tidak memiliki hak akses.';
             } elseif ($statusCode === 404) {
-                $errorMessage = $apiMessage ?: 'NIK atau sertifikat elektronik tidak ditemukan di sistem BSrE.';
+                $errorMessage = $apiMessage ?: 'Sertifikat elektronik tidak ditemukan di server BSrE.';
             } elseif ($statusCode === 422) {
-                $errorMessage = $apiMessage ?: 'Sertifikat elektronik kedaluwarsa, belum aktif, atau format dokumen tidak sesuai.';
+                $errorMessage = $apiMessage ?: 'Sertifikat elektronik tidak valid atau format dokumen tidak sesuai.';
             } elseif ($statusCode >= 500) {
-                $errorMessage = 'Layanan server BSrE sedang mengalami gangguan. Silakan coba kembali nanti.';
+                $errorMessage = 'Layanan BSrE sedang gangguan. Silakan coba beberapa saat lagi.';
             } else {
-                $errorMessage = $apiMessage ?: 'Terjadi kesalahan saat memproses tanda tangan elektronik.';
+                $errorMessage = $apiMessage ?: 'Gagal memproses tanda tangan elektronik.';
             }
 
             return [
                 'success' => false,
-                'message' => "Gagal TTE: {$errorMessage}",
+                'message' => $errorMessage,
             ];
 
         } catch (\Throwable $e) {
@@ -135,14 +135,14 @@ class BsreEsignService
 
                 return [
                     'success' => true,
-                    'message' => "Dokumen {$documentName} berhasil disahkan secara elektronik (Mode Pengujian Lokal).",
+                    'message' => "Dokumen {$documentName} berhasil ditandatangani.",
                     'path' => $filename,
                 ];
             }
 
             return [
                 'success' => false,
-                'message' => 'Tidak dapat terhubung ke server BSrE. Pastikan koneksi jaringan aktif dan URL BSrE dapat dijangkau.',
+                'message' => 'Gagal terhubung ke server BSrE. Periksa koneksi jaringan Anda.',
             ];
         }
     }
@@ -171,7 +171,7 @@ class BsreEsignService
         if (empty($types)) {
             return [
                 'success' => true,
-                'message' => 'Semua dokumen telah ditandatangani sebelumnya.',
+                'message' => 'Semua dokumen telah ditandatangani.',
                 'signed_count' => 0,
             ];
         }
@@ -199,7 +199,7 @@ class BsreEsignService
 
         return [
             'success' => true,
-            'message' => "Berhasil menandatangani {$successCount} dokumen secara elektronik sekaligus.",
+            'message' => "{$successCount} dokumen berhasil ditandatangani.",
             'signed_count' => $successCount,
         ];
     }
