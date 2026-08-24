@@ -12,6 +12,7 @@ Aplikasi tata kelola administrasi rapat resmi di lingkungan Pemerintah Kabupaten
 - **TTE BSrE - BSSN:** Pengesahan digital dokumen resmi (Notulen, Daftar Hadir, Dokumentasi) via API BSrE disertai halaman verifikasi publik QR Code.
 - **Asisten Notulen AI:** Format otomatis notulen rapat standar kedinasan menggunakan Google Gemini AI dalam satu klik.
 - **Ekspor Dokumen & Dokumentasi:** Cetak PDF bertata letak kop dinas resmi dan unduh arsip seluruh dokumentasi foto dalam format ZIP.
+- **Audit Log Aktivitas:** Pencatatan dan monitoring rekam jejak aktivitas keamanan (Login, Logout, Buat/Hapus Rapat, TTE) khusus Super Admin dengan auto-pruning 90 hari.
 
 ---
 

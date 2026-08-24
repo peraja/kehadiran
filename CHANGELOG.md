@@ -4,6 +4,28 @@ Semua perubahan penting pada proyek ini dicatat dalam berkas ini.
 
 Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/1.0.0/), dan proyek ini mematuhi [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.7] - 2026-08-25
+
+### Ditambahkan
+- **Modul Audit Log Aktivitas Sistem**:
+  - Model [`AuditLog.php`](file:///Users/abedzul/Desktop/htdocs/rapat/app/Models/AuditLog.php) dan layanan [`AuditLogger.php`](file:///Users/abedzul/Desktop/htdocs/rapat/app/Services/AuditLogger.php) untuk pencatatan otomatis aktivitas autentikasi (login SIMPEG/lokal, logout), pembuatan/penghapusan rapat, dan pengesahan TTE BSrE lengkap beserta NIP dan alamat IP.
+  - Fitur pembersihan otomatis (*automatic pruning*) untuk audit log berusia lebih dari 90 hari via `model:prune`.
+  - Halaman antarmuka Audit Log ([`livewire/admin/audit-logs.blade.php`](file:///Users/abedzul/Desktop/htdocs/rapat/resources/views/livewire/admin/audit-logs.blade.php)) khusus Super Admin dengan toolbar responsif, filter pill aksi, filter rentang tanggal, dan bilah pencarian *fluid*.
+
+### Diubah
+- **Penyelarasan & Pemisahan Tombol Reset Filter**:
+  - Penambahan tombol *badge* **Reset Filter** pada toolbar Daftar Rapat ([`meetings/index.blade.php`](file:///Users/abedzul/Desktop/htdocs/rapat/resources/views/livewire/meetings/index.blade.php)) saat filter aktif.
+  - Pemisahan fungsi tombol silang `(x)` di dalam kolom pencarian (khusus *quick clear* teks) dan tombol `Reset Filter` di luar (khusus parameter status/role/tanggal/OPD) untuk mencegah duplikasi tombol reset.
+  - Standardisasi tombol reset di seluruh tampilan data kosong (*Empty State*) dengan efek interaksi `active:scale-95 transition-all cursor-pointer`.
+- **Standardisasi Tampilan Empty State**:
+  - Penyelarasan desain wadah ikon (`w-14 h-14 bg-slate-100 rounded-2xl`), ikon stroke 1.5, dan tipografi judul (`text-base font-extrabold text-slate-900`) di seluruh modul (Daftar Rapat, Riwayat Rapat, Audit Log, Master OPD, Master Pengguna, Presensi, dan Pengaturan OPD).
+  - Penghapusan teks subjudul pada tampilan data kosong agar seragam, rapi, dan minimalis.
+- **Penyempurnaan Tabel Audit Log**:
+  - Penyesuaian proporsi lebar kolom: Tanggal & Waktu (`w-48`), Nama & NIP (`w-56`), Aksi (`w-32`), Keterangan (`flex-1 / line-clamp-2`), dan Alamat IP (`w-36`).
+  - Pengubahan nama header kolom: `Pelaku` &rarr; `Nama & NIP` dan `Waktu` &rarr; `Tanggal & Waktu`.
+  - Penghapusan avatar inisial pada kolom Nama & NIP untuk tampilan yang lebih bersih.
+  - Peringkasan label aksi dan deskripsi log (contoh: `TTE BSrE` &rarr; `TTE`, `Login ASN` &rarr; `Login`).
+
 ## [1.3.6] - 2026-08-25
 
 ### Ditambahkan

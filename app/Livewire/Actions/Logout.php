@@ -12,6 +12,11 @@ class Logout
      */
     public function __invoke(): void
     {
+        $user = Auth::guard('web')->user();
+        if ($user) {
+            \App\Services\AuditLogger::log('logout', 'Logout dari sistem', $user);
+        }
+
         Auth::guard('web')->logout();
 
         Session::invalidate();

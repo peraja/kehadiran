@@ -206,7 +206,9 @@ new #[Layout('layouts.app')] class extends Component {
 
         unset($validated['selected_opd_id'], $validated['selected_signer_id']);
 
-        Meeting::create($validated);
+        $meeting = Meeting::create($validated);
+
+        \App\Services\AuditLogger::log('create_meeting', "Buat rapat: {$meeting->title}");
 
         $this->reset(['title', 'date', 'start_time', 'end_time', 'location', 'selected_opd_id']);
         $this->selected_signer_id = 'kepala_opd';
@@ -373,50 +375,66 @@ new #[Layout('layouts.app')] class extends Component {
     <div class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
 
         <!-- Toolbar -->
-        <div class="p-4 border-b border-slate-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-slate-50/50">
+        <div class="p-6 border-b border-slate-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-slate-50/50">
             <!-- Filter Pills -->
             @unless(auth()->user()->hasActiveRole('pimpinan'))
-            <div class="flex flex-wrap items-center gap-2">
+            <div class="flex flex-wrap items-center gap-1.5 sm:gap-2">
                 <button wire:click="$set('statusFilter','')"
-                    class="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold transition-all {{ $statusFilter === '' ? 'bg-slate-800 text-white shadow-sm' : 'bg-white border border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900' }}">
-                    Semua Status
-                    <span class="inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-[10px] {{ $statusFilter === '' ? 'bg-slate-700 text-slate-300' : 'bg-slate-100 text-slate-500' }}">{{ $counts['total'] }}</span>
+                    class="inline-flex items-center justify-center gap-1.5 h-10 px-4 rounded-xl text-xs font-bold transition-all {{ $statusFilter === '' ? 'bg-slate-900 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900' }}">
+                    Semua
+                    <span class="inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-[10px] {{ $statusFilter === '' ? 'bg-slate-800 text-slate-300' : 'bg-slate-100 text-slate-500' }}">{{ $counts['total'] }}</span>
                 </button>
                 <button wire:click="$set('statusFilter','scheduled')"
-                    class="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold transition-all {{ $statusFilter === 'scheduled' ? 'bg-slate-600 text-white shadow-sm' : 'bg-white border border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-700' }}">
+                    class="inline-flex items-center justify-center gap-1.5 h-10 px-4 rounded-xl text-xs font-bold transition-all {{ $statusFilter === 'scheduled' ? 'bg-slate-600 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-700' }}">
+                    <span class="w-1.5 h-1.5 rounded-full {{ $statusFilter === 'scheduled' ? 'bg-slate-300' : 'bg-slate-400' }}"></span>
                     Dijadwalkan
                     <span class="inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-[10px] {{ $statusFilter === 'scheduled' ? 'bg-slate-700 text-slate-100' : 'bg-slate-100 text-slate-700' }}">{{ $counts['scheduled'] }}</span>
                 </button>
                 <button wire:click="$set('statusFilter','ongoing')"
-                    class="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold transition-all {{ $statusFilter === 'ongoing' ? 'bg-rose-600 text-white shadow-sm' : 'bg-white border border-slate-200 text-slate-600 hover:border-rose-300 hover:bg-rose-50 hover:text-rose-700' }}">
+                    class="inline-flex items-center justify-center gap-1.5 h-10 px-4 rounded-xl text-xs font-bold transition-all {{ $statusFilter === 'ongoing' ? 'bg-rose-600 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-rose-300 hover:bg-rose-50 hover:text-rose-700' }}">
+                    <span class="w-1.5 h-1.5 rounded-full {{ $statusFilter === 'ongoing' ? 'bg-rose-200' : 'bg-rose-500' }}"></span>
                     Berlangsung
                     <span class="inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-[10px] {{ $statusFilter === 'ongoing' ? 'bg-rose-700 text-rose-100' : 'bg-rose-100 text-rose-700' }}">{{ $counts['ongoing'] }}</span>
                 </button>
                 <button wire:click="$set('statusFilter','completed')"
-                    class="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold transition-all {{ $statusFilter === 'completed' ? 'bg-primary-600 text-white shadow-sm' : 'bg-white border border-slate-200 text-slate-600 hover:border-primary-300 hover:bg-primary-50 hover:text-primary-700' }}">
+                    class="inline-flex items-center justify-center gap-1.5 h-10 px-4 rounded-xl text-xs font-bold transition-all {{ $statusFilter === 'completed' ? 'bg-primary-600 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-primary-300 hover:bg-primary-50 hover:text-primary-700' }}">
+                    <span class="w-1.5 h-1.5 rounded-full {{ $statusFilter === 'completed' ? 'bg-primary-200' : 'bg-primary-500' }}"></span>
                     Selesai
                     <span class="inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-[10px] {{ $statusFilter === 'completed' ? 'bg-primary-700 text-primary-100' : 'bg-primary-100 text-primary-700' }}">{{ $counts['completed'] }}</span>
                 </button>
             </div>
             @endunless
 
-            <!-- Search Field -->
-            <div class="w-full md:w-80">
-                <div class="relative">
+            <!-- Search Field & Reset -->
+            <div class="flex flex-col md:flex-row items-stretch md:items-center gap-3 w-full md:w-auto">
+                <div class="relative flex-1 md:w-80">
                     <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                        <svg class="h-5 w-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg class="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                         </svg>
                     </div>
-                    <input wire:model.live.debounce.300ms="search" type="text" class="block w-full rounded-xl border border-slate-200 pl-10 pr-10 py-2.5 text-sm focus:border-primary-500 focus:ring-primary-500 shadow-sm transition-colors" placeholder="Cari agenda atau lokasi rapat...">
+                    <input wire:model.live.debounce.300ms="search" type="text"
+                        class="block w-full h-10 rounded-xl border border-slate-200 pl-9 pr-9 py-2 text-xs sm:text-sm focus:border-primary-500 focus:ring-primary-500 shadow-2xs transition-colors bg-white placeholder:text-slate-400"
+                        placeholder="Cari agenda atau lokasi rapat...">
                     @if($search)
-                    <button wire:click="$set('search', '')" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 transition-colors">
-                        <svg class="w-5 h-5 bg-slate-100 rounded-full p-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <button wire:click="$set('search', '')" class="absolute inset-y-0 right-0 pr-2.5 flex items-center text-slate-400 hover:text-slate-600 transition-colors" title="Hapus pencarian">
+                        <svg class="w-4 h-4 bg-slate-100 rounded-full p-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                         </svg>
                     </button>
                     @endif
                 </div>
+
+                @if($statusFilter)
+                <button wire:click="resetFilters"
+                    class="h-10 inline-flex items-center gap-1.5 px-3 rounded-xl text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 active:scale-95 transition-all border border-rose-200/80 shadow-2xs cursor-pointer shrink-0"
+                    title="Reset semua filter">
+                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                    <span>Reset Filter</span>
+                </button>
+                @endif
             </div>
         </div>
 
@@ -491,7 +509,7 @@ new #[Layout('layouts.app')] class extends Component {
                                 </div>
                                 <h3 class="text-base font-extrabold text-slate-900">Tidak Ada Data Rapat</h3>
                                 @if($search || $statusFilter)
-                                <button type="button" wire:click="resetFilters" class="mt-3 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors">
+                                <button type="button" wire:click="resetFilters" class="mt-3 px-4 py-2 bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-700 rounded-xl text-xs font-bold transition-all cursor-pointer">
                                     Reset Filter
                                 </button>
                                 @elseif(!auth()->user()->hasActiveRole('pimpinan'))

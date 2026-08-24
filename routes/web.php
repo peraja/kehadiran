@@ -56,4 +56,8 @@ Volt::route('settings', 'admin.settings')
     ->middleware(['auth'])
     ->name('admin.settings');
 
+Volt::route('audit-logs', 'admin.audit-logs')
+    ->middleware(['auth'])
+    ->name('admin.audit-logs');
+
 require __DIR__.'/auth.php';

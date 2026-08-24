@@ -454,6 +454,13 @@ class BsreEsignService
      */
     protected function updateMeetingSignedStatus(Meeting $meeting, User $user, string $type, string $path): void
     {
+        $typeName = match($type) {
+            'minutes' => 'Notulen',
+            'attendance' => 'Daftar Hadir',
+            'photos', 'documentation' => 'Dokumentasi',
+            default => ucfirst($type),
+        };
+
         if ($type === 'minutes') {
             $meeting->update([
                 'minutes_signed_at' => now(),
@@ -473,6 +480,8 @@ class BsreEsignService
                 'photos_signed_path' => $path,
             ]);
         }
+
+        \App\Services\AuditLogger::log('sign_tte', "TTE {$typeName}: {$meeting->title}", $user);
     }
 
     /**

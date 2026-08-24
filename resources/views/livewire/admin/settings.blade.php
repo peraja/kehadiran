@@ -66,7 +66,6 @@ new #[Layout('layouts.app')] class extends Component {
                 <h2 class="text-base font-bold text-slate-900">
                     Survei Kepuasan Masyarakat (SKM)
                 </h2>
-                <p class="text-xs text-slate-500 font-medium">Tautan resmi survei kepuasan masyarakat dari KemenPAN-RB untuk peserta rapat.</p>
             </div>
 
             <div>

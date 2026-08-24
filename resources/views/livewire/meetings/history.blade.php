@@ -135,7 +135,7 @@ new #[Layout('layouts.app')] class extends Component {
     <div class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
 
         <!-- Toolbar -->
-        <div class="p-3.5 sm:p-4 border-b border-slate-100 bg-slate-50/50">
+        <div class="p-6 border-b border-slate-100 bg-slate-50/50">
             <div class="flex flex-col lg:flex-row items-stretch lg:items-center gap-2.5">
                 <!-- Search Field (Fluid width) -->
                 <div class="relative flex-1 min-w-[200px]">
@@ -190,7 +190,7 @@ new #[Layout('layouts.app')] class extends Component {
                         </div>
                     </div>
 
-                    @if($search || $selected_opd_id || $date_from || $date_to)
+                    @if($selected_opd_id || $date_from || $date_to)
                     <!-- Reset Button -->
                     <button wire:click="resetFilters"
                         class="h-10 inline-flex items-center gap-1.5 px-3 rounded-xl text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 active:scale-95 transition-all border border-rose-200/80 shadow-2xs cursor-pointer shrink-0"
@@ -198,7 +198,7 @@ new #[Layout('layouts.app')] class extends Component {
                         <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                         </svg>
-                        <span>Reset</span>
+                        <span>Reset Filter</span>
                     </button>
                     @endif
                 </div>
@@ -299,17 +299,19 @@ new #[Layout('layouts.app')] class extends Component {
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="4" class="py-16 text-center text-slate-500">
-                            <div class="flex flex-col items-center justify-center space-y-3">
-                                <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center text-slate-400">
-                                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <td colspan="4" class="py-16 px-6 text-center">
+                            <div class="flex flex-col items-center justify-center max-w-sm mx-auto">
+                                <div class="w-14 h-14 bg-slate-100 rounded-2xl flex items-center justify-center mb-3 text-slate-400">
+                                    <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
                                     </svg>
                                 </div>
-                                <div>
-                                    <h3 class="text-base font-bold text-slate-800">Belum ada riwayat rapat</h3>
-                                    <p class="text-xs text-slate-500 mt-1 max-w-sm">Arsip rapat yang telah selesai dan bertanda tangan elektronik akan muncul di sini.</p>
-                                </div>
+                                <h3 class="text-base font-extrabold text-slate-900">Tidak Ada Riwayat Rapat</h3>
+                                @if($search || $selected_opd_id || $date_from || $date_to)
+                                <button type="button" wire:click="resetFilters" class="mt-3 px-4 py-2 bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-700 rounded-xl text-xs font-bold transition-all cursor-pointer">
+                                    Reset Filter
+                                </button>
+                                @endif
                             </div>
                         </td>
                     </tr>

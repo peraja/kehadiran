@@ -492,7 +492,11 @@ new class extends Component {
             abort(403, 'Akses tidak diizinkan.');
         }
 
+        $meetingTitle = $this->meeting->title;
         $this->meeting->delete();
+
+        \App\Services\AuditLogger::log('delete_meeting', "Hapus rapat: {$meetingTitle}");
+
         session()->flash('message', 'Rapat berhasil dihapus.');
         $this->redirect(route('meetings.index'), navigate: true);
     }

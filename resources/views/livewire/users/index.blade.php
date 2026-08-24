@@ -296,34 +296,34 @@ new #[Layout('layouts.app')] class extends Component {
     <!-- Main Table Container -->
     <div class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
         <!-- Toolbar -->
-        <div class="p-4 border-b border-slate-100 flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-slate-50/50">
+        <div class="p-6 border-b border-slate-100 bg-slate-50/50 space-y-4">
             <!-- Filter Pills -->
             <div class="flex flex-wrap items-center gap-1.5 sm:gap-2">
                 <button wire:click="$set('roleFilter','')" 
-                    class="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all {{ $roleFilter === '' ? 'bg-slate-900 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900' }}">
+                    class="inline-flex items-center justify-center gap-1.5 h-10 px-4 rounded-xl text-xs font-bold transition-all {{ $roleFilter === '' ? 'bg-slate-900 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900' }}">
                     Semua
                     <span class="inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-[10px] {{ $roleFilter === '' ? 'bg-slate-800 text-slate-300' : 'bg-slate-100 text-slate-500' }}">{{ $counts['total'] }}</span>
                 </button>
                 <button wire:click="$set('roleFilter','admin')" 
-                    class="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all {{ $roleFilter === 'admin' ? 'bg-purple-600 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-purple-300 hover:bg-purple-50 hover:text-purple-700' }}">
+                    class="inline-flex items-center justify-center gap-1.5 h-10 px-4 rounded-xl text-xs font-bold transition-all {{ $roleFilter === 'admin' ? 'bg-purple-600 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-purple-300 hover:bg-purple-50 hover:text-purple-700' }}">
                     <span class="w-1.5 h-1.5 rounded-full {{ $roleFilter === 'admin' ? 'bg-purple-200' : 'bg-purple-500' }}"></span>
                     Super Admin
                     <span class="inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-[10px] {{ $roleFilter === 'admin' ? 'bg-purple-700 text-purple-100' : 'bg-purple-100 text-purple-700' }}">{{ $counts['admin'] }}</span>
                 </button>
                 <button wire:click="$set('roleFilter','pimpinan')" 
-                    class="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all {{ $roleFilter === 'pimpinan' ? 'bg-indigo-600 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700' }}">
+                    class="inline-flex items-center justify-center gap-1.5 h-10 px-4 rounded-xl text-xs font-bold transition-all {{ $roleFilter === 'pimpinan' ? 'bg-indigo-600 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700' }}">
                     <span class="w-1.5 h-1.5 rounded-full {{ $roleFilter === 'pimpinan' ? 'bg-indigo-200' : 'bg-indigo-500' }}"></span>
                     Pimpinan
                     <span class="inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-[10px] {{ $roleFilter === 'pimpinan' ? 'bg-indigo-700 text-indigo-100' : 'bg-indigo-100 text-indigo-700' }}">{{ $counts['pimpinan'] }}</span>
                 </button>
                 <button wire:click="$set('roleFilter','admin_opd')" 
-                    class="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all {{ $roleFilter === 'admin_opd' ? 'bg-primary-600 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-primary-300 hover:bg-primary-50 hover:text-primary-700' }}">
+                    class="inline-flex items-center justify-center gap-1.5 h-10 px-4 rounded-xl text-xs font-bold transition-all {{ $roleFilter === 'admin_opd' ? 'bg-primary-600 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-primary-300 hover:bg-primary-50 hover:text-primary-700' }}">
                     <span class="w-1.5 h-1.5 rounded-full {{ $roleFilter === 'admin_opd' ? 'bg-primary-200' : 'bg-primary-500' }}"></span>
                     Admin OPD
                     <span class="inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-[10px] {{ $roleFilter === 'admin_opd' ? 'bg-primary-700 text-primary-100' : 'bg-primary-100 text-primary-700' }}">{{ $counts['admin_opd'] }}</span>
                 </button>
                 <button wire:click="$set('roleFilter','pegawai')" 
-                    class="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all {{ $roleFilter === 'pegawai' ? 'bg-slate-700 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-700' }}">
+                    class="inline-flex items-center justify-center gap-1.5 h-10 px-4 rounded-xl text-xs font-bold transition-all {{ $roleFilter === 'pegawai' ? 'bg-slate-700 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-700' }}">
                     <span class="w-1.5 h-1.5 rounded-full {{ $roleFilter === 'pegawai' ? 'bg-slate-300' : 'bg-slate-400' }}"></span>
                     Pegawai
                     <span class="inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-[10px] {{ $roleFilter === 'pegawai' ? 'bg-slate-800 text-slate-100' : 'bg-slate-100 text-slate-700' }}">{{ $counts['pegawai'] }}</span>
@@ -331,22 +331,35 @@ new #[Layout('layouts.app')] class extends Component {
             </div>
 
             <!-- Search Field -->
-            <div class="w-full lg:w-80">
-                <div class="relative">
+            <div class="flex flex-col md:flex-row items-stretch md:items-center gap-3">
+                <div class="relative flex-1 min-w-[220px] max-w-sm">
                     <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                        <svg class="h-5 w-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg class="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                         </svg>
                     </div>
-                    <input wire:model.live.debounce.300ms="search" type="text" class="block w-full rounded-xl border border-slate-200 pl-10 pr-10 py-2.5 text-sm focus:border-primary-500 focus:ring-primary-500 shadow-sm transition-colors" placeholder="Cari nama, NIP, atau OPD...">
+                    <input wire:model.live.debounce.300ms="search" type="text"
+                        class="block w-full h-10 rounded-xl border border-slate-200 pl-9 pr-9 py-2 text-xs sm:text-sm focus:border-primary-500 focus:ring-primary-500 shadow-2xs transition-colors bg-white placeholder:text-slate-400"
+                        placeholder="Cari nama, NIP, atau OPD...">
                     @if($search)
-                    <button wire:click="$set('search', '')" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 transition-colors">
-                        <svg class="w-5 h-5 bg-slate-100 rounded-full p-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <button wire:click="$set('search', '')" class="absolute inset-y-0 right-0 pr-2.5 flex items-center text-slate-400 hover:text-slate-600 transition-colors" title="Hapus pencarian">
+                        <svg class="w-4 h-4 bg-slate-100 rounded-full p-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                         </svg>
                     </button>
                     @endif
                 </div>
+
+                @if($roleFilter)
+                <button wire:click="resetFilters"
+                    class="h-10 inline-flex items-center gap-1.5 px-3 rounded-xl text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 active:scale-95 transition-all border border-rose-200/80 shadow-2xs cursor-pointer shrink-0"
+                    title="Reset semua filter">
+                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                    <span>Reset Filter</span>
+                </button>
+                @endif
             </div>
         </div>
 
@@ -433,7 +446,7 @@ new #[Layout('layouts.app')] class extends Component {
                                 </div>
                                 <h3 class="text-base font-extrabold text-slate-900">Tidak Ada Data Pengguna</h3>
                                 @if($search || $roleFilter)
-                                <button type="button" wire:click="resetFilters" class="mt-3 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors">
+                                <button type="button" wire:click="resetFilters" class="mt-3 px-4 py-2 bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-700 rounded-xl text-xs font-bold transition-all cursor-pointer">
                                     Reset Filter
                                 </button>
                                 @else
