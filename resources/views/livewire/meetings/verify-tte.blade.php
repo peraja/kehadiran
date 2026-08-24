@@ -62,14 +62,13 @@ new #[Layout('layouts.guest')] class extends Component {
         <div>
             <div class="w-14 h-14 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-2.5">
                 <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                 </svg>
             </div>
-            <div class="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-xs font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200 mb-1">
+            <div class="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200">
                 <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
                 Tanda Tangan Elektronik Sah
             </div>
-            <p class="text-xs text-slate-400 font-medium">BSrE - Badan Siber dan Sandi Negara</p>
         </div>
 
         <!-- Verification Detail Card -->
@@ -95,6 +94,10 @@ new #[Layout('layouts.guest')] class extends Component {
             <div class="py-2.5 flex justify-between items-center gap-4">
                 <span class="text-slate-400 font-medium shrink-0">Waktu TTE</span>
                 <span class="font-bold text-emerald-700 font-mono text-right">{{ $signedAt->translatedFormat('d F Y, H:i') }} WITA</span>
+            </div>
+            <div class="py-2.5 flex justify-between items-center gap-4">
+                <span class="text-slate-400 font-medium shrink-0">Sertifikat</span>
+                <span class="font-bold text-slate-800 text-right text-xs">BSrE - BSSN</span>
             </div>
         </div>
 

@@ -91,6 +91,7 @@ new #[Layout('layouts.guest')] class extends Component {
                     $name = $pData['nama_pegawai'] ?? $pData['nama'] ?? $nip;
                     $unit_id = $pData['unit_id'] ?? $pData['id_unit'] ?? null;
                     $jabatan = $pData['jabatan_nama'] ?? $pData['jabatan'] ?? null;
+                    $pangkat = $pData['pangkat_nama'] ?? $pData['pangkat'] ?? null;
                     $unit_name = null;
 
                     if ($unit_id) {
@@ -102,14 +103,20 @@ new #[Layout('layouts.guest')] class extends Component {
                         $unit_name = $uData['unit_nama'] ?? $uData['nama_unit'] ?? $uData['unit_kerja'] ?? null;
                     }
 
+                    $userData = [
+                        'name' => $name,
+                        'password' => \Illuminate\Support\Facades\Hash::make(\Illuminate\Support\Str::random(24)),
+                        'jabatan' => $jabatan,
+                        'unit_name' => $unit_name,
+                    ];
+
+                    if (!empty($pangkat)) {
+                        $userData['pangkat'] = trim((string)$pangkat);
+                    }
+
                     $user = User::updateOrCreate(
                         ['nip' => $nip],
-                        [
-                            'name' => $name,
-                            'password' => \Illuminate\Support\Facades\Hash::make(\Illuminate\Support\Str::random(24)),
-                            'jabatan' => $jabatan,
-                            'unit_name' => $unit_name
-                        ]
+                        $userData
                     );
 
                     if ($user->roles->count() == 0) {

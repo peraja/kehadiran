@@ -23,6 +23,22 @@ return new class extends Migration
             $table->string('signer_name')->nullable();
             $table->string('signer_nip')->nullable();
             $table->string('signer_rank')->nullable();
+
+            // TTE Notulen
+            $table->timestamp('minutes_signed_at')->nullable();
+            $table->foreignId('minutes_signed_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->string('minutes_signed_path')->nullable();
+
+            // TTE Daftar Hadir / Presensi
+            $table->timestamp('attendance_signed_at')->nullable();
+            $table->foreignId('attendance_signed_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->string('attendance_signed_path')->nullable();
+
+            // TTE Dokumentasi Foto
+            $table->timestamp('photos_signed_at')->nullable();
+            $table->foreignId('photos_signed_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->string('photos_signed_path')->nullable();
+
             $table->timestamps();
         });
     }

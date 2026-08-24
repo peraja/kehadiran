@@ -4,6 +4,35 @@ Semua perubahan penting pada proyek ini dicatat dalam berkas ini.
 
 Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/1.0.0/), dan proyek ini mematuhi [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.4] - 2026-08-25
+
+### Ditambahkan
+- **Sinkronisasi Pangkat SIMPEG**: Pemetaan dan penyimpanan otomatis atribut `pangkat` dari respon API SIMPEG (`pangkat_nama`) saat login ASN (`LoginForm.php`) dan saat scan presensi mandiri (`check-in.blade.php`).
+- **Tampilan Pangkat pada Profil**: Penambahan baris info *Pangkat / Golongan* pada kartu profil pengguna ([`profile.blade.php`](file:///Users/abedzul/Desktop/htdocs/rapat/resources/views/profile.blade.php)).
+- **Pelacakan Aset Build untuk cPanel**: Penyesuaian `.gitignore` untuk menyertakan folder `public/build` sehingga aset CSS/JS siap pakai tanpa memerlukan Node.js di server cPanel.
+- **Standarisasi Struktur Folder Storage**: Penambahan berkas `.gitignore` standar di seluruh subdirektori `storage/` (`storage/app/public`, `storage/framework/*`, `storage/logs`) guna memastikan struktur direktori otomatis terbuat saat deployment Git.
+
+### Diubah
+- **Konsolidasi & Perapian Migrasi Database**:
+  - Menggabungkan kolom `pangkat` langsung ke skema utama [`0001_01_01_000000_create_users_table.php`](file:///Users/abedzul/Desktop/htdocs/rapat/database/migrations/0001_01_01_000000_create_users_table.php).
+  - Menggabungkan seluruh kolom TTE BSrE langsung ke skema utama [`2026_08_20_000004_create_meetings_table.php`](file:///Users/abedzul/Desktop/htdocs/rapat/database/migrations/2026_08_20_000004_create_meetings_table.php).
+  - Menghapus 2 berkas migrasi alter tabel redundan.
+- **Penyelarasan UI Header & Dokumen Rapat**:
+  - Pemindahan badge status dokumen ke sisi kanan bilah aksi pada header rapat.
+  - Penyembunyian badge status rapat khusus untuk pengguna dengan peran `pimpinan`.
+  - Reaktivitas realtime Livewire antar-tab saat aksi "Buka Revisi" dijalankan melalui penyiaran event `meeting-updated`.
+  - Desain tombol "Lihat PDF" yang telah di-TTE bergaya *emerald verified* dan pembersihan badge ganda.
+- **Konfigurasi Server & Dokumentasi**:
+  - Standardisasi berkas `.htaccess` di root proyek menjadi aturan *forwarder* publik yang ringkas dan aman.
+  - Pembaruan berkas [`README.md`](file:///Users/abedzul/Desktop/htdocs/rapat/README.md) menjadi ringkas, akurat dengan kondisi sistem eksisting, dan bersih dari data kredensial.
+
+### Dihapus
+- **Pembersihan Berkas Legacy & Prototipe**:
+  - Menghapus seluruh berkas statis prototipe lama di root dan `public/` (`admin.html/php`, `api.php`, `login.html/php`, `meeting.html/php`, `server.js`, `create_assets.js`, `build_zip.py`, `public/assets/`, `.htaccess-1-barebones`, `.htaccess-2-routing`).
+  - Menghapus berkas scaffolding autentikasi Laravel Breeze yang tidak digunakan (`VerifyEmailController.php`, `register.blade.php`, `forgot-password.blade.php`, `reset-password.blade.php`, `confirm-password.blade.php`, `verify-email.blade.php`, `welcome/navigation.blade.php`).
+  - Menghapus komponen blade yang tidak terpakai (`action-message.blade.php`, `application-logo.blade.php`, `danger-button.blade.php`, `secondary-button.blade.php`, `textarea-input.blade.php`).
+  - Menghapus berkas dokumen perancangan dan PDF teknis internal (`CPANEL_DEPLOYMENT_GUIDE.md`, `CPANEL_TROUBLESHOOT.md`, `DEPLOYMENT_GUIDE.md`, `DESIGN.md`, `Rancangan_Modul_Manajemen_Rapat.md`, `pdf-petunjuk-teknis-api-esign-client-service-v221-sign-2_compress.pdf`).
+
 ## [1.3.3] - 2026-08-25
 
 ### Ditambahkan

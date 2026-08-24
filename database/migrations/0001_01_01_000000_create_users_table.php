@@ -20,6 +20,7 @@ return new class extends Migration
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password')->nullable();
             $table->string('jabatan')->nullable();
+            $table->string('pangkat')->nullable();
             $table->string('unit_name')->nullable();
             $table->rememberToken();
             $table->timestamps();

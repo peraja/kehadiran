@@ -5,6 +5,7 @@ use App\Models\Meeting;
 use App\Models\Opd;
 use App\Models\OpdSigner;
 use App\Services\BsreEsignService;
+use Livewire\Attributes\On;
 
 new class extends Component {
     public Meeting $meeting;
@@ -18,6 +19,12 @@ new class extends Component {
     public bool $showSignModal = false;
     public string $passphrase = '';
     public string $errorMessage = '';
+
+    #[On('meeting-updated')]
+    public function refreshMeeting(): void
+    {
+        $this->meeting->refresh();
+    }
 
     public function getOpdProperty(): ?Opd
     {
@@ -424,7 +431,7 @@ new class extends Component {
 
         // Blokir semua perubahan jika ada dokumen yang sudah TTE
         if ($this->signerLocked) {
-            session()->flash('error', 'Rapat tidak dapat diubah karena dokumen telah ditandatangani. Buka kunci dokumen terlebih dahulu.');
+            session()->flash('error', 'Rapat dikunci karena dokumen telah TTE. Buka revisi terlebih dahulu.');
             $this->dispatch('close-modal', 'edit-meeting-modal');
             return;
         }
@@ -505,10 +512,11 @@ new class extends Component {
 <div class="relative">
     <div class="flex flex-col md:flex-row md:items-start justify-between gap-5 relative z-10">
         <div class="space-y-2.5 flex-1 min-w-0">
+            @unless(auth()->user()?->hasActiveRole('pimpinan'))
             <div class="flex flex-wrap items-center gap-2">
                 <x-meeting-status-badge :status="$meeting->status" />
-                <x-document-status-badge :meeting="$meeting" />
             </div>
+            @endunless
 
             <h1 class="font-extrabold text-2xl sm:text-3xl text-slate-900 tracking-tight leading-tight break-words">{{ trim($meeting->title) }}</h1>
 
@@ -519,6 +527,8 @@ new class extends Component {
         </div>
 
         <div class="flex flex-wrap items-center gap-2.5 shrink-0 w-full md:w-auto mt-2 md:mt-0">
+            <x-document-status-badge :meeting="$meeting" />
+
             @if($meeting->status === 'completed' && auth()->user()->hasActiveRole('pimpinan') && !$meeting->isFullySigned())
                 <button type="button" x-data="" x-on:click.prevent="$dispatch('open-modal', 'sign-all-modal'); $wire.openSignModal()" class="flex-1 md:flex-none inline-flex justify-center items-center px-4 py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl font-bold text-sm transition-all shadow-sm gap-2 cursor-pointer">
                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -588,7 +598,7 @@ new class extends Component {
                     Edit Rapat
                 </h2>
                 <div class="flex items-center gap-2">
-                    <button wire:click="deleteMeeting" wire:confirm="Hapus rapat ini? Seluruh data presensi, dokumentasi, dan notulen terkait akan dihapus." class="inline-flex items-center px-3 py-1.5 bg-rose-50 text-rose-600 hover:bg-rose-100 rounded-xl text-xs font-bold transition-colors">
+                    <button wire:click="deleteMeeting" wire:confirm="Hapus rapat ini beserta seluruh datanya?" class="inline-flex items-center px-3 py-1.5 bg-rose-50 text-rose-600 hover:bg-rose-100 rounded-xl text-xs font-bold transition-colors">
                         <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                         </svg>

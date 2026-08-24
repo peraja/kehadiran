@@ -8,6 +8,7 @@ use Livewire\Attributes\On;
 
 new #[Layout('layouts.app')] class extends Component {
     public Meeting $meeting;
+    public bool $canEdit = false;
 
     // Single Document TTE BSrE State
     public bool $showSignModal = false;
@@ -20,12 +21,20 @@ new #[Layout('layouts.app')] class extends Component {
         $this->meeting = $meeting;
 
         $user = auth()->user();
-        if ($user->hasActiveRole('pimpinan') && !$meeting->isSigner($user)) {
-            abort(403, 'Anda hanya dapat mengakses rapat yang penandatangannya adalah Anda sendiri.');
-        }
-
-        if ($user->hasActiveRole('pegawai') && $meeting->created_by !== $user->id) {
-            abort(403, 'Anda hanya dapat mengakses rapat yang Anda buat sendiri.');
+        if ($user->hasActiveRole('pimpinan')) {
+            if (!$meeting->isSigner($user)) {
+                abort(403, 'Anda hanya dapat mengakses rapat yang penandatangannya adalah Anda sendiri.');
+            }
+            $this->canEdit = false;
+        } elseif ($user->hasActiveRole('admin')) {
+            $this->canEdit = true;
+        } elseif ($user->hasActiveRole('admin_opd')) {
+            $this->canEdit = $user->unit_name === $meeting->opd?->name || $user->unit_name === $meeting->creator?->unit_name;
+        } else {
+            if ($meeting->created_by !== $user->id) {
+                abort(403, 'Anda hanya dapat mengakses rapat yang Anda buat sendiri.');
+            }
+            $this->canEdit = true;
         }
     }
 
@@ -33,6 +42,61 @@ new #[Layout('layouts.app')] class extends Component {
     public function refreshMeeting(): void
     {
         $this->meeting->refresh();
+    }
+
+    public function unlockForRevision(string $type): void
+    {
+        $user = auth()->user();
+
+        if (!$this->canEdit || $user->hasActiveRole('pimpinan')) {
+            abort(403, 'Akses tidak diizinkan. Pembukaan kunci hanya dapat dilakukan oleh penyelenggara atau admin.');
+        }
+
+        switch ($type) {
+            case 'attendance':
+            case 'presensi':
+                if ($this->meeting->attendance_signed_path && \Illuminate\Support\Facades\Storage::disk('public')->exists($this->meeting->attendance_signed_path)) {
+                    \Illuminate\Support\Facades\Storage::disk('public')->delete($this->meeting->attendance_signed_path);
+                }
+                $this->meeting->update([
+                    'attendance_signed_at' => null,
+                    'attendance_signed_by' => null,
+                    'attendance_signed_path' => null,
+                ]);
+                $msg = 'Kunci presensi dibuka untuk revisi.';
+                break;
+
+            case 'photos':
+            case 'dokumentasi':
+                if ($this->meeting->photos_signed_path && \Illuminate\Support\Facades\Storage::disk('public')->exists($this->meeting->photos_signed_path)) {
+                    \Illuminate\Support\Facades\Storage::disk('public')->delete($this->meeting->photos_signed_path);
+                }
+                $this->meeting->update([
+                    'photos_signed_at' => null,
+                    'photos_signed_by' => null,
+                    'photos_signed_path' => null,
+                ]);
+                $msg = 'Kunci dokumentasi dibuka untuk revisi.';
+                break;
+
+            case 'minutes':
+            case 'notulen':
+            default:
+                if ($this->meeting->minutes_signed_path && \Illuminate\Support\Facades\Storage::disk('public')->exists($this->meeting->minutes_signed_path)) {
+                    \Illuminate\Support\Facades\Storage::disk('public')->delete($this->meeting->minutes_signed_path);
+                }
+                $this->meeting->update([
+                    'minutes_signed_at' => null,
+                    'minutes_signed_by' => null,
+                    'minutes_signed_path' => null,
+                ]);
+                $msg = 'Kunci notulen dibuka untuk revisi.';
+                break;
+        }
+
+        $this->meeting->refresh();
+        session()->flash('message', $msg);
+        $this->dispatch('meeting-updated');
     }
 
     public function openSingleSignModal(string $type): void
@@ -110,12 +174,7 @@ new #[Layout('layouts.app')] class extends Component {
                         </div>
                         <div class="sm:w-3/4 flex flex-wrap items-center justify-between gap-3">
                             <div>
-                                @if($meeting->attendance_signed_at)
-                                <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                                    Sudah TTE
-                                </span>
-                                @else
+                                @if(!$meeting->attendance_signed_at)
                                 <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-600 border border-slate-200">
                                     <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
                                     Belum TTE
@@ -125,12 +184,32 @@ new #[Layout('layouts.app')] class extends Component {
 
                             <div class="flex items-center gap-2 shrink-0">
                                 @if($meeting->status === 'completed')
-                                <a href="{{ route('meetings.export.attendance', $meeting->id) }}" target="_blank" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-slate-50 active:scale-95 text-slate-700 border border-slate-300 rounded-xl text-xs font-bold transition-all shadow-2xs">
-                                    <svg class="w-4 h-4 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                    @if($meeting->attendance_signed_at)
+                                    <a href="{{ route('meetings.export.attendance', $meeting->id) }}" target="_blank" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 active:scale-95 text-emerald-700 border border-emerald-300 rounded-xl text-xs font-bold transition-all shadow-2xs">
+                                        <svg class="w-4 h-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                                        </svg>
+                                        <span>Lihat PDF</span>
+                                    </a>
+                                    @else
+                                    <a href="{{ route('meetings.export.attendance', $meeting->id) }}" target="_blank" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-slate-50 active:scale-95 text-slate-700 border border-slate-300 rounded-xl text-xs font-bold transition-all shadow-2xs">
+                                        <svg class="w-4 h-4 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                        </svg>
+                                        <span>Lihat PDF</span>
+                                    </a>
+                                    @endif
+                                @endif
+
+                                @if($meeting->attendance_signed_at && $canEdit && !auth()->user()->hasActiveRole('pimpinan'))
+                                <button type="button" wire:click="unlockForRevision('attendance')"
+                                    wire:confirm="Buka kunci presensi untuk revisi? Dokumen perlu ditandatangani ulang setelahnya."
+                                    class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 hover:bg-amber-100 active:scale-95 text-amber-700 border border-amber-300 rounded-xl text-xs font-bold transition-all shadow-2xs cursor-pointer">
+                                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
                                     </svg>
-                                    <span>Lihat PDF</span>
-                                </a>
+                                    <span>Buka Revisi</span>
+                                </button>
                                 @endif
 
                                 @if(!$meeting->attendance_signed_at && $meeting->status === 'completed')
@@ -152,12 +231,7 @@ new #[Layout('layouts.app')] class extends Component {
                         </div>
                         <div class="sm:w-3/4 flex flex-wrap items-center justify-between gap-3">
                             <div>
-                                @if($meeting->photos_signed_at)
-                                <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                                    Sudah TTE
-                                </span>
-                                @else
+                                @if(!$meeting->photos_signed_at)
                                 <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-600 border border-slate-200">
                                     <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
                                     Belum TTE
@@ -167,12 +241,32 @@ new #[Layout('layouts.app')] class extends Component {
 
                             <div class="flex items-center gap-2 shrink-0">
                                 @if($meeting->status === 'completed' && $meeting->photos()->count() > 0)
-                                <a href="{{ route('meetings.export.photos', $meeting->id) }}" target="_blank" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-slate-50 active:scale-95 text-slate-700 border border-slate-300 rounded-xl text-xs font-bold transition-all shadow-2xs">
-                                    <svg class="w-4 h-4 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                    @if($meeting->photos_signed_at)
+                                    <a href="{{ route('meetings.export.photos', $meeting->id) }}" target="_blank" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 active:scale-95 text-emerald-700 border border-emerald-300 rounded-xl text-xs font-bold transition-all shadow-2xs">
+                                        <svg class="w-4 h-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                                        </svg>
+                                        <span>Lihat PDF</span>
+                                    </a>
+                                    @else
+                                    <a href="{{ route('meetings.export.photos', $meeting->id) }}" target="_blank" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-slate-50 active:scale-95 text-slate-700 border border-slate-300 rounded-xl text-xs font-bold transition-all shadow-2xs">
+                                        <svg class="w-4 h-4 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                        </svg>
+                                        <span>Lihat PDF</span>
+                                    </a>
+                                    @endif
+                                @endif
+
+                                @if($meeting->photos_signed_at && $canEdit && !auth()->user()->hasActiveRole('pimpinan'))
+                                <button type="button" wire:click="unlockForRevision('photos')"
+                                    wire:confirm="Buka kunci dokumentasi untuk revisi? Dokumen perlu ditandatangani ulang setelahnya."
+                                    class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 hover:bg-amber-100 active:scale-95 text-amber-700 border border-amber-300 rounded-xl text-xs font-bold transition-all shadow-2xs cursor-pointer">
+                                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
                                     </svg>
-                                    <span>Lihat PDF</span>
-                                </a>
+                                    <span>Buka Revisi</span>
+                                </button>
                                 @endif
 
                                 @if(!$meeting->photos_signed_at && $meeting->status === 'completed' && $meeting->photos()->count() > 0)
@@ -194,12 +288,7 @@ new #[Layout('layouts.app')] class extends Component {
                         </div>
                         <div class="sm:w-3/4 flex flex-wrap items-center justify-between gap-3">
                             <div>
-                                @if($meeting->minutes_signed_at)
-                                <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                                    Sudah TTE
-                                </span>
-                                @else
+                                @if(!$meeting->minutes_signed_at)
                                 <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-600 border border-slate-200">
                                     <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
                                     Belum TTE
@@ -209,12 +298,32 @@ new #[Layout('layouts.app')] class extends Component {
 
                             <div class="flex items-center gap-2 shrink-0">
                                 @if($meeting->status === 'completed' && $meeting->minutes && !empty(trim($meeting->minutes->content)))
-                                <a href="{{ route('meetings.export.minutes', $meeting->id) }}" target="_blank" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-slate-50 active:scale-95 text-slate-700 border border-slate-300 rounded-xl text-xs font-bold transition-all shadow-2xs">
-                                    <svg class="w-4 h-4 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                    @if($meeting->minutes_signed_at)
+                                    <a href="{{ route('meetings.export.minutes', $meeting->id) }}" target="_blank" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 active:scale-95 text-emerald-700 border border-emerald-300 rounded-xl text-xs font-bold transition-all shadow-2xs">
+                                        <svg class="w-4 h-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                                        </svg>
+                                        <span>Lihat PDF</span>
+                                    </a>
+                                    @else
+                                    <a href="{{ route('meetings.export.minutes', $meeting->id) }}" target="_blank" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-slate-50 active:scale-95 text-slate-700 border border-slate-300 rounded-xl text-xs font-bold transition-all shadow-2xs">
+                                        <svg class="w-4 h-4 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                        </svg>
+                                        <span>Lihat PDF</span>
+                                    </a>
+                                    @endif
+                                @endif
+
+                                @if($meeting->minutes_signed_at && $canEdit && !auth()->user()->hasActiveRole('pimpinan'))
+                                <button type="button" wire:click="unlockForRevision('minutes')"
+                                    wire:confirm="Buka kunci notulen untuk revisi? Dokumen perlu ditandatangani ulang setelahnya."
+                                    class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 hover:bg-amber-100 active:scale-95 text-amber-700 border border-amber-300 rounded-xl text-xs font-bold transition-all shadow-2xs cursor-pointer">
+                                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
                                     </svg>
-                                    <span>Lihat PDF</span>
-                                </a>
+                                    <span>Buka Revisi</span>
+                                </button>
                                 @endif
 
                                 @if(!$meeting->minutes_signed_at && $meeting->status === 'completed' && $meeting->minutes && !empty(trim($meeting->minutes->content)))

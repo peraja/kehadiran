@@ -190,7 +190,7 @@ class BsreEsignTest extends TestCase
         $response->assertSee('Tanda Tangan Elektronik Sah');
         $response->assertSee('Kepala Dinas Kominfo');
         $response->assertSee('Dr. H. Contoh, M.Si');
-        $response->assertSee('BSrE - Badan Siber dan Sandi Negara');
+        $response->assertSee('BSrE - BSSN');
         $response->assertSee('Download PDF');
     }
 

@@ -348,5 +348,50 @@ class MeetingValidationTest extends TestCase
             ->assertDontSee('Simpan Notulen')
             ->assertDontSee('Upload Foto');
     }
+
+    public function test_unlock_for_revision_dispatches_meeting_updated_and_resets_signed_fields(): void
+    {
+        $admin = User::factory()->create();
+        $admin->assignRole('admin');
+        $this->actingAs($admin);
+
+        $meeting = Meeting::create([
+            'title' => 'Rapat Uji Buka Revisi',
+            'agenda' => 'Agenda',
+            'date' => now()->toDateString(),
+            'start_time' => '09:00',
+            'end_time' => '11:00',
+            'location' => 'Ruang Rapat',
+            'status' => 'completed',
+            'created_by' => $admin->id,
+            'attendance_signed_at' => now(),
+            'minutes_signed_at' => now(),
+            'photos_signed_at' => now(),
+        ]);
+
+        // Unlock attendance from presensi tab
+        Volt::test('meetings.presensi', ['meeting' => $meeting])
+            ->call('unlockForRevision')
+            ->assertDispatched('meeting-updated');
+
+        $meeting->refresh();
+        $this->assertNull($meeting->attendance_signed_at);
+
+        // Unlock minutes from notulen tab
+        Volt::test('meetings.notulen', ['meeting' => $meeting])
+            ->call('unlockForRevision')
+            ->assertDispatched('meeting-updated');
+
+        $meeting->refresh();
+        $this->assertNull($meeting->minutes_signed_at);
+
+        // Unlock photos from overview tab
+        Volt::test('meetings.overview', ['meeting' => $meeting])
+            ->call('unlockForRevision', 'photos')
+            ->assertDispatched('meeting-updated');
+
+        $meeting->refresh();
+        $this->assertNull($meeting->photos_signed_at);
+    }
 }
 

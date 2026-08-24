@@ -88,6 +88,7 @@ new #[Layout('layouts.app')] class extends Component {
             $this->meeting->refresh();
             $this->closeSignModal();
             session()->flash('message', $result['message']);
+            $this->dispatch('meeting-updated');
         } else {
             $this->errorMessage = $result['message'];
             $this->passphrase = '';
@@ -115,6 +116,7 @@ new #[Layout('layouts.app')] class extends Component {
 
         $this->meeting->refresh();
         session()->flash('message', 'Kunci dokumentasi dibuka untuk revisi.');
+        $this->dispatch('meeting-updated');
     }
 
     public function updatedPhotos()
@@ -239,12 +241,9 @@ new #[Layout('layouts.app')] class extends Component {
 
             @if($meeting->photos->count() > 0)
             <div class="flex flex-wrap items-center gap-3 self-start sm:self-auto">
-                @if($meeting->photos_signed_at)
-                <span class="inline-flex items-center px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full text-[11px] font-bold uppercase tracking-wider whitespace-nowrap shadow-2xs">
-                    <svg class="w-3 h-3 mr-1.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                    Sudah TTE
-                </span>
-                @elseif(auth()->user()->hasActiveRole('pimpinan') && $meeting->status === 'completed')
+                @if(!auth()->user()->hasActiveRole('pimpinan') && !$meeting->photos_signed_at)
+                    {{-- No badge needed when not signed --}}
+                @elseif(auth()->user()->hasActiveRole('pimpinan') && !$meeting->photos_signed_at && $meeting->status === 'completed')
                 <button type="button" x-data="" x-on:click.prevent="$dispatch('open-modal', 'sign-photos-modal'); $wire.openSignModal()" class="inline-flex justify-center items-center px-4 py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl font-bold text-sm transition-all shadow-sm gap-2">
                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
@@ -254,12 +253,21 @@ new #[Layout('layouts.app')] class extends Component {
                 @endif
 
                 @if($meeting->status === 'completed')
-                <a href="{{ route('meetings.export.photos', $meeting->id) }}" target="_blank" class="inline-flex justify-center items-center px-4 py-2.5 bg-white hover:bg-slate-50 border border-slate-300 hover:border-slate-400 active:scale-95 text-slate-700 rounded-xl font-bold text-sm transition-all shadow-sm gap-2">
-                    <svg class="w-4 h-4 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                    <span>Lihat PDF</span>
-                </a>
+                    @if($meeting->photos_signed_at)
+                    <a href="{{ route('meetings.export.photos', $meeting->id) }}" target="_blank" class="inline-flex justify-center items-center px-4 py-2.5 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 hover:border-emerald-400 active:scale-95 text-emerald-800 rounded-xl font-bold text-sm transition-all shadow-2xs gap-2">
+                        <svg class="w-4 h-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                        </svg>
+                        <span>Lihat PDF</span>
+                    </a>
+                    @else
+                    <a href="{{ route('meetings.export.photos', $meeting->id) }}" target="_blank" class="inline-flex justify-center items-center px-4 py-2.5 bg-white hover:bg-slate-50 border border-slate-300 hover:border-slate-400 active:scale-95 text-slate-700 rounded-xl font-bold text-sm transition-all shadow-sm gap-2">
+                        <svg class="w-4 h-4 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <span>Lihat PDF</span>
+                    </a>
+                    @endif
                 @endif
             </div>
             @endif
