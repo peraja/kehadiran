@@ -8,7 +8,6 @@ Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/
 
 ### Ditambahkan
 - **Sinkronisasi Pangkat SIMPEG**: Pemetaan dan penyimpanan otomatis atribut `pangkat` dari respon API SIMPEG (`pangkat_nama`) saat login ASN (`LoginForm.php`) dan saat scan presensi mandiri (`check-in.blade.php`).
-- **Tampilan Pangkat pada Profil**: Penambahan baris info *Pangkat / Golongan* pada kartu profil pengguna ([`profile.blade.php`](file:///Users/abedzul/Desktop/htdocs/rapat/resources/views/profile.blade.php)).
 - **Pelacakan Aset Build untuk cPanel**: Penyesuaian `.gitignore` untuk menyertakan folder `public/build` sehingga aset CSS/JS siap pakai tanpa memerlukan Node.js di server cPanel.
 - **Standarisasi Struktur Folder Storage**: Penambahan berkas `.gitignore` standar di seluruh subdirektori `storage/` (`storage/app/public`, `storage/framework/*`, `storage/logs`) guna memastikan struktur direktori otomatis terbuat saat deployment Git.
 

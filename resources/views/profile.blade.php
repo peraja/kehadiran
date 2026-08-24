@@ -70,18 +70,6 @@
                 </div>
             </div>
 
-            @if($user->pangkat)
-            <!-- Pangkat / Golongan -->
-            <div class="flex flex-col sm:flex-row sm:items-center py-4 px-6 gap-2 sm:gap-6 hover:bg-slate-50/50 transition-colors">
-                <div class="sm:w-1/4 text-slate-500 font-bold text-sm">
-                    Pangkat / Golongan
-                </div>
-                <div class="sm:w-3/4 text-slate-800 font-semibold text-sm">
-                    {{ $user->pangkat }}
-                </div>
-            </div>
-            @endif
-
             <!-- OPD / Unit Kerja -->
             <div class="flex flex-col sm:flex-row sm:items-center py-4 px-6 gap-2 sm:gap-6 hover:bg-slate-50/50 transition-colors">
                 <div class="sm:w-1/4 text-slate-500 font-bold text-sm">
