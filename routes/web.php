@@ -60,4 +60,8 @@ Volt::route('audit-logs', 'admin.audit-logs')
     ->middleware(['auth'])
     ->name('admin.audit-logs');
 
+// Livewire GET fallbacks (prevent 405 MethodNotAllowed from browser prefetch/extensions)
+Route::match(['get', 'head'], 'livewire/update', fn () => response()->noContent());
+Route::match(['get', 'head'], 'livewire/upload-file', fn () => response()->noContent());
+
 require __DIR__.'/auth.php';

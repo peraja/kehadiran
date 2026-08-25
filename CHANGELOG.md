@@ -32,6 +32,7 @@ Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/
   - Penambahan konfigurasi `$middleware->trustProxies(at: '*')` pada [`bootstrap/app.php`](file:///Users/abedzul/Desktop/htdocs/rapat/bootstrap/app.php) guna memastikan Laravel mendeteksi header SSL/HTTPS dari reverse proxy cPanel.
   - Penegasan skema HTTPS global (`URL::forceScheme('https')`) pada [`app/Providers/AppServiceProvider.php`](file:///Users/abedzul/Desktop/htdocs/rapat/app/Providers/AppServiceProvider.php) untuk lingkungan produksi.
   - Pembatasan aturan redirect *trailing slash* pada [`public/.htaccess`](file:///Users/abedzul/Desktop/htdocs/rapat/public/.htaccess) hanya untuk metode `GET` (`RewriteCond %{REQUEST_METHOD} =GET`) guna mencegah konversi request `POST /livewire/update` menjadi `GET` akibat redirect 301.
+  - Penambahan rute fallback *graceful handler* untuk `GET|HEAD /livewire/update` dan `GET|HEAD /livewire/upload-file` pada [`routes/web.php`](file:///Users/abedzul/Desktop/htdocs/rapat/routes/web.php) guna mencegah pengecualian *MethodNotAllowedHttpException* yang dipicu oleh mekanisme *browser prefetch* atau ekstensi browser.
   - Penambahan direktif `Options -MultiViews -Indexes` pada root [`.htaccess`](file:///Users/abedzul/Desktop/htdocs/rapat/.htaccess).
 
 ## [1.3.8] - 2026-08-25
