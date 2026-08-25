@@ -302,7 +302,7 @@ new #[Layout('layouts.guest')] class extends Component {
                         placeholder="Contoh: 198501012010011001"
                         @readonly($nip_checked)
                         wire:keydown.enter.prevent="checkNip"
-                        required autofocus />
+                        required />
                     @error('nip') <span class="text-xs text-rose-600 mt-1.5 block font-bold">{{ $message }}</span> @enderror
                 </div>
 

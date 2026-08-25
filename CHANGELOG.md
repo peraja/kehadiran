@@ -20,6 +20,9 @@ Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/
   - Mengubah lebar dropdown menu profil di mobile ([`resources/views/livewire/layout/topbar-profile.blade.php`](file:///Users/abedzul/Desktop/htdocs/rapat/resources/views/livewire/layout/topbar-profile.blade.php)) menjadi `w-max min-w-[200px] max-w-[calc(100vw-2rem)]` agar otomatis menyesuaikan panjang nama pengguna dan gelar tanpa terpotong.
 - **Penyelarasan Badge Tanggal Topbar Mobile**:
   - Menampilkan badge tanggal hari ini (`l, d F Y`) pada topbar mobile ([`resources/views/layouts/app.blade.php`](file:///Users/abedzul/Desktop/htdocs/rapat/resources/views/layouts/app.blade.php)) dengan style dan format yang seragam dengan desktop.
+- **Optimalisasi Perilaku Auto Focus Form**:
+  - Menghapus auto focus pada form Presensi/Check-In ([`resources/views/livewire/meetings/check-in.blade.php`](file:///Users/abedzul/Desktop/htdocs/rapat/resources/views/livewire/meetings/check-in.blade.php)) guna mencegah keyboard virtual mobile menutupi informasi rapat saat halaman dibuka via scan QR.
+  - Memperkuat auto focus pada input NIP form Login ([`resources/views/livewire/pages/auth/login.blade.php`](file:///Users/abedzul/Desktop/htdocs/rapat/resources/views/livewire/pages/auth/login.blade.php)) menggunakan Alpine.js agar selalu aktif saat transisi navigasi SPA.
 
 ## [1.4.3] - 2026-08-26
 
