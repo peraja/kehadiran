@@ -87,7 +87,7 @@ new #[Layout('layouts.app')] class extends Component {
 
         <!-- Global Save Button -->
         <div class="flex justify-end pt-2">
-            <button type="submit" wire:loading.attr="disabled" wire:target="saveSettings" class="inline-flex items-center justify-center px-6 py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white font-bold text-sm rounded-xl shadow-sm transition-all gap-2">
+            <button type="submit" wire:loading.attr="disabled" wire:target="saveSettings" class="w-full sm:w-auto inline-flex items-center justify-center px-6 py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white font-bold text-sm rounded-xl shadow-sm transition-all gap-2">
                 <svg wire:loading.remove wire:target="saveSettings" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                 </svg>

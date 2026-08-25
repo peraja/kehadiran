@@ -22,8 +22,8 @@ new #[Layout('layouts.app')] class extends Component {
 
         $user = auth()->user();
         if ($user->hasActiveRole('pimpinan')) {
-            if (!$meeting->isSigner($user)) {
-                abort(403, 'Anda hanya dapat mengakses rapat yang penandatangannya adalah Anda sendiri.');
+            if ($meeting->status !== 'completed' || !$meeting->isSigner($user)) {
+                abort(403, 'Anda hanya dapat mengakses rapat berstatus selesai yang penandatangannya adalah Anda sendiri.');
             }
             $this->canEdit = false;
         } elseif ($user->hasActiveRole('admin')) {
@@ -180,11 +180,11 @@ new #[Layout('layouts.app')] class extends Component {
             <div class="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden">
                 <div class="divide-y divide-slate-100 text-sm">
                     <!-- 1. Presensi -->
-                    <div class="flex flex-col sm:flex-row sm:items-center justify-between py-4 px-6 gap-3 sm:gap-6 hover:bg-slate-50/50 transition-colors">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between py-3.5 sm:py-4 px-4 sm:px-6 gap-3 sm:gap-6 hover:bg-slate-50/50 transition-colors">
                         <div class="text-slate-900 font-bold text-sm shrink-0">
                             Presensi
                         </div>
-                        <div class="flex items-center gap-2 shrink-0">
+                        <div class="flex flex-wrap items-center gap-2 shrink-0">
                             @if($meeting->hasDocumentContent('attendance'))
                                 @if($meeting->attendance_signed_at)
                                 <a href="{{ route('meetings.export.attendance', $meeting->id) }}" target="_blank" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 active:scale-95 text-emerald-700 border border-emerald-300 rounded-xl text-xs font-bold transition-all shadow-2xs">
@@ -217,11 +217,11 @@ new #[Layout('layouts.app')] class extends Component {
                     </div>
 
                     <!-- 2. Dokumentasi -->
-                    <div class="flex flex-col sm:flex-row sm:items-center justify-between py-4 px-6 gap-3 sm:gap-6 hover:bg-slate-50/50 transition-colors">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between py-3.5 sm:py-4 px-4 sm:px-6 gap-3 sm:gap-6 hover:bg-slate-50/50 transition-colors">
                         <div class="text-slate-900 font-bold text-sm shrink-0">
                             Dokumentasi
                         </div>
-                        <div class="flex items-center gap-2 shrink-0">
+                        <div class="flex flex-wrap items-center gap-2 shrink-0">
                             @if($meeting->hasDocumentContent('photos'))
                                 @if($meeting->photos_signed_at)
                                 <a href="{{ route('meetings.export.photos', $meeting->id) }}" target="_blank" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 active:scale-95 text-emerald-700 border border-emerald-300 rounded-xl text-xs font-bold transition-all shadow-2xs">
@@ -254,11 +254,11 @@ new #[Layout('layouts.app')] class extends Component {
                     </div>
 
                     <!-- 3. Notulen -->
-                    <div class="flex flex-col sm:flex-row sm:items-center justify-between py-4 px-6 gap-3 sm:gap-6 hover:bg-slate-50/50 transition-colors">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between py-3.5 sm:py-4 px-4 sm:px-6 gap-3 sm:gap-6 hover:bg-slate-50/50 transition-colors">
                         <div class="text-slate-900 font-bold text-sm shrink-0">
                             Notulen
                         </div>
-                        <div class="flex items-center gap-2 shrink-0">
+                        <div class="flex flex-wrap items-center gap-2 shrink-0">
                             @if($meeting->hasDocumentContent('minutes'))
                                 @if($meeting->minutes_signed_at)
                                 <a href="{{ route('meetings.export.minutes', $meeting->id) }}" target="_blank" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 active:scale-95 text-emerald-700 border border-emerald-300 rounded-xl text-xs font-bold transition-all shadow-2xs">
@@ -466,11 +466,11 @@ new #[Layout('layouts.app')] class extends Component {
                     @error('passphrase') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                 </div>
 
-                <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
-                    <button type="button" x-on:click="$dispatch('close')" wire:click="closeSignModal" class="px-4 py-2.5 bg-white border border-slate-300 hover:bg-slate-50 active:scale-95 text-slate-700 font-bold text-sm rounded-xl transition-all shadow-sm">
+                <div class="flex flex-col-reverse sm:flex-row items-center justify-end gap-3 pt-3 border-t border-slate-100">
+                    <button type="button" x-on:click="$dispatch('close')" wire:click="closeSignModal" class="w-full sm:w-auto px-4 py-2.5 bg-white border border-slate-300 hover:bg-slate-50 active:scale-95 text-slate-700 font-bold text-sm rounded-xl transition-all shadow-sm">
                         Batal
                     </button>
-                    <button type="submit" wire:loading.attr="disabled" wire:target="executeSign" class="inline-flex items-center justify-center px-5 py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white text-sm font-bold rounded-xl shadow-sm transition-all gap-2">
+                    <button type="submit" wire:loading.attr="disabled" wire:target="executeSign" class="w-full sm:w-auto inline-flex items-center justify-center px-5 py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white text-sm font-bold rounded-xl shadow-sm transition-all gap-2">
                         <svg wire:loading.remove wire:target="executeSign" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                         </svg>

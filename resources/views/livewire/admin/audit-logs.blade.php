@@ -123,28 +123,28 @@ new #[Layout('layouts.app')] class extends Component {
     <!-- Main Table Container -->
     <div class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
         <!-- Toolbar (Top Pills + Filter Bar) -->
-        <div class="p-6 border-b border-slate-100 bg-slate-50/50 space-y-4">
+        <div class="p-4 sm:p-6 border-b border-slate-100 bg-slate-50/50 space-y-4">
             <!-- Filter Pills (Kategori Aksi) -->
-            <div class="flex flex-wrap items-center gap-1.5 sm:gap-2">
+            <div class="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2 w-full md:w-auto">
                 <button wire:click="$set('actionFilter', '')"
-                    class="inline-flex items-center justify-center gap-1.5 h-10 px-4 rounded-xl text-xs font-bold transition-all {{ $actionFilter === '' ? 'bg-slate-900 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900' }}">
+                    class="inline-flex items-center justify-center gap-1.5 h-10 px-3 sm:px-4 rounded-xl text-xs font-bold transition-all {{ $actionFilter === '' ? 'bg-slate-900 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900' }}">
                     Semua
                     <span class="inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-[10px] {{ $actionFilter === '' ? 'bg-slate-800 text-slate-300' : 'bg-slate-100 text-slate-500' }}">{{ $counts['total'] }}</span>
                 </button>
                 <button wire:click="$set('actionFilter', 'auth')"
-                    class="inline-flex items-center justify-center gap-1.5 h-10 px-4 rounded-xl text-xs font-bold transition-all {{ $actionFilter === 'auth' ? 'bg-emerald-600 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700' }}">
+                    class="inline-flex items-center justify-center gap-1.5 h-10 px-3 sm:px-4 rounded-xl text-xs font-bold transition-all {{ $actionFilter === 'auth' ? 'bg-emerald-600 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700' }}">
                     <span class="w-1.5 h-1.5 rounded-full {{ $actionFilter === 'auth' ? 'bg-emerald-200' : 'bg-emerald-500' }}"></span>
                     Otentikasi
                     <span class="inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-[10px] {{ $actionFilter === 'auth' ? 'bg-emerald-700 text-emerald-100' : 'bg-emerald-100 text-emerald-700' }}">{{ $counts['auth'] }}</span>
                 </button>
                 <button wire:click="$set('actionFilter', 'meeting')"
-                    class="inline-flex items-center justify-center gap-1.5 h-10 px-4 rounded-xl text-xs font-bold transition-all {{ $actionFilter === 'meeting' ? 'bg-primary-600 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-primary-300 hover:bg-primary-50 hover:text-primary-700' }}">
+                    class="inline-flex items-center justify-center gap-1.5 h-10 px-3 sm:px-4 rounded-xl text-xs font-bold transition-all {{ $actionFilter === 'meeting' ? 'bg-primary-600 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-primary-300 hover:bg-primary-50 hover:text-primary-700' }}">
                     <span class="w-1.5 h-1.5 rounded-full {{ $actionFilter === 'meeting' ? 'bg-primary-200' : 'bg-primary-500' }}"></span>
                     Rapat
                     <span class="inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-[10px] {{ $actionFilter === 'meeting' ? 'bg-primary-700 text-primary-100' : 'bg-primary-100 text-primary-700' }}">{{ $counts['meeting'] }}</span>
                 </button>
                 <button wire:click="$set('actionFilter', 'tte')"
-                    class="inline-flex items-center justify-center gap-1.5 h-10 px-4 rounded-xl text-xs font-bold transition-all {{ $actionFilter === 'tte' ? 'bg-indigo-600 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700' }}">
+                    class="inline-flex items-center justify-center gap-1.5 h-10 px-3 sm:px-4 rounded-xl text-xs font-bold transition-all {{ $actionFilter === 'tte' ? 'bg-indigo-600 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700' }}">
                     <span class="w-1.5 h-1.5 rounded-full {{ $actionFilter === 'tte' ? 'bg-indigo-200' : 'bg-indigo-500' }}"></span>
                     TTE
                     <span class="inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-[10px] {{ $actionFilter === 'tte' ? 'bg-indigo-700 text-indigo-100' : 'bg-indigo-100 text-indigo-700' }}">{{ $counts['tte'] }}</span>
@@ -172,26 +172,26 @@ new #[Layout('layouts.app')] class extends Component {
                     @endif
                 </div>
 
-                <!-- Right Side Date Filter & Reset -->
-                <div class="flex flex-wrap sm:flex-nowrap items-center gap-2.5 shrink-0">
-                    <!-- Date Range Container -->
-                    <div class="inline-flex items-center bg-white border border-slate-200 rounded-xl shadow-2xs overflow-hidden h-10 divide-x divide-slate-200 shrink-0">
-                        <div class="flex items-center px-2.5 py-1 gap-1.5">
-                            <span class="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Dari</span>
+                <!-- Right Side Date Filter & Reset (Full width on mobile, inline on desktop) -->
+                <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full md:w-auto shrink-0">
+                    <!-- Date Range Container (Full width 2 columns on mobile) -->
+                    <div class="grid grid-cols-2 sm:inline-flex items-center bg-white border border-slate-200 rounded-xl shadow-2xs overflow-hidden h-10 divide-x divide-slate-200 w-full sm:w-auto">
+                        <div class="flex items-center px-2.5 py-1 gap-1.5 min-w-0">
+                            <span class="text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wider text-slate-400 shrink-0">Dari</span>
                             <input wire:model.live="date_from" type="date"
-                                class="border-0 p-0 text-xs font-semibold text-slate-700 focus:ring-0 bg-transparent cursor-pointer" />
+                                class="border-0 p-0 text-xs font-semibold text-slate-700 focus:ring-0 bg-transparent cursor-pointer w-full min-w-0" />
                         </div>
-                        <div class="flex items-center px-2.5 py-1 gap-1.5">
-                            <span class="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Sampai</span>
+                        <div class="flex items-center px-2.5 py-1 gap-1.5 min-w-0">
+                            <span class="text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wider text-slate-400 shrink-0">Sampai</span>
                             <input wire:model.live="date_to" type="date"
-                                class="border-0 p-0 text-xs font-semibold text-slate-700 focus:ring-0 bg-transparent cursor-pointer" />
+                                class="border-0 p-0 text-xs font-semibold text-slate-700 focus:ring-0 bg-transparent cursor-pointer w-full min-w-0" />
                         </div>
                     </div>
 
                     @if($actionFilter || $date_from || $date_to)
                     <!-- Reset Button -->
                     <button wire:click="resetFilters"
-                        class="h-10 inline-flex items-center gap-1.5 px-3 rounded-xl text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 active:scale-95 transition-all border border-rose-200/80 shadow-2xs cursor-pointer shrink-0"
+                        class="h-10 inline-flex items-center justify-center gap-1.5 px-3 rounded-xl text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 active:scale-95 transition-all border border-rose-200/80 shadow-2xs cursor-pointer shrink-0 w-full sm:w-auto"
                         title="Reset semua filter">
                         <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -204,8 +204,8 @@ new #[Layout('layouts.app')] class extends Component {
         </div>
 
         <!-- Table View -->
-        <div class="overflow-x-auto min-h-[400px]">
-            <table class="w-full text-left border-collapse">
+        <div class="overflow-x-auto min-h-[400px] rounded-2xl">
+            <table class="w-full text-left border-collapse min-w-[760px]">
                 <thead class="bg-slate-50 border-b border-slate-200 text-slate-500">
                     <tr class="text-[11px] font-extrabold uppercase tracking-wider">
                         <th class="py-4 px-6 text-left whitespace-nowrap w-48">Tanggal & Waktu</th>

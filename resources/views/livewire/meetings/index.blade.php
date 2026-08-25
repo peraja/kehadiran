@@ -230,33 +230,34 @@ new #[Layout('layouts.app')] class extends Component {
 
         $user = auth()->user();
         if ($user->hasActiveRole('pimpinan')) {
-            // Pimpinan hanya melihat rapat yang penandatangannya adalah dirinya sendiri
-            $query->where(function ($q) use ($user) {
-                $q->where(function ($sq) use ($user) {
-                    if (!empty($user->nip)) {
-                        $sq->where('signer_nip', $user->nip)
-                            ->orWhere('signer_name', $user->name);
-                    } else {
-                        $sq->where('signer_name', $user->name);
-                    }
-                })->orWhereHas('opd', function ($oq) use ($user) {
-                    if (!empty($user->nip)) {
-                        $oq->where('leader_nip', $user->nip)->orWhere('leader_name', $user->name);
-                    } else {
-                        $oq->where('leader_name', $user->name);
-                    }
+            // Pimpinan hanya melihat rapat yang berstatus SELESAI dan penandatangannya adalah dirinya sendiri
+            $query->where('status', 'completed')
+                ->where(function ($q) use ($user) {
+                    $q->where(function ($sq) use ($user) {
+                        if (!empty($user->nip)) {
+                            $sq->where('signer_nip', $user->nip)
+                                ->orWhere('signer_name', $user->name);
+                        } else {
+                            $sq->where('signer_name', $user->name);
+                        }
+                    })->orWhereHas('opd', function ($oq) use ($user) {
+                        if (!empty($user->nip)) {
+                            $oq->where('leader_nip', $user->nip)->orWhere('leader_name', $user->name);
+                        } else {
+                            $oq->where('leader_name', $user->name);
+                        }
+                    });
+                })->where(function ($q) {
+                    // Jangan tampilkan jika belum ada berkas dokumen (presensi, foto, atau notulen) dan belum pernah di-TTE
+                    $q->has('attendances')
+                        ->orHas('photos')
+                        ->orWhereHas('minutes', function ($mq) {
+                            $mq->whereNotNull('content')->where('content', '!=', '');
+                        })
+                        ->orWhereNotNull('minutes_signed_at')
+                        ->orWhereNotNull('attendance_signed_at')
+                        ->orWhereNotNull('photos_signed_at');
                 });
-            })->where(function ($q) {
-                // Jangan tampilkan jika belum ada berkas dokumen (presensi, foto, atau notulen) dan belum pernah di-TTE
-                $q->has('attendances')
-                    ->orHas('photos')
-                    ->orWhereHas('minutes', function ($mq) {
-                        $mq->whereNotNull('content')->where('content', '!=', '');
-                    })
-                    ->orWhereNotNull('minutes_signed_at')
-                    ->orWhereNotNull('attendance_signed_at')
-                    ->orWhereNotNull('photos_signed_at');
-            });
         } elseif ($user->hasActiveRole('admin_opd')) {
             // Admin OPD melihat seluruh rapat di lingkungan unit kerjanya
             $query->where(function ($q) use ($user) {
@@ -385,29 +386,29 @@ new #[Layout('layouts.app')] class extends Component {
     <div class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
 
         <!-- Toolbar -->
-        <div class="p-6 border-b border-slate-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-slate-50/50">
+        <div class="p-4 sm:p-6 border-b border-slate-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-slate-50/50">
             <!-- Filter Pills -->
             @unless(auth()->user()->hasActiveRole('pimpinan'))
-            <div class="flex flex-wrap items-center gap-1.5 sm:gap-2">
+            <div class="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2 w-full md:w-auto">
                 <button wire:click="$set('statusFilter','')"
-                    class="inline-flex items-center justify-center gap-1.5 h-10 px-4 rounded-xl text-xs font-bold transition-all {{ $statusFilter === '' ? 'bg-slate-900 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900' }}">
+                    class="inline-flex items-center justify-center gap-1.5 h-10 px-3 sm:px-4 rounded-xl text-xs font-bold transition-all {{ $statusFilter === '' ? 'bg-slate-900 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900' }}">
                     Semua
                     <span class="inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-[10px] {{ $statusFilter === '' ? 'bg-slate-800 text-slate-300' : 'bg-slate-100 text-slate-500' }}">{{ $counts['total'] }}</span>
                 </button>
                 <button wire:click="$set('statusFilter','scheduled')"
-                    class="inline-flex items-center justify-center gap-1.5 h-10 px-4 rounded-xl text-xs font-bold transition-all {{ $statusFilter === 'scheduled' ? 'bg-slate-600 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-700' }}">
+                    class="inline-flex items-center justify-center gap-1.5 h-10 px-3 sm:px-4 rounded-xl text-xs font-bold transition-all {{ $statusFilter === 'scheduled' ? 'bg-slate-600 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-700' }}">
                     <span class="w-1.5 h-1.5 rounded-full {{ $statusFilter === 'scheduled' ? 'bg-slate-300' : 'bg-slate-400' }}"></span>
                     Dijadwalkan
                     <span class="inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-[10px] {{ $statusFilter === 'scheduled' ? 'bg-slate-700 text-slate-100' : 'bg-slate-100 text-slate-700' }}">{{ $counts['scheduled'] }}</span>
                 </button>
                 <button wire:click="$set('statusFilter','ongoing')"
-                    class="inline-flex items-center justify-center gap-1.5 h-10 px-4 rounded-xl text-xs font-bold transition-all {{ $statusFilter === 'ongoing' ? 'bg-rose-600 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-rose-300 hover:bg-rose-50 hover:text-rose-700' }}">
+                    class="inline-flex items-center justify-center gap-1.5 h-10 px-3 sm:px-4 rounded-xl text-xs font-bold transition-all {{ $statusFilter === 'ongoing' ? 'bg-rose-600 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-rose-300 hover:bg-rose-50 hover:text-rose-700' }}">
                     <span class="w-1.5 h-1.5 rounded-full {{ $statusFilter === 'ongoing' ? 'bg-rose-200' : 'bg-rose-500' }}"></span>
                     Berlangsung
                     <span class="inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-[10px] {{ $statusFilter === 'ongoing' ? 'bg-rose-700 text-rose-100' : 'bg-rose-100 text-rose-700' }}">{{ $counts['ongoing'] }}</span>
                 </button>
                 <button wire:click="$set('statusFilter','completed')"
-                    class="inline-flex items-center justify-center gap-1.5 h-10 px-4 rounded-xl text-xs font-bold transition-all {{ $statusFilter === 'completed' ? 'bg-primary-600 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-primary-300 hover:bg-primary-50 hover:text-primary-700' }}">
+                    class="inline-flex items-center justify-center gap-1.5 h-10 px-3 sm:px-4 rounded-xl text-xs font-bold transition-all {{ $statusFilter === 'completed' ? 'bg-primary-600 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-primary-300 hover:bg-primary-50 hover:text-primary-700' }}">
                     <span class="w-1.5 h-1.5 rounded-full {{ $statusFilter === 'completed' ? 'bg-primary-200' : 'bg-primary-500' }}"></span>
                     Selesai
                     <span class="inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-[10px] {{ $statusFilter === 'completed' ? 'bg-primary-700 text-primary-100' : 'bg-primary-100 text-primary-700' }}">{{ $counts['completed'] }}</span>
@@ -449,8 +450,8 @@ new #[Layout('layouts.app')] class extends Component {
         </div>
 
         <!-- Table View -->
-        <div class="overflow-x-auto min-h-[400px]">
-            <table class="w-full text-left border-collapse">
+        <div class="overflow-x-auto min-h-[400px] rounded-2xl">
+            <table class="w-full text-left border-collapse min-w-[720px]">
                 <thead class="bg-slate-50 border-b border-slate-200 text-slate-500">
                     <tr class="text-[11px] font-extrabold uppercase tracking-wider">
                         <th class="py-4 px-6 text-left">Agenda & Lokasi</th>
@@ -554,66 +555,69 @@ new #[Layout('layouts.app')] class extends Component {
                     @error('title') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                 </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-[1fr_auto_auto] gap-4">
+                <div class="grid grid-cols-1 md:grid-cols-[1fr_auto_auto] gap-4">
                     <!-- Tanggal -->
                     <div>
                         <label for="date" class="block text-sm font-bold text-slate-700 mb-1">Tanggal</label>
-                        <input wire:model="date" id="date" type="date" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" />
+                        <input wire:model="date" id="date" type="date" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors cursor-pointer" />
                         @error('date') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                     </div>
 
-                    <!-- Jam Mulai -->
-                    <div>
-                        <label class="block text-sm font-bold text-slate-700 mb-1">Waktu Mulai</label>
-                        <div class="flex items-center gap-1.5">
-                            <div>
-                                <select wire:model="start_hour" class="w-16 text-sm py-2.5 px-2 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors cursor-pointer">
-                                    @for($h = 8; $h <= 16; $h++)
-                                        @php $hStr = sprintf('%02d', $h); @endphp
-                                        <option value="{{ $hStr }}">{{ $hStr }}</option>
-                                    @endfor
-                                </select>
+                    <!-- Grid Waktu (2 Kolom di Mobile, Sejajar di Desktop) -->
+                    <div class="grid grid-cols-2 gap-4 md:contents">
+                        <!-- Jam Mulai -->
+                        <div>
+                            <label class="block text-sm font-bold text-slate-700 mb-1">Waktu Mulai</label>
+                            <div class="flex items-center gap-1.5">
+                                <div class="flex-1 md:flex-none">
+                                    <select wire:model="start_hour" class="w-full md:w-16 text-sm py-2.5 px-2 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors cursor-pointer">
+                                        @for($h = 8; $h <= 16; $h++)
+                                            @php $hStr = sprintf('%02d', $h); @endphp
+                                            <option value="{{ $hStr }}">{{ $hStr }}</option>
+                                        @endfor
+                                    </select>
+                                </div>
+                                <span class="text-slate-400 font-bold text-sm">:</span>
+                                <div class="flex-1 md:flex-none">
+                                    <select wire:model="start_minute" class="w-full md:w-16 text-sm py-2.5 px-2 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors cursor-pointer">
+                                        @foreach(['00', '15', '30', '45'] as $mOption)
+                                            <option value="{{ $mOption }}">{{ $mOption }}</option>
+                                        @endforeach
+                                        @if(!in_array($start_minute, ['00', '15', '30', '45']) && $start_minute !== '')
+                                            <option value="{{ $start_minute }}">{{ $start_minute }}</option>
+                                        @endif
+                                    </select>
+                                </div>
                             </div>
-                            <span class="text-slate-400 font-bold text-sm">:</span>
-                            <div>
-                                <select wire:model="start_minute" class="w-16 text-sm py-2.5 px-2 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors cursor-pointer">
-                                    @foreach(['00', '15', '30', '45'] as $mOption)
-                                        <option value="{{ $mOption }}">{{ $mOption }}</option>
-                                    @endforeach
-                                    @if(!in_array($start_minute, ['00', '15', '30', '45']) && $start_minute !== '')
-                                        <option value="{{ $start_minute }}">{{ $start_minute }}</option>
-                                    @endif
-                                </select>
-                            </div>
+                            @error('start_time') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                         </div>
-                        @error('start_time') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
-                    </div>
 
-                    <!-- Jam Selesai -->
-                    <div>
-                        <label class="block text-sm font-bold text-slate-700 mb-1">Waktu Selesai</label>
-                        <div class="flex items-center gap-1.5">
-                            <div>
-                                <select wire:model="end_hour" class="w-16 text-sm py-2.5 px-2 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors cursor-pointer">
-                                    @for($h = 8; $h <= 16; $h++)
-                                        @php $hStr = sprintf('%02d', $h); @endphp
-                                        <option value="{{ $hStr }}">{{ $hStr }}</option>
-                                    @endfor
-                                </select>
+                        <!-- Jam Selesai -->
+                        <div>
+                            <label class="block text-sm font-bold text-slate-700 mb-1">Waktu Selesai</label>
+                            <div class="flex items-center gap-1.5">
+                                <div class="flex-1 md:flex-none">
+                                    <select wire:model="end_hour" class="w-full md:w-16 text-sm py-2.5 px-2 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors cursor-pointer">
+                                        @for($h = 8; $h <= 16; $h++)
+                                            @php $hStr = sprintf('%02d', $h); @endphp
+                                            <option value="{{ $hStr }}">{{ $hStr }}</option>
+                                        @endfor
+                                    </select>
+                                </div>
+                                <span class="text-slate-400 font-bold text-sm">:</span>
+                                <div class="flex-1 md:flex-none">
+                                    <select wire:model="end_minute" class="w-full md:w-16 text-sm py-2.5 px-2 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors cursor-pointer">
+                                        @foreach(['00', '15', '30', '45'] as $mOption)
+                                            <option value="{{ $mOption }}">{{ $mOption }}</option>
+                                        @endforeach
+                                        @if(!in_array($end_minute, ['00', '15', '30', '45']) && $end_minute !== '')
+                                            <option value="{{ $end_minute }}">{{ $end_minute }}</option>
+                                        @endif
+                                    </select>
+                                </div>
                             </div>
-                            <span class="text-slate-400 font-bold text-sm">:</span>
-                            <div>
-                                <select wire:model="end_minute" class="w-16 text-sm py-2.5 px-2 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors cursor-pointer">
-                                    @foreach(['00', '15', '30', '45'] as $mOption)
-                                        <option value="{{ $mOption }}">{{ $mOption }}</option>
-                                    @endforeach
-                                    @if(!in_array($end_minute, ['00', '15', '30', '45']) && $end_minute !== '')
-                                        <option value="{{ $end_minute }}">{{ $end_minute }}</option>
-                                    @endif
-                                </select>
-                            </div>
+                            @error('end_time') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                         </div>
-                        @error('end_time') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                     </div>
                 </div>
 
@@ -655,12 +659,12 @@ new #[Layout('layouts.app')] class extends Component {
                     @error('selected_signer_id') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                 </div>
 
-                <div class="mt-8 pt-6 border-t border-slate-100 flex justify-end gap-3">
-                    <button type="button" x-on:click="$dispatch('close')" class="px-5 py-2.5 bg-white border border-slate-300 hover:bg-slate-50 active:scale-95 text-slate-700 rounded-xl font-bold text-sm transition-all shadow-sm">
+                <div class="mt-8 pt-6 border-t border-slate-100 flex flex-col-reverse sm:flex-row justify-end gap-3">
+                    <button type="button" x-on:click="$dispatch('close')" class="w-full sm:w-auto px-5 py-2.5 bg-white border border-slate-300 hover:bg-slate-50 active:scale-95 text-slate-700 rounded-xl font-bold text-sm transition-all shadow-sm">
                         Batal
                     </button>
 
-                    <button type="submit" wire:loading.attr="disabled" wire:target="saveMeeting" class="inline-flex items-center justify-center px-5 py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl font-bold text-sm transition-all shadow-sm gap-2">
+                    <button type="submit" wire:loading.attr="disabled" wire:target="saveMeeting" class="w-full sm:w-auto inline-flex items-center justify-center px-5 py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl font-bold text-sm transition-all shadow-sm gap-2">
                         <svg wire:loading.remove wire:target="saveMeeting" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                         </svg>

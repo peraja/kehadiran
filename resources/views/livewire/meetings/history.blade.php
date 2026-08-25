@@ -135,7 +135,7 @@ new #[Layout('layouts.app')] class extends Component {
     <div class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
 
         <!-- Toolbar -->
-        <div class="p-6 border-b border-slate-100 bg-slate-50/50">
+        <div class="p-4 sm:p-6 border-b border-slate-100 bg-slate-50/50">
             <div class="flex flex-col lg:flex-row items-stretch lg:items-center gap-2.5">
                 <!-- Search Field (Fluid width) -->
                 <div class="relative flex-1 min-w-[200px]">
@@ -156,11 +156,11 @@ new #[Layout('layouts.app')] class extends Component {
                     @endif
                 </div>
 
-                <!-- Right Side Filters (1 Row) -->
-                <div class="flex flex-wrap sm:flex-nowrap items-center gap-2.5 shrink-0">
+                <!-- Right Side Filters (Full width on mobile, inline on desktop) -->
+                <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full lg:w-auto shrink-0">
                     @if(auth()->user()->hasActiveRole('admin'))
                     <!-- OPD Dropdown -->
-                    <div class="relative min-w-[160px] sm:min-w-[180px] max-w-[240px]">
+                    <div class="relative w-full sm:w-auto min-w-[160px] sm:min-w-[180px] max-w-none sm:max-w-[240px]">
                         <select wire:model.live="selected_opd_id"
                             class="w-full h-10 rounded-xl border border-slate-200 bg-white pl-3 pr-8 py-2 text-xs sm:text-sm font-semibold text-slate-700 focus:border-primary-500 focus:ring-primary-500 shadow-2xs transition-colors cursor-pointer appearance-none truncate">
                             <option value="">Semua OPD</option>
@@ -176,24 +176,24 @@ new #[Layout('layouts.app')] class extends Component {
                     </div>
                     @endif
 
-                    <!-- Date Range Container -->
-                    <div class="inline-flex items-center bg-white border border-slate-200 rounded-xl shadow-2xs overflow-hidden h-10 divide-x divide-slate-200 shrink-0">
-                        <div class="flex items-center px-2.5 py-1 gap-1.5">
-                            <span class="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Dari</span>
+                    <!-- Date Range Container (Full width 2 columns on mobile) -->
+                    <div class="grid grid-cols-2 sm:inline-flex items-center bg-white border border-slate-200 rounded-xl shadow-2xs overflow-hidden h-10 divide-x divide-slate-200 w-full sm:w-auto">
+                        <div class="flex items-center px-2.5 py-1 gap-1.5 min-w-0">
+                            <span class="text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wider text-slate-400 shrink-0">Dari</span>
                             <input wire:model.live="date_from" type="date"
-                                class="border-0 p-0 text-xs font-semibold text-slate-700 focus:ring-0 bg-transparent cursor-pointer" />
+                                class="border-0 p-0 text-xs font-semibold text-slate-700 focus:ring-0 bg-transparent cursor-pointer w-full min-w-0" />
                         </div>
-                        <div class="flex items-center px-2.5 py-1 gap-1.5">
-                            <span class="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Sampai</span>
+                        <div class="flex items-center px-2.5 py-1 gap-1.5 min-w-0">
+                            <span class="text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wider text-slate-400 shrink-0">Sampai</span>
                             <input wire:model.live="date_to" type="date"
-                                class="border-0 p-0 text-xs font-semibold text-slate-700 focus:ring-0 bg-transparent cursor-pointer" />
+                                class="border-0 p-0 text-xs font-semibold text-slate-700 focus:ring-0 bg-transparent cursor-pointer w-full min-w-0" />
                         </div>
                     </div>
 
                     @if($selected_opd_id || $date_from || $date_to)
                     <!-- Reset Button -->
                     <button wire:click="resetFilters"
-                        class="h-10 inline-flex items-center gap-1.5 px-3 rounded-xl text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 active:scale-95 transition-all border border-rose-200/80 shadow-2xs cursor-pointer shrink-0"
+                        class="h-10 inline-flex items-center justify-center gap-1.5 px-3 rounded-xl text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 active:scale-95 transition-all border border-rose-200/80 shadow-2xs cursor-pointer shrink-0 w-full sm:w-auto"
                         title="Reset semua filter">
                         <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -206,8 +206,8 @@ new #[Layout('layouts.app')] class extends Component {
         </div>
 
         <!-- Table View -->
-        <div class="overflow-x-auto min-h-[400px]">
-            <table class="w-full text-left border-collapse">
+        <div class="overflow-x-auto min-h-[400px] rounded-2xl">
+            <table class="w-full text-left border-collapse min-w-[720px]">
                 <thead class="bg-slate-50 border-b border-slate-200 text-slate-500">
                     <tr class="text-[11px] font-extrabold uppercase tracking-wider">
                         <th class="py-4 px-6 text-left">Agenda & Lokasi</th>

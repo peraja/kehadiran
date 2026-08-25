@@ -24,22 +24,23 @@ new class extends Component {
 
         // Filter based on active role
         if ($user->hasActiveRole('pimpinan')) {
-            $query->where(function ($q) use ($user) {
-                $q->where(function ($sq) use ($user) {
-                    if (!empty($user->nip)) {
-                        $sq->where('signer_nip', $user->nip)
-                            ->orWhere('signer_name', $user->name);
-                    } else {
-                        $sq->where('signer_name', $user->name);
-                    }
-                })->orWhereHas('opd', function ($oq) use ($user) {
-                    if (!empty($user->nip)) {
-                        $oq->where('leader_nip', $user->nip)->orWhere('leader_name', $user->name);
-                    } else {
-                        $oq->where('leader_name', $user->name);
-                    }
+            $query->where('status', 'completed')
+                ->where(function ($q) use ($user) {
+                    $q->where(function ($sq) use ($user) {
+                        if (!empty($user->nip)) {
+                            $sq->where('signer_nip', $user->nip)
+                                ->orWhere('signer_name', $user->name);
+                        } else {
+                            $sq->where('signer_name', $user->name);
+                        }
+                    })->orWhereHas('opd', function ($oq) use ($user) {
+                        if (!empty($user->nip)) {
+                            $oq->where('leader_nip', $user->nip)->orWhere('leader_name', $user->name);
+                        } else {
+                            $oq->where('leader_name', $user->name);
+                        }
+                    });
                 });
-            });
         } elseif ($user->hasActiveRole('admin_opd')) {
             $unitName = $user->unit_name;
             $query->where(function ($q) use ($unitName) {

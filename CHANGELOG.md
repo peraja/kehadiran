@@ -4,6 +4,30 @@ Semua perubahan penting pada proyek ini dicatat dalam berkas ini.
 
 Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/1.0.0/), dan proyek ini mematuhi [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] - 2026-08-25
+
+### Ditambahkan
+- **Pengetatan Akses & Tampilan Khusus Role Pimpinan**:
+  - Penegasan kueri rapat untuk peran `pimpinan` pada Daftar Rapat ([`meetings/index.blade.php`](file:///Users/abedzul/Desktop/htdocs/rapat/resources/views/livewire/meetings/index.blade.php)) dan Dashboard ([`dashboard-summary.blade.php`](file:///Users/abedzul/Desktop/htdocs/rapat/resources/views/livewire/dashboard-summary.blade.php)) agar secara eksklusif hanya menampilkan rapat yang berstatus selesai (`status = 'completed'`).
+  - Proteksi otorisasi `403 Forbidden` pada [`header.blade.php`](file:///Users/abedzul/Desktop/htdocs/rapat/resources/views/livewire/meetings/header.blade.php) dan [`overview.blade.php`](file:///Users/abedzul/Desktop/htdocs/rapat/resources/views/livewire/meetings/overview.blade.php) jika pimpinan mencoba mengakses rapat yang belum berstatus selesai.
+
+### Diubah
+- **Optimalisasi Desain Responsif Antarmuka Mobile (< 640px)**:
+  - **Navigasi Shell & Topbar**: Pengurangan tinggi topbar menjadi `h-16 sm:h-20`, tombol profil diubah menjadi mode ikon avatar saja di HP (`hidden sm:block` untuk teks nama/role), serta penambahan penutupan otomatis drawer mobile saat tautan diklik (`@click="sidebarOpen = false"`).
+  - **Grid Filter Pills & Toolbar Data**:
+    - *Daftar Rapat & Log Audit*: Filter pills status/aksi menjadi layout Grid 2 Kolom (`grid grid-cols-2 sm:flex sm:flex-wrap`).
+    - *Master OPD*: Filter pills status menjadi Grid 3 Kolom simetris (`grid grid-cols-3 sm:flex sm:flex-wrap`).
+    - *Master Pengguna*: Pill "Semua" diatur baris penuh (`col-span-2 sm:col-span-1`) dan 4 pilihan role tersusun 2 kolom di bawahnya.
+    - *Riwayat Rapat & Log Audit*: Rentang filter tanggal "Dari" dan "Sampai" dibuat *full-width* simetris (`grid grid-cols-2 sm:inline-flex w-full sm:w-auto`).
+  - **Tab Navigasi Workspace Rapat Tanpa Scroll**: Mengubah 4 tab workspace rapat pada [`meeting-layout.blade.php`](file:///Users/abedzul/Desktop/htdocs/rapat/resources/views/components/meeting-layout.blade.php) menjadi Grid 2 Kolom tanpa scroll (`grid grid-cols-2 sm:flex sm:flex-wrap`) dengan teks dan badge rata tengah.
+  - **Standardisasi Form Modal & Tombol Aksi Sentuh**:
+    - *Form Buat & Edit Rapat*: Input tanggal dan waktu mulai/selesai diatur menjadi `grid-cols-2 gap-4 md:contents` dengan dropdown jam:menit yang *fluid*.
+    - *Form Tambah/Edit Pengguna*: Pilihan checkbox role disusun dalam Grid 2 Kolom ramah sentuhan.
+    - *Form Edit OPD*: Grid kode unit & nama OPD menggunakan `grid-cols-1 sm:grid-cols-3` agar tidak menyempit di layar HP kecil.
+    - *Modal Notulen AI*: Ketinggian kotak pratinjau hasil AI menggunakan batas adaptif `max-h-[55vh] sm:max-h-[420px] overflow-y-auto`.
+    - *Tombol Aksi Seluruh Modal*: Diseragamkan menggunakan pola `flex-col-reverse sm:flex-row justify-end gap-3` dengan tombol utama berposisi di atas dan melebar penuh (`w-full sm:w-auto`).
+  - **Card Dokumen Rapat**: Tombol aksi berkas pada akun pimpinan diatur dengan pembungkus `flex flex-wrap items-center gap-2` dan padding yang nyaman.
+
 ## [1.3.9] - 2026-08-25
 
 ### Diubah

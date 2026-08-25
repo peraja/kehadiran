@@ -109,8 +109,8 @@ new class extends Component {
         $this->meeting = $meeting;
 
         $user = auth()->user();
-        if ($user->hasActiveRole('pimpinan') && !$meeting->isSigner($user)) {
-            abort(403, 'Anda hanya dapat mengakses rapat yang penandatangannya adalah Anda sendiri.');
+        if ($user->hasActiveRole('pimpinan') && ($meeting->status !== 'completed' || !$meeting->isSigner($user))) {
+            abort(403, 'Anda hanya dapat mengakses rapat berstatus selesai yang penandatangannya adalah Anda sendiri.');
         }
 
         if ($user->hasActiveRole('pegawai') && $meeting->created_by !== $user->id) {
@@ -655,71 +655,74 @@ new class extends Component {
                     @error('title') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                 </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-[1fr_auto_auto] gap-4">
+                <div class="grid grid-cols-1 md:grid-cols-[1fr_auto_auto] gap-4">
                     <div>
                         <label for="edit_date" class="block text-sm font-bold text-slate-700 mb-1">Tanggal</label>
-                        <input wire:model="date" id="edit_date" type="date" class="w-full text-sm py-2.5 px-3 border border-slate-300 rounded-xl text-slate-900 shadow-sm transition-colors {{ $lockedClass }}" {{ $locked ? 'disabled' : 'required' }} />
+                        <input wire:model="date" id="edit_date" type="date" class="w-full text-sm py-2.5 px-3 border border-slate-300 rounded-xl text-slate-900 shadow-sm transition-colors cursor-pointer {{ $lockedClass }}" {{ $locked ? 'disabled' : 'required' }} />
                         @error('date') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                     </div>
 
-                    <!-- Jam Mulai -->
-                    <div>
-                        <label class="block text-sm font-bold text-slate-700 mb-1">Waktu Mulai</label>
-                        <div class="flex items-center gap-1.5">
-                            <div>
-                                <select wire:model="start_hour" class="w-16 text-sm py-2.5 px-2 border border-slate-300 rounded-xl text-slate-900 shadow-sm transition-colors cursor-pointer {{ $lockedClass }}" {{ $locked ? 'disabled' : '' }}>
-                                    @for($h = 8; $h <= 16; $h++)
-                                        @php $hStr = sprintf('%02d', $h); @endphp
-                                        <option value="{{ $hStr }}">{{ $hStr }}</option>
-                                    @endfor
-                                    @if(!in_array((int)$start_hour, range(8, 16)) && $start_hour !== '')
-                                        <option value="{{ $start_hour }}">{{ $start_hour }}</option>
-                                    @endif
-                                </select>
+                    <!-- Grid Waktu (2 Kolom di Mobile, Sejajar di Desktop) -->
+                    <div class="grid grid-cols-2 gap-4 md:contents">
+                        <!-- Jam Mulai -->
+                        <div>
+                            <label class="block text-sm font-bold text-slate-700 mb-1">Waktu Mulai</label>
+                            <div class="flex items-center gap-1.5">
+                                <div class="flex-1 md:flex-none">
+                                    <select wire:model="start_hour" class="w-full md:w-16 text-sm py-2.5 px-2 border border-slate-300 rounded-xl text-slate-900 shadow-sm transition-colors cursor-pointer {{ $lockedClass }}" {{ $locked ? 'disabled' : '' }}>
+                                        @for($h = 8; $h <= 16; $h++)
+                                            @php $hStr = sprintf('%02d', $h); @endphp
+                                            <option value="{{ $hStr }}">{{ $hStr }}</option>
+                                        @endfor
+                                        @if(!in_array((int)$start_hour, range(8, 16)) && $start_hour !== '')
+                                            <option value="{{ $start_hour }}">{{ $start_hour }}</option>
+                                        @endif
+                                    </select>
+                                </div>
+                                <span class="text-slate-400 font-bold text-sm">:</span>
+                                <div class="flex-1 md:flex-none">
+                                    <select wire:model="start_minute" class="w-full md:w-16 text-sm py-2.5 px-2 border border-slate-300 rounded-xl text-slate-900 shadow-sm transition-colors cursor-pointer {{ $lockedClass }}" {{ $locked ? 'disabled' : '' }}>
+                                        @foreach(['00', '15', '30', '45'] as $mOption)
+                                            <option value="{{ $mOption }}">{{ $mOption }}</option>
+                                        @endforeach
+                                        @if(!in_array($start_minute, ['00', '15', '30', '45']) && $start_minute !== '')
+                                            <option value="{{ $start_minute }}">{{ $start_minute }}</option>
+                                        @endif
+                                    </select>
+                                </div>
                             </div>
-                            <span class="text-slate-400 font-bold text-sm">:</span>
-                            <div>
-                                <select wire:model="start_minute" class="w-16 text-sm py-2.5 px-2 border border-slate-300 rounded-xl text-slate-900 shadow-sm transition-colors cursor-pointer {{ $lockedClass }}" {{ $locked ? 'disabled' : '' }}>
-                                    @foreach(['00', '15', '30', '45'] as $mOption)
-                                        <option value="{{ $mOption }}">{{ $mOption }}</option>
-                                    @endforeach
-                                    @if(!in_array($start_minute, ['00', '15', '30', '45']) && $start_minute !== '')
-                                        <option value="{{ $start_minute }}">{{ $start_minute }}</option>
-                                    @endif
-                                </select>
-                            </div>
+                            @error('start_time') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                         </div>
-                        @error('start_time') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
-                    </div>
 
-                    <!-- Jam Selesai -->
-                    <div>
-                        <label class="block text-sm font-bold text-slate-700 mb-1">Waktu Selesai</label>
-                        <div class="flex items-center gap-1.5">
-                            <div>
-                                <select wire:model="end_hour" class="w-16 text-sm py-2.5 px-2 border border-slate-300 rounded-xl text-slate-900 shadow-sm transition-colors cursor-pointer {{ $lockedClass }}" {{ $locked ? 'disabled' : '' }}>
-                                    @for($h = 8; $h <= 16; $h++)
-                                        @php $hStr = sprintf('%02d', $h); @endphp
-                                        <option value="{{ $hStr }}">{{ $hStr }}</option>
-                                    @endfor
-                                    @if(!in_array((int)$end_hour, range(8, 16)) && $end_hour !== '')
-                                        <option value="{{ $end_hour }}">{{ $end_hour }}</option>
-                                    @endif
-                                </select>
+                        <!-- Jam Selesai -->
+                        <div>
+                            <label class="block text-sm font-bold text-slate-700 mb-1">Waktu Selesai</label>
+                            <div class="flex items-center gap-1.5">
+                                <div class="flex-1 md:flex-none">
+                                    <select wire:model="end_hour" class="w-full md:w-16 text-sm py-2.5 px-2 border border-slate-300 rounded-xl text-slate-900 shadow-sm transition-colors cursor-pointer {{ $lockedClass }}" {{ $locked ? 'disabled' : '' }}>
+                                        @for($h = 8; $h <= 16; $h++)
+                                            @php $hStr = sprintf('%02d', $h); @endphp
+                                            <option value="{{ $hStr }}">{{ $hStr }}</option>
+                                        @endfor
+                                        @if(!in_array((int)$end_hour, range(8, 16)) && $end_hour !== '')
+                                            <option value="{{ $end_hour }}">{{ $end_hour }}</option>
+                                        @endif
+                                    </select>
+                                </div>
+                                <span class="text-slate-400 font-bold text-sm">:</span>
+                                <div class="flex-1 md:flex-none">
+                                    <select wire:model="end_minute" class="w-full md:w-16 text-sm py-2.5 px-2 border border-slate-300 rounded-xl text-slate-900 shadow-sm transition-colors cursor-pointer {{ $lockedClass }}" {{ $locked ? 'disabled' : '' }}>
+                                        @foreach(['00', '15', '30', '45'] as $mOption)
+                                            <option value="{{ $mOption }}">{{ $mOption }}</option>
+                                        @endforeach
+                                        @if(!in_array($end_minute, ['00', '15', '30', '45']) && $end_minute !== '')
+                                            <option value="{{ $end_minute }}">{{ $end_minute }}</option>
+                                        @endif
+                                    </select>
+                                </div>
                             </div>
-                            <span class="text-slate-400 font-bold text-sm">:</span>
-                            <div>
-                                <select wire:model="end_minute" class="w-16 text-sm py-2.5 px-2 border border-slate-300 rounded-xl text-slate-900 shadow-sm transition-colors cursor-pointer {{ $lockedClass }}" {{ $locked ? 'disabled' : '' }}>
-                                    @foreach(['00', '15', '30', '45'] as $mOption)
-                                        <option value="{{ $mOption }}">{{ $mOption }}</option>
-                                    @endforeach
-                                    @if(!in_array($end_minute, ['00', '15', '30', '45']) && $end_minute !== '')
-                                        <option value="{{ $end_minute }}">{{ $end_minute }}</option>
-                                    @endif
-                                </select>
-                            </div>
+                            @error('end_time') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                         </div>
-                        @error('end_time') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                     </div>
                 </div>
 
@@ -757,13 +760,13 @@ new class extends Component {
                     </select>
                 </div>
 
-                <div class="mt-8 pt-6 border-t border-slate-100 flex justify-end gap-3">
-                    <button type="button" x-on:click="$dispatch('close')" class="px-5 py-2.5 bg-white border border-slate-300 hover:bg-slate-50 active:scale-95 text-slate-700 rounded-xl font-bold text-sm transition-all shadow-sm">
+                <div class="mt-8 pt-6 border-t border-slate-100 flex flex-col-reverse sm:flex-row justify-end gap-3">
+                    <button type="button" x-on:click="$dispatch('close')" class="w-full sm:w-auto px-5 py-2.5 bg-white border border-slate-300 hover:bg-slate-50 active:scale-95 text-slate-700 rounded-xl font-bold text-sm transition-all shadow-sm">
                         {{ $locked ? 'Tutup' : 'Batal' }}
                     </button>
 
                     @if(!$locked)
-                    <button type="submit" wire:loading.attr="disabled" wire:target="updateMeeting" class="inline-flex items-center justify-center px-5 py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl font-bold text-sm transition-all shadow-sm gap-2">
+                    <button type="submit" wire:loading.attr="disabled" wire:target="updateMeeting" class="w-full sm:w-auto inline-flex items-center justify-center px-5 py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl font-bold text-sm transition-all shadow-sm gap-2">
                         <svg wire:loading.remove wire:target="updateMeeting" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                         </svg>
@@ -942,11 +945,11 @@ new class extends Component {
                     @error('passphrase') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                 </div>
 
-                <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
-                    <button type="button" x-on:click="$dispatch('close')" wire:click="closeSignModal" class="px-4 py-2.5 bg-white border border-slate-300 hover:bg-slate-50 active:scale-95 text-slate-700 font-bold text-sm rounded-xl transition-all shadow-sm">
+                <div class="flex flex-col-reverse sm:flex-row items-center justify-end gap-3 pt-3 border-t border-slate-100">
+                    <button type="button" x-on:click="$dispatch('close')" wire:click="closeSignModal" class="w-full sm:w-auto px-4 py-2.5 bg-white border border-slate-300 hover:bg-slate-50 active:scale-95 text-slate-700 font-bold text-sm rounded-xl transition-all shadow-sm">
                         Batal
                     </button>
-                    <button type="submit" wire:loading.attr="disabled" wire:target="executeSign" class="inline-flex items-center justify-center px-5 py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white text-sm font-bold rounded-xl shadow-sm transition-all gap-2">
+                    <button type="submit" wire:loading.attr="disabled" wire:target="executeSign" class="w-full sm:w-auto inline-flex items-center justify-center px-5 py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white text-sm font-bold rounded-xl shadow-sm transition-all gap-2">
                         <svg wire:loading.remove wire:target="executeSign" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                         </svg>

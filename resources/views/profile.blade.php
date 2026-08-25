@@ -29,7 +29,7 @@
         <!-- User Profile Card -->
         <div class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden divide-y divide-slate-100 text-sm">
             <!-- Nama Lengkap -->
-            <div class="flex flex-col sm:flex-row sm:items-center py-4 px-6 gap-2 sm:gap-6 hover:bg-slate-50/50 transition-colors">
+            <div class="flex flex-col sm:flex-row sm:items-center py-3.5 sm:py-4 px-4 sm:px-6 gap-1.5 sm:gap-6 hover:bg-slate-50/50 transition-colors">
                 <div class="sm:w-1/4 text-slate-500 font-bold text-sm">
                     Nama Lengkap
                 </div>
@@ -39,7 +39,7 @@
             </div>
 
             <!-- NIP -->
-            <div class="flex flex-col sm:flex-row sm:items-center py-4 px-6 gap-2 sm:gap-6 hover:bg-slate-50/50 transition-colors">
+            <div class="flex flex-col sm:flex-row sm:items-center py-3.5 sm:py-4 px-4 sm:px-6 gap-1.5 sm:gap-6 hover:bg-slate-50/50 transition-colors">
                 <div class="sm:w-1/4 text-slate-500 font-bold text-sm">
                     NIP
                 </div>
@@ -50,7 +50,7 @@
 
             @if($user->hasRole('pimpinan'))
             <!-- NIK -->
-            <div class="flex flex-col sm:flex-row sm:items-center py-4 px-6 gap-2 sm:gap-6 hover:bg-slate-50/50 transition-colors">
+            <div class="flex flex-col sm:flex-row sm:items-center py-3.5 sm:py-4 px-4 sm:px-6 gap-1.5 sm:gap-6 hover:bg-slate-50/50 transition-colors">
                 <div class="sm:w-1/4 text-slate-500 font-bold text-sm">
                     NIK
                 </div>
@@ -61,7 +61,7 @@
             @endif
 
             <!-- Jabatan -->
-            <div class="flex flex-col sm:flex-row sm:items-center py-4 px-6 gap-2 sm:gap-6 hover:bg-slate-50/50 transition-colors">
+            <div class="flex flex-col sm:flex-row sm:items-center py-3.5 sm:py-4 px-4 sm:px-6 gap-1.5 sm:gap-6 hover:bg-slate-50/50 transition-colors">
                 <div class="sm:w-1/4 text-slate-500 font-bold text-sm">
                     Jabatan
                 </div>
@@ -71,7 +71,7 @@
             </div>
 
             <!-- OPD / Unit Kerja -->
-            <div class="flex flex-col sm:flex-row sm:items-center py-4 px-6 gap-2 sm:gap-6 hover:bg-slate-50/50 transition-colors">
+            <div class="flex flex-col sm:flex-row sm:items-center py-3.5 sm:py-4 px-4 sm:px-6 gap-1.5 sm:gap-6 hover:bg-slate-50/50 transition-colors">
                 <div class="sm:w-1/4 text-slate-500 font-bold text-sm">
                     OPD
                 </div>
@@ -81,7 +81,7 @@
             </div>
 
             <!-- Waktu Terdaftar -->
-            <div class="flex flex-col sm:flex-row sm:items-center py-4 px-6 gap-2 sm:gap-6 hover:bg-slate-50/50 transition-colors">
+            <div class="flex flex-col sm:flex-row sm:items-center py-3.5 sm:py-4 px-4 sm:px-6 gap-1.5 sm:gap-6 hover:bg-slate-50/50 transition-colors">
                 <div class="sm:w-1/4 text-slate-500 font-bold text-sm">
                     Waktu Terdaftar
                 </div>

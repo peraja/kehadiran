@@ -34,25 +34,36 @@ new class extends Component
 
     <x-dropdown align="right" width="w-48">
         <x-slot name="trigger">
-            <button type="button" class="flex items-center gap-3 py-1.5 px-2.5 sm:py-2 sm:px-3.5 rounded-2xl bg-slate-50/80 hover:bg-slate-100/80 border border-slate-200/80 outline-none focus:outline-none focus-visible:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/25 active:scale-[0.99] transition-all shadow-2xs select-none cursor-pointer">
+            <button type="button" class="flex items-center gap-2.5 p-1 sm:py-2 sm:px-3.5 rounded-2xl bg-slate-50/80 hover:bg-slate-100/80 border border-slate-200/80 outline-none focus:outline-none focus-visible:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/25 active:scale-[0.99] transition-all shadow-2xs select-none cursor-pointer" aria-label="Menu profil">
+                <!-- Avatar Icon (Selalu Tampil) -->
                 <div class="w-9 h-9 rounded-xl bg-primary-600 text-white font-extrabold text-sm flex items-center justify-center shadow-xs shrink-0">
                     {{ strtoupper(substr($user->name, 0, 2)) }}
                 </div>
-                <div class="text-left pr-1">
-                    <div class="text-xs font-bold text-slate-900 whitespace-nowrap leading-tight">{{ $user->name }}</div>
+
+                <!-- Nama & Role (Hanya tampil di tablet/desktop sm+) -->
+                <div class="hidden sm:block text-left pr-1 min-w-0">
+                    <div class="text-xs font-bold text-slate-900 truncate max-w-[160px] md:max-w-none leading-tight">{{ $user->name }}</div>
                     <div class="text-[10px] font-semibold text-slate-500 leading-tight mt-0.5 flex items-center gap-1.5">
-                        <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-bold border {{ $roleBadgeColors }}">
+                        <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-bold border {{ $roleBadgeColors }} truncate">
                             {{ $roleLabel }}
                         </span>
                     </div>
                 </div>
-                <svg class="h-4 w-4 text-slate-400 shrink-0 ml-auto" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+
+                <!-- Chevron Arrow (Hanya tampil di tablet/desktop sm+) -->
+                <svg class="hidden sm:block h-4 w-4 text-slate-400 shrink-0 ml-auto" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                     <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
                 </svg>
             </button>
         </x-slot>
 
         <x-slot name="content">
+            <!-- Header Nama & Role khusus di Mobile saat dropdown dibuka -->
+            <div class="block sm:hidden px-4 py-2.5 border-b border-slate-100 bg-slate-50/50">
+                <div class="text-xs font-bold text-slate-900 truncate">{{ $user->name }}</div>
+                <div class="text-[10px] text-slate-500 font-semibold mt-0.5">{{ $roleLabel }}</div>
+            </div>
+
             <!-- Menu Links -->
             <div class="py-1">
                 <x-dropdown-link :href="route('profile')" wire:navigate class="flex items-center gap-2.5 px-4 py-2 text-xs sm:text-sm font-semibold text-slate-700 hover:text-primary-600 hover:bg-slate-50">

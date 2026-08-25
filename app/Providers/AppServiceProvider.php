@@ -19,10 +19,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // Selalu force HTTPS agar Livewire & URL helper tidak menghasilkan
-        // URL http:// yang menyebabkan request POST dikonversi menjadi GET
-        // setelah melewati Apache rewrite internal di server cPanel.
-        \Illuminate\Support\Facades\URL::forceScheme('https');
+        // Force HTTPS pada server produksi / saat APP_URL menggunakan https
+        // agar tidak memicu error SSL pada development server lokal (php artisan serve).
+        if (app()->isProduction() || str_starts_with(config('app.url', ''), 'https://')) {
+            \Illuminate\Support\Facades\URL::forceScheme('https');
+        }
 
         \Illuminate\Support\Facades\Schema::defaultStringLength(191);
 

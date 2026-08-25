@@ -12,7 +12,7 @@
     </nav>
 
     <!-- Workspace Header Card -->
-    <div class="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6 sm:p-8 relative overflow-hidden mb-6">
+    <div class="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-4 sm:p-6 md:p-8 relative overflow-hidden mb-6">
         <!-- Decorative Blob -->
         <div class="absolute top-0 right-0 -mt-16 -mr-16 w-64 h-64 bg-gradient-to-br from-primary-50 to-indigo-50 rounded-full blur-3xl opacity-70 pointer-events-none"></div>
         
@@ -20,7 +20,7 @@
         
         @unless(auth()->user()?->hasActiveRole('pimpinan'))
         <!-- Premium Tabs (Pills) -->
-        <nav class="flex items-center gap-2 mt-8 overflow-x-auto pb-2 scrollbar-hide relative z-10">
+        <nav class="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2 mt-6 sm:mt-8 relative z-10">
             @php
                 $tabs = [
                     'overview' => [
@@ -49,7 +49,7 @@
             @foreach($tabs as $key => $tab)
                 <a href="{{ route('meetings.'.$key, $meeting->id) }}"
                    wire:navigate
-                   class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all shadow-sm whitespace-nowrap shrink-0 {{ $activeTab === $key ? 'bg-slate-900 text-white hover:bg-slate-800' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 hover:text-slate-900 hover:border-slate-300' }}">
+                   class="inline-flex items-center justify-center sm:justify-start gap-2 px-3 sm:px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all shadow-sm {{ $activeTab === $key ? 'bg-slate-900 text-white hover:bg-slate-800' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 hover:text-slate-900 hover:border-slate-300' }}">
                     {!! $tab['icon'] !!}
                     <span>{{ $tab['label'] }}</span>
                     @if($tab['count'] !== null)
@@ -64,7 +64,7 @@
     </div>
 
     <!-- Workspace Content Card -->
-    <div class="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6 sm:p-8 min-h-[400px]">
+    <div class="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-4 sm:p-6 md:p-8 min-h-[400px]">
         {{ $slot }}
     </div>
 </div>

@@ -35,7 +35,7 @@
         <!-- Main Content Area (Offset by sidebar width on desktop) -->
         <div class="lg:pl-72 flex flex-col min-h-screen">
             <!-- Top App-Bar -->
-            <header class="sticky top-0 z-30 flex h-20 shrink-0 items-center justify-between gap-x-4 border-b border-slate-200 bg-white/80 px-4 sm:px-6 lg:px-8 backdrop-blur-md shadow-sm">
+            <header class="sticky top-0 z-30 flex h-16 sm:h-20 shrink-0 items-center justify-between gap-x-4 border-b border-slate-200 bg-white/80 px-4 sm:px-6 lg:px-8 backdrop-blur-md shadow-sm">
                 <div class="flex items-center gap-x-4">
                     <button type="button" @click="sidebarOpen = true" class="-m-2.5 p-2.5 text-slate-700 lg:hidden rounded-xl hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-primary-500 active:scale-95 transition-all" aria-label="Buka navigasi">
                         <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">

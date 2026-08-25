@@ -296,34 +296,34 @@ new #[Layout('layouts.app')] class extends Component {
     <!-- Main Table Container -->
     <div class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
         <!-- Toolbar -->
-        <div class="p-6 border-b border-slate-100 bg-slate-50/50 space-y-4">
+        <div class="p-4 sm:p-6 border-b border-slate-100 bg-slate-50/50 space-y-4">
             <!-- Filter Pills -->
-            <div class="flex flex-wrap items-center gap-1.5 sm:gap-2">
+            <div class="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2 w-full md:w-auto">
                 <button wire:click="$set('roleFilter','')" 
-                    class="inline-flex items-center justify-center gap-1.5 h-10 px-4 rounded-xl text-xs font-bold transition-all {{ $roleFilter === '' ? 'bg-slate-900 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900' }}">
+                    class="col-span-2 sm:col-span-1 inline-flex items-center justify-center gap-1.5 h-10 px-3 sm:px-4 rounded-xl text-xs font-bold transition-all {{ $roleFilter === '' ? 'bg-slate-900 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900' }}">
                     Semua
                     <span class="inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-[10px] {{ $roleFilter === '' ? 'bg-slate-800 text-slate-300' : 'bg-slate-100 text-slate-500' }}">{{ $counts['total'] }}</span>
                 </button>
                 <button wire:click="$set('roleFilter','admin')" 
-                    class="inline-flex items-center justify-center gap-1.5 h-10 px-4 rounded-xl text-xs font-bold transition-all {{ $roleFilter === 'admin' ? 'bg-purple-600 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-purple-300 hover:bg-purple-50 hover:text-purple-700' }}">
+                    class="inline-flex items-center justify-center gap-1.5 h-10 px-3 sm:px-4 rounded-xl text-xs font-bold transition-all {{ $roleFilter === 'admin' ? 'bg-purple-600 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-purple-300 hover:bg-purple-50 hover:text-purple-700' }}">
                     <span class="w-1.5 h-1.5 rounded-full {{ $roleFilter === 'admin' ? 'bg-purple-200' : 'bg-purple-500' }}"></span>
                     Super Admin
                     <span class="inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-[10px] {{ $roleFilter === 'admin' ? 'bg-purple-700 text-purple-100' : 'bg-purple-100 text-purple-700' }}">{{ $counts['admin'] }}</span>
                 </button>
                 <button wire:click="$set('roleFilter','pimpinan')" 
-                    class="inline-flex items-center justify-center gap-1.5 h-10 px-4 rounded-xl text-xs font-bold transition-all {{ $roleFilter === 'pimpinan' ? 'bg-indigo-600 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700' }}">
+                    class="inline-flex items-center justify-center gap-1.5 h-10 px-3 sm:px-4 rounded-xl text-xs font-bold transition-all {{ $roleFilter === 'pimpinan' ? 'bg-indigo-600 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700' }}">
                     <span class="w-1.5 h-1.5 rounded-full {{ $roleFilter === 'pimpinan' ? 'bg-indigo-200' : 'bg-indigo-500' }}"></span>
                     Pimpinan
                     <span class="inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-[10px] {{ $roleFilter === 'pimpinan' ? 'bg-indigo-700 text-indigo-100' : 'bg-indigo-100 text-indigo-700' }}">{{ $counts['pimpinan'] }}</span>
                 </button>
                 <button wire:click="$set('roleFilter','admin_opd')" 
-                    class="inline-flex items-center justify-center gap-1.5 h-10 px-4 rounded-xl text-xs font-bold transition-all {{ $roleFilter === 'admin_opd' ? 'bg-primary-600 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-primary-300 hover:bg-primary-50 hover:text-primary-700' }}">
+                    class="inline-flex items-center justify-center gap-1.5 h-10 px-3 sm:px-4 rounded-xl text-xs font-bold transition-all {{ $roleFilter === 'admin_opd' ? 'bg-primary-600 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-primary-300 hover:bg-primary-50 hover:text-primary-700' }}">
                     <span class="w-1.5 h-1.5 rounded-full {{ $roleFilter === 'admin_opd' ? 'bg-primary-200' : 'bg-primary-500' }}"></span>
                     Admin OPD
                     <span class="inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-[10px] {{ $roleFilter === 'admin_opd' ? 'bg-primary-700 text-primary-100' : 'bg-primary-100 text-primary-700' }}">{{ $counts['admin_opd'] }}</span>
                 </button>
                 <button wire:click="$set('roleFilter','pegawai')" 
-                    class="inline-flex items-center justify-center gap-1.5 h-10 px-4 rounded-xl text-xs font-bold transition-all {{ $roleFilter === 'pegawai' ? 'bg-slate-700 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-700' }}">
+                    class="inline-flex items-center justify-center gap-1.5 h-10 px-3 sm:px-4 rounded-xl text-xs font-bold transition-all {{ $roleFilter === 'pegawai' ? 'bg-slate-700 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-700' }}">
                     <span class="w-1.5 h-1.5 rounded-full {{ $roleFilter === 'pegawai' ? 'bg-slate-300' : 'bg-slate-400' }}"></span>
                     Pegawai
                     <span class="inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-[10px] {{ $roleFilter === 'pegawai' ? 'bg-slate-800 text-slate-100' : 'bg-slate-100 text-slate-700' }}">{{ $counts['pegawai'] }}</span>
@@ -331,8 +331,8 @@ new #[Layout('layouts.app')] class extends Component {
             </div>
 
             <!-- Search Field -->
-            <div class="flex flex-col md:flex-row items-stretch md:items-center gap-3">
-                <div class="relative flex-1 min-w-[220px] max-w-sm">
+            <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full md:w-auto">
+                <div class="relative flex-1 min-w-[220px] md:w-80">
                     <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
                         <svg class="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -352,7 +352,7 @@ new #[Layout('layouts.app')] class extends Component {
 
                 @if($roleFilter)
                 <button wire:click="resetFilters"
-                    class="h-10 inline-flex items-center gap-1.5 px-3 rounded-xl text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 active:scale-95 transition-all border border-rose-200/80 shadow-2xs cursor-pointer shrink-0"
+                    class="h-10 inline-flex items-center justify-center gap-1.5 px-3 rounded-xl text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 active:scale-95 transition-all border border-rose-200/80 shadow-2xs cursor-pointer shrink-0 w-full sm:w-auto"
                     title="Reset semua filter">
                     <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -364,8 +364,8 @@ new #[Layout('layouts.app')] class extends Component {
         </div>
 
         <!-- Table View -->
-        <div class="overflow-x-auto min-h-[400px]">
-            <table class="w-full text-left border-collapse">
+        <div class="overflow-x-auto min-h-[400px] rounded-2xl">
+            <table class="w-full text-left border-collapse min-w-[700px]">
                 <thead class="bg-slate-50 border-b border-slate-200 text-slate-500">
                     <tr class="text-[11px] font-extrabold uppercase tracking-wider">
                         <th class="py-4 px-6 text-left w-1/3">Nama & NIP</th>
@@ -571,29 +571,29 @@ new #[Layout('layouts.app')] class extends Component {
                     <label class="block text-sm font-bold text-slate-700 mb-2">
                         Role
                     </label>
-                    <div class="flex flex-wrap items-center gap-2 sm:gap-2.5">
+                    <div class="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2 sm:gap-2.5">
                         @if(auth()->user()->hasActiveRole('admin'))
                         <!-- Super Admin -->
-                        <label class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border cursor-pointer select-none transition-all text-xs font-bold {{ in_array('admin', $roles) ? 'bg-purple-50 text-purple-900 border-purple-300 ring-2 ring-purple-500/20 shadow-2xs' : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:bg-slate-50' }}">
+                        <label class="inline-flex items-center gap-2 px-3 py-2 sm:px-3.5 rounded-xl border cursor-pointer select-none transition-all text-xs font-bold {{ in_array('admin', $roles) ? 'bg-purple-50 text-purple-900 border-purple-300 ring-2 ring-purple-500/20 shadow-2xs' : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:bg-slate-50' }}">
                             <input type="checkbox" wire:model.live="roles" value="admin" class="w-4 h-4 rounded text-purple-600 focus:ring-purple-500 border-slate-300">
                             <span>Super Admin</span>
                         </label>
                         @endif
 
                         <!-- Pimpinan -->
-                        <label class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border cursor-pointer select-none transition-all text-xs font-bold {{ in_array('pimpinan', $roles) ? 'bg-indigo-50 text-indigo-900 border-indigo-300 ring-2 ring-indigo-500/20 shadow-2xs' : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:bg-slate-50' }}">
+                        <label class="inline-flex items-center gap-2 px-3 py-2 sm:px-3.5 rounded-xl border cursor-pointer select-none transition-all text-xs font-bold {{ in_array('pimpinan', $roles) ? 'bg-indigo-50 text-indigo-900 border-indigo-300 ring-2 ring-indigo-500/20 shadow-2xs' : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:bg-slate-50' }}">
                             <input type="checkbox" wire:model.live="roles" value="pimpinan" class="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 border-slate-300">
                             <span>Pimpinan</span>
                         </label>
 
                         <!-- Admin OPD -->
-                        <label class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border cursor-pointer select-none transition-all text-xs font-bold {{ in_array('admin_opd', $roles) ? 'bg-emerald-50 text-emerald-900 border-emerald-300 ring-2 ring-emerald-500/20 shadow-2xs' : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:bg-slate-50' }}">
+                        <label class="inline-flex items-center gap-2 px-3 py-2 sm:px-3.5 rounded-xl border cursor-pointer select-none transition-all text-xs font-bold {{ in_array('admin_opd', $roles) ? 'bg-emerald-50 text-emerald-900 border-emerald-300 ring-2 ring-emerald-500/20 shadow-2xs' : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:bg-slate-50' }}">
                             <input type="checkbox" wire:model.live="roles" value="admin_opd" class="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 border-slate-300">
                             <span>Admin OPD</span>
                         </label>
 
                         <!-- Pegawai -->
-                        <label class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border cursor-pointer select-none transition-all text-xs font-bold {{ in_array('pegawai', $roles) ? 'bg-slate-100 text-slate-900 border-slate-300 ring-2 ring-slate-400/20 shadow-2xs' : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:bg-slate-50' }}">
+                        <label class="inline-flex items-center gap-2 px-3 py-2 sm:px-3.5 rounded-xl border cursor-pointer select-none transition-all text-xs font-bold {{ in_array('pegawai', $roles) ? 'bg-slate-100 text-slate-900 border-slate-300 ring-2 ring-slate-400/20 shadow-2xs' : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:bg-slate-50' }}">
                             <input type="checkbox" wire:model.live="roles" value="pegawai" class="w-4 h-4 rounded text-slate-700 focus:ring-slate-500 border-slate-300">
                             <span>Pegawai</span>
                         </label>
@@ -625,11 +625,11 @@ new #[Layout('layouts.app')] class extends Component {
                     @error('unit_name') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                 </div>
 
-                <div class="mt-8 pt-6 border-t border-slate-100 flex justify-end gap-3">
-                    <button type="button" x-on:click="$dispatch('close-modal', 'user-form-modal')" class="px-5 py-2.5 bg-white border border-slate-300 hover:bg-slate-50 active:scale-95 text-slate-700 rounded-xl font-bold text-sm transition-all shadow-sm">
+                <div class="mt-8 pt-6 border-t border-slate-100 flex flex-col-reverse sm:flex-row justify-end gap-3">
+                    <button type="button" x-on:click="$dispatch('close-modal', 'user-form-modal')" class="w-full sm:w-auto px-5 py-2.5 bg-white border border-slate-300 hover:bg-slate-50 active:scale-95 text-slate-700 rounded-xl font-bold text-sm transition-all shadow-sm">
                         Batal
                     </button>
-                    <button type="submit" wire:loading.attr="disabled" wire:target="saveUser" class="inline-flex items-center justify-center px-5 py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl font-bold text-sm transition-all shadow-sm gap-2">
+                    <button type="submit" wire:loading.attr="disabled" wire:target="saveUser" class="w-full sm:w-auto inline-flex items-center justify-center px-5 py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl font-bold text-sm transition-all shadow-sm gap-2">
                         <svg wire:loading.remove wire:target="saveUser" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                         </svg>

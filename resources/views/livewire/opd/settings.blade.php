@@ -344,7 +344,7 @@ new #[Layout('layouts.app')] class extends Component {
                 {{ $name }}
             </p>
         </div>
-        <button type="button" wire:click="syncFromSimpeg" wire:loading.attr="disabled" class="relative z-10 inline-flex justify-center items-center px-5 py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl font-bold text-sm transition-all shadow-sm shrink-0 gap-2">
+        <button type="button" wire:click="syncFromSimpeg" wire:loading.attr="disabled" class="relative z-10 w-full sm:w-auto inline-flex justify-center items-center px-5 py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl font-bold text-sm transition-all shadow-sm shrink-0 gap-2">
             <svg wire:loading.remove wire:target="syncFromSimpeg" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>
@@ -404,7 +404,7 @@ new #[Layout('layouts.app')] class extends Component {
             </div>
 
             <div class="flex justify-end pt-2">
-                <button type="submit" wire:loading.attr="disabled" wire:target="saveOpdInfo" class="inline-flex items-center justify-center px-5 py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white font-bold text-sm rounded-xl shadow-sm transition-all gap-2">
+                <button type="submit" wire:loading.attr="disabled" wire:target="saveOpdInfo" class="w-full sm:w-auto inline-flex items-center justify-center px-5 py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white font-bold text-sm rounded-xl shadow-sm transition-all gap-2">
                     <svg wire:loading.remove wire:target="saveOpdInfo" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                     </svg>
@@ -725,11 +725,11 @@ new #[Layout('layouts.app')] class extends Component {
                 </div>
                 @endif
 
-                <div class="mt-8 pt-6 border-t border-slate-100 flex justify-end gap-3">
-                    <button type="button" x-on:click="$dispatch('close-modal', 'signer-form-modal')" class="px-5 py-2.5 bg-white border border-slate-300 hover:bg-slate-50 active:scale-95 text-slate-700 rounded-xl font-bold text-sm transition-all shadow-sm">
+                <div class="mt-8 pt-6 border-t border-slate-100 flex flex-col-reverse sm:flex-row justify-end gap-3">
+                    <button type="button" x-on:click="$dispatch('close-modal', 'signer-form-modal')" class="w-full sm:w-auto px-5 py-2.5 bg-white border border-slate-300 hover:bg-slate-50 active:scale-95 text-slate-700 rounded-xl font-bold text-sm transition-all shadow-sm">
                         Batal
                     </button>
-                    <button type="submit" wire:loading.attr="disabled" wire:target="saveSigner" class="inline-flex items-center justify-center px-5 py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl font-bold text-sm transition-all shadow-sm gap-2">
+                    <button type="submit" wire:loading.attr="disabled" wire:target="saveSigner" class="w-full sm:w-auto inline-flex items-center justify-center px-5 py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl font-bold text-sm transition-all shadow-sm gap-2">
                         <svg wire:loading.remove wire:target="saveSigner" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                         </svg>

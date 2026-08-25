@@ -205,7 +205,7 @@ new #[Layout('layouts.app')] class extends Component {
 
         <!-- Full-Width Attendee Table -->
         <div class="overflow-x-auto rounded-2xl border border-slate-200">
-            <table class="w-full text-left border-collapse">
+            <table class="w-full text-left border-collapse min-w-[680px]">
                 <thead class="bg-slate-50/80 border-b border-slate-200 text-slate-500">
                     <tr class="text-[11px] font-extrabold uppercase tracking-wider">
                         <th class="py-3.5 px-4 text-center w-12">#</th>

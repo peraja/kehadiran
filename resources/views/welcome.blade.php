@@ -63,12 +63,12 @@
     <main class="flex-1 flex flex-col items-center pt-16 pb-24 px-4 sm:px-6 lg:px-8 relative z-10">
 
         <div class="max-w-4xl w-full text-center relative z-10">
-            <h1 class="text-4xl sm:text-6xl font-extrabold text-slate-900 tracking-tight leading-[1.15] mb-6">
+            <h1 class="text-3xl sm:text-5xl md:text-6xl font-extrabold text-slate-900 tracking-tight leading-[1.15] mb-4 sm:mb-6">
                 Manajemen Rapat <br class="hidden sm:inline">
                 <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary-600 to-indigo-600">Pemerintah Kabupaten Sinjai</span>
             </h1>
 
-            <p class="text-base sm:text-lg text-slate-600 max-w-2xl mx-auto mb-10 font-medium leading-relaxed">
+            <p class="text-sm sm:text-base md:text-lg text-slate-600 max-w-2xl mx-auto mb-8 sm:mb-10 font-medium leading-relaxed px-2">
                 Platform digital resmi untuk pengelolaan agenda rapat, presensi cerdas berbasis QR code, pencatatan notulen, hingga pengarsipan dokumentasi kegiatan.
             </p>
 
@@ -101,7 +101,7 @@
                     @php
                         $opdName = $m->opd?->name ?? $m->creator?->unit_name ?? 'Pemerintah Kabupaten Sinjai';
                     @endphp
-                    <div class="p-5 sm:px-6 hover:bg-slate-50/80 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-4 group">
+                    <div class="p-4 sm:p-5 md:px-6 hover:bg-slate-50/80 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 group">
                         <div class="min-w-0 flex-1 space-y-1">
                             <!-- Judul Agenda -->
                             <div class="font-extrabold text-slate-900 text-sm sm:text-base group-hover:text-primary-600 transition-colors leading-snug break-words">

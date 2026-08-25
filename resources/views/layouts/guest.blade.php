@@ -33,18 +33,18 @@
         <div class="fixed top-0 inset-x-0 h-[500px] bg-gradient-to-b from-primary-50 to-transparent -z-10"></div>
         <div class="fixed top-0 right-0 w-[600px] h-[600px] bg-indigo-50/50 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/3 -z-10"></div>
 
-        <div class="min-h-full flex flex-col justify-center items-center py-12 px-4 sm:px-6 lg:px-8">
+        <div class="min-h-full flex flex-col justify-center items-center py-8 px-3 sm:py-12 sm:px-6 lg:px-8">
             <div class="text-center group">
                 <a href="/" wire:navigate class="inline-flex flex-col items-center gap-3">
-                    <img src="{{ asset('img/logo.png') }}" alt="Logo Pemkab Sinjai" class="h-14 w-auto drop-shadow-md group-hover:scale-105 transition-transform duration-300" />
+                    <img src="{{ asset('img/logo.png') }}" alt="Logo Pemkab Sinjai" class="h-12 sm:h-14 w-auto drop-shadow-md group-hover:scale-105 transition-transform duration-300" />
                     <div>
-                        <span class="text-3xl font-extrabold text-slate-900 tracking-tight leading-tight">e<span class="text-primary-600">Rapat</span></span>
-                        <span class="block text-[11px] text-slate-500 font-bold mt-1 uppercase tracking-widest">Pemkab Sinjai</span>
+                        <span class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight leading-tight">e<span class="text-primary-600">Rapat</span></span>
+                        <span class="block text-[10px] sm:text-[11px] text-slate-500 font-bold mt-0.5 sm:mt-1 uppercase tracking-widest">Pemkab Sinjai</span>
                     </div>
                 </a>
             </div>
 
-            <div class="w-full sm:max-w-lg mt-8 px-6 sm:px-10 py-10 bg-white shadow-xl shadow-slate-200/50 overflow-hidden rounded-[2rem] border border-slate-100 relative">
+            <div class="w-full sm:max-w-lg mt-6 sm:mt-8 px-5 py-7 sm:px-10 sm:py-10 bg-white shadow-xl shadow-slate-200/50 overflow-hidden rounded-3xl sm:rounded-[2rem] border border-slate-100 relative">
                 <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-primary-400 via-primary-600 to-indigo-600"></div>
                 {{ $slot }}
             </div>
