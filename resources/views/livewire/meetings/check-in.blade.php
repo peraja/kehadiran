@@ -64,11 +64,12 @@ new #[Layout('layouts.guest')] class extends Component {
     public function checkNip()
     {
         $this->resetValidation();
+        $this->nip = trim((string) $this->nip);
         $this->validate([
-            'nip' => 'required|string|min:5',
+            'nip' => 'required|digits:18',
         ], [
             'nip.required' => 'NIP wajib diisi.',
-            'nip.min' => 'NIP minimal 5 karakter.',
+            'nip.digits' => 'NIP harus 18 digit.',
         ]);
 
         $nip = trim($this->nip);
@@ -284,11 +285,11 @@ new #[Layout('layouts.guest')] class extends Component {
         @if($participant_type === 'internal')
         <!-- Pegawai Internal NIP Section -->
         <div class="space-y-3">
-            <label for="nip" class="block text-sm font-bold text-slate-700">Masukkan NIP (18 digit)</label>
+            <label for="nip" class="block text-sm font-bold text-slate-700">Masukkan NIP</label>
 
             <div class="flex flex-col sm:flex-row sm:items-start gap-3">
                 <div class="flex-1 w-full">
-                    <input wire:model="nip" id="nip" type="text"
+                    <input wire:model="nip" id="nip" type="text" maxlength="18" inputmode="numeric"
                         class="block w-full py-2.5 px-3 rounded-xl border border-slate-300 text-base sm:text-sm font-mono focus:ring-primary-500 focus:border-primary-500 transition-colors {{ $nip_checked ? 'bg-slate-50 text-slate-500 opacity-70' : 'bg-white' }}"
                         placeholder="Contoh: 199610072022031013"
                         @readonly($nip_checked)
