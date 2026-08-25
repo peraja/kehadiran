@@ -5,6 +5,7 @@ use App\Models\Meeting;
 use App\Models\Opd;
 use App\Models\OpdSigner;
 use App\Services\BsreEsignService;
+use SimpleSoftwareIO\QrCode\Facades\QrCode;
 use Livewire\Attributes\On;
 
 new class extends Component {

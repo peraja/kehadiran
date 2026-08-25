@@ -4,6 +4,12 @@ Semua perubahan penting pada proyek ini dicatat dalam berkas ini.
 
 Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/1.0.0/), dan proyek ini mematuhi [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.8] - 2026-08-25
+
+### Diperbaiki
+- **Polyfill `iconv` untuk Kompatibilitas Lingkungan cPanel**: Penambahan fungsi polyfill `iconv()` otomatis berbasis `mb_convert_encoding()` pada [`bootstrap/app.php`](file:///Users/abedzul/Desktop/htdocs/rapat/bootstrap/app.php) guna mencegah kegagalan pembuatan QR Code (`BaconQrCode\Encoder\iconv`) pada server shared hosting cPanel yang belum mengaktifkan ekstensi PHP `iconv`.
+- **Import Facade QR Code**: Penambahan import `SimpleSoftwareIO\QrCode\Facades\QrCode` pada komponen Livewire [`livewire/meetings/header.blade.php`](file:///Users/abedzul/Desktop/htdocs/rapat/resources/views/livewire/meetings/header.blade.php).
+
 ## [1.3.7] - 2026-08-25
 
 ### Ditambahkan
