@@ -45,7 +45,7 @@ new #[Layout('layouts.guest', [
         <!-- NIP -->
         <div>
             <x-input-label for="nip" value="NIP" />
-            <x-text-input wire:model="form.nip" id="nip" class="block mt-1 w-full font-mono" type="text" name="nip" placeholder="Contoh: 198501012010011001" required autofocus x-init="$nextTick(() => $el.focus())" autocomplete="username" />
+            <x-text-input wire:model="form.nip" id="nip" class="block mt-1 w-full font-mono" type="text" name="nip" placeholder="Contoh: 199610072022031013" required autofocus x-init="$nextTick(() => $el.focus())" autocomplete="username" />
             <x-input-error :messages="$errors->get('form.nip')" class="mt-1" />
         </div>
 

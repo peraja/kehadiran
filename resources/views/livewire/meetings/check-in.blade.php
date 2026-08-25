@@ -67,7 +67,7 @@ new #[Layout('layouts.guest')] class extends Component {
         $this->validate([
             'nip' => 'required|string|min:5',
         ], [
-            'nip.required' => 'Silakan masukkan NIP Anda.',
+            'nip.required' => 'NIP wajib diisi.',
             'nip.min' => 'NIP minimal 5 karakter.',
         ]);
 
@@ -178,16 +178,16 @@ new #[Layout('layouts.guest')] class extends Component {
                 return;
             }
 
-            $this->validate([
-                'signature' => 'required|string',
-            ], [
-                'signature.required' => 'Tanda tangan wajib diisi.'
-            ]);
-
             $now = now();
             $this->recorded_time = $now->format('H:i') . ' WITA';
 
             if ($this->participant_type == 'internal') {
+                $this->validate([
+                    'signature' => 'required|string',
+                ], [
+                    'signature.required' => 'Tanda Tangan wajib diisi.'
+                ]);
+
                 if (!$this->nip_checked || !$this->employee_id) {
                     $this->addError('nip', 'Silakan cek NIP terlebih dahulu.');
                     return;
@@ -211,14 +211,16 @@ new #[Layout('layouts.guest')] class extends Component {
                     'device_info' => request()->userAgent()
                 ]);
             } else {
-                // Guest check-in
+                // Guest check-in: Validate name, agency, position, and signature simultaneously
                 $this->validate([
                     'guest_name' => 'required|string|max:255',
                     'guest_agency' => 'required|string|max:255',
                     'guest_position' => 'nullable|string|max:255',
+                    'signature' => 'required|string',
                 ], [
-                    'guest_name.required' => 'Nama wajib diisi.',
-                    'guest_agency.required' => 'Instansi wajib diisi.',
+                    'guest_name.required' => 'Nama Lengkap wajib diisi.',
+                    'guest_agency.required' => 'Instansi / Lembaga wajib diisi.',
+                    'signature.required' => 'Tanda Tangan wajib diisi.',
                 ]);
 
                 $this->meeting->attendances()->create([
@@ -260,20 +262,9 @@ new #[Layout('layouts.guest')] class extends Component {
             {{ $meeting->title }}
         </h2>
         <div class="mt-2.5 flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 text-xs sm:text-sm font-medium text-slate-500">
-            <div class="flex items-center gap-1.5">
-                <svg class="w-4 h-4 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-                <span>{{ $meeting->date ? $meeting->date->translatedFormat('l, d F Y') : '-' }}</span>
-            </div>
+            <span>{{ $meeting->date ? $meeting->date->translatedFormat('l, d F Y') : '-' }}</span>
             <span class="hidden sm:inline text-slate-300">&bull;</span>
-            <div class="flex items-center gap-1.5">
-                <svg class="w-4 h-4 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-                <span class="break-words">{{ $meeting->location }}</span>
-            </div>
+            <span class="break-words">{{ $meeting->location }}</span>
         </div>
     </div>
 
@@ -293,17 +284,29 @@ new #[Layout('layouts.guest')] class extends Component {
         @if($participant_type === 'internal')
         <!-- Pegawai Internal NIP Section -->
         <div class="space-y-3">
-            <label for="nip" class="block text-sm font-bold text-slate-700">NIP</label>
+            <label for="nip" class="block text-sm font-bold text-slate-700">Masukkan NIP (18 digit)</label>
 
             <div class="flex flex-col sm:flex-row sm:items-start gap-3">
                 <div class="flex-1 w-full">
                     <input wire:model="nip" id="nip" type="text"
                         class="block w-full py-2.5 px-3 rounded-xl border border-slate-300 text-base sm:text-sm font-mono focus:ring-primary-500 focus:border-primary-500 transition-colors {{ $nip_checked ? 'bg-slate-50 text-slate-500 opacity-70' : 'bg-white' }}"
-                        placeholder="Contoh: 198501012010011001"
+                        placeholder="Contoh: 199610072022031013"
                         @readonly($nip_checked)
                         wire:keydown.enter.prevent="checkNip"
                         required />
-                    @error('nip') <span class="text-xs text-rose-600 mt-1.5 block font-bold">{{ $message }}</span> @enderror
+                    @error('nip')
+                        <div class="mt-2 text-xs space-y-1.5">
+                            <span class="text-rose-600 font-bold block">{{ $message }}</span>
+                            @if(str_contains($message, 'tidak ditemukan'))
+                            <button type="button" wire:click="$set('participant_type', 'eksternal')" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition cursor-pointer">
+                                <span>Gunakan Tab Eksternal</span>
+                                <svg class="w-3.5 h-3.5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                                </svg>
+                            </button>
+                            @endif
+                        </div>
+                    @enderror
                 </div>
 
                 @if(!$nip_checked)
@@ -349,20 +352,20 @@ new #[Layout('layouts.guest')] class extends Component {
         </div>
         @else
         <!-- Eksternal Form Section -->
-        <div class="space-y-5 bg-slate-50 p-5 rounded-2xl border border-slate-200">
+        <div class="space-y-4">
             <div>
                 <label for="guest_name" class="block text-sm font-bold text-slate-700 mb-1">Nama Lengkap</label>
-                <input wire:model.blur="guest_name" id="guest_name" type="text" class="block w-full py-2.5 px-3 rounded-xl border border-slate-300 text-base sm:text-sm focus:ring-primary-500 focus:border-primary-500 transition-colors" placeholder="Contoh: Ahmad Yani" required />
+                <input wire:model.blur="guest_name" id="guest_name" type="text" class="block w-full py-2.5 px-3 rounded-xl border border-slate-300 text-base sm:text-sm focus:ring-primary-500 focus:border-primary-500 transition-colors" placeholder="Contoh: Anthony" required />
                 @error('guest_name') <span class="text-xs text-rose-600 mt-1 block font-bold">{{ $message }}</span> @enderror
             </div>
             <div>
                 <label for="guest_agency" class="block text-sm font-bold text-slate-700 mb-1">Instansi / Lembaga</label>
-                <input wire:model.blur="guest_agency" id="guest_agency" type="text" class="block w-full py-2.5 px-3 rounded-xl border border-slate-300 text-base sm:text-sm focus:ring-primary-500 focus:border-primary-500 transition-colors" placeholder="Contoh: Polres Sinjai" required />
+                <input wire:model.blur="guest_agency" id="guest_agency" type="text" class="block w-full py-2.5 px-3 rounded-xl border border-slate-300 text-base sm:text-sm focus:ring-primary-500 focus:border-primary-500 transition-colors" placeholder="Contoh: Pengadilan Negeri Sinjai" required />
                 @error('guest_agency') <span class="text-xs text-rose-600 mt-1 block font-bold">{{ $message }}</span> @enderror
             </div>
             <div>
                 <label for="guest_position" class="block text-sm font-bold text-slate-700 mb-1">Jabatan (Opsional)</label>
-                <input wire:model.blur="guest_position" id="guest_position" type="text" class="block w-full py-2.5 px-3 rounded-xl border border-slate-300 text-base sm:text-sm focus:ring-primary-500 focus:border-primary-500 transition-colors" placeholder="Contoh: Staf Humas" />
+                <input wire:model.blur="guest_position" id="guest_position" type="text" class="block w-full py-2.5 px-3 rounded-xl border border-slate-300 text-base sm:text-sm focus:ring-primary-500 focus:border-primary-500 transition-colors" placeholder="Contoh: Ketua" />
                 @error('guest_position') <span class="text-xs text-rose-600 mt-1 block font-bold">{{ $message }}</span> @enderror
             </div>
         </div>
@@ -373,7 +376,7 @@ new #[Layout('layouts.guest')] class extends Component {
         <div class="space-y-6 pt-4 border-t border-slate-100" x-data="signaturePad()" wire:key="sig-pad-{{ $participant_type }}-{{ $nip_checked ? 'checked' : 'init' }}">
             <div>
                 <div class="flex items-center justify-between mb-3">
-                    <label class="block text-sm font-extrabold text-slate-900">Tanda Tangan Digital</label>
+                    <label class="block text-sm font-extrabold text-slate-900">Tanda Tangan</label>
                     <button type="button" @click="clearSignature" class="text-xs font-bold text-rose-600 hover:text-rose-700 active:scale-95 transition flex items-center gap-1 bg-rose-50 px-2 py-1 rounded-xl cursor-pointer">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>

@@ -26,6 +26,12 @@ Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/
 - **Isolasi State Signature Pad & Sinkronisasi Input Eksternal**:
   - Menambahkan isolasi DOM dinamis `wire:key` dan `wire:ignore` pada kanvas tanda tangan presensi ([`resources/views/livewire/meetings/check-in.blade.php`](file:///Users/abedzul/Desktop/htdocs/rapat/resources/views/livewire/meetings/check-in.blade.php)) agar konteks kanvas tidak tereset saat berpindah tab kategori peserta (*Pemkab Sinjai* vs *Eksternal*).
   - Menggunakan `wire:model.blur` pada input tamu eksternal guna memastikan seluruh nilai field tersinkronisasi sebelum data tanda tangan dikirim.
+- **Penyempurnaan Antarmuka & Validasi Form Presensi**:
+  - Menghilangkan kontainer bersarang (*nested card*) pada tab eksternal agar menyatu rapi dengan kartu utama presensi.
+  - Menghapus ikon tanggal dan lokasi pada header form presensi untuk estetika yang lebih minimalis.
+  - Menyelaraskan teks pesan error validasi dengan label masing-masing kolom serta mengeksekusi validasi seluruh kolom tamu eksternal secara serentak.
+  - Memperbarui label input NIP menjadi `Masukkan NIP (18 digit)` dan menyediakan tombol pintas `[ Gunakan Tab Eksternal → ]` saat NIP tidak ditemukan di database SIMPEG.
+  - Memperbarui contoh *placeholder* NIP (`Contoh: 199610072022031013`) dan instansi tamu eksternal (`Contoh: Pengadilan Negeri Sinjai`).
 
 ## [1.4.3] - 2026-08-26
 
