@@ -256,7 +256,7 @@ new #[Layout('layouts.guest')] class extends Component {
     </div>
 
     @if($status === 'ready')
-    <form wire:submit.prevent="confirmCheckIn" method="POST" onsubmit="event.preventDefault(); return false;" class="space-y-6">
+    <div class="space-y-6">
 
         <!-- Category Segmented Control -->
         <div class="flex p-1.5 bg-slate-100 rounded-2xl shadow-inner border border-slate-200/50">
@@ -392,7 +392,7 @@ new #[Layout('layouts.guest')] class extends Component {
             </div>
         </div>
         @endif
-    </form>
+    </div>
 
     @elseif($status === 'success')
     <div class="text-center py-4 space-y-6">
