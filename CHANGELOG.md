@@ -34,6 +34,7 @@ Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/
   - Menyelaraskan teks pesan error validasi dengan label masing-masing kolom serta mengeksekusi validasi seluruh kolom tamu eksternal secara serentak.
   - Memperbarui label input NIP menjadi `Masukkan NIP`, menambahkan validasi ketat 18 digit angka (`required|digits:18`, `maxlength="18"`, `inputmode="numeric"`), dan menyediakan tombol pintas `[ Gunakan Tab Eksternal → ]` saat NIP tidak ditemukan di database SIMPEG.
   - Memperbarui contoh *placeholder* NIP (`Contoh: 199610072022031013`) dan instansi tamu eksternal (`Contoh: Pengadilan Negeri Sinjai`).
+  - Mengintegrasikan state verifikasi NIP (`nipChecked`) secara reaktif dengan `@entangle` dan pemantau `$watch('nipChecked')` pada kanvas tanda tangan presensi.
 
 ## [1.4.3] - 2026-08-26
 

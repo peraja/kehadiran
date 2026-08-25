@@ -274,7 +274,7 @@ new #[Layout('layouts.guest')] class extends Component {
     </div>
 
     @if($status === 'ready')
-    <div class="space-y-6" x-data="{ tab: @entangle('participant_type') }">
+    <div class="space-y-6" x-data="{ tab: @entangle('participant_type'), nipChecked: @entangle('nip_checked') }">
 
         <!-- Category Segmented Control -->
         <div class="flex p-1.5 bg-slate-100 rounded-2xl shadow-inner border border-slate-200/50">
@@ -314,7 +314,7 @@ new #[Layout('layouts.guest')] class extends Component {
                 </div>
 
                 @if(!$nip_checked)
-                <button type="button" wire:click="checkNip" wire:loading.attr="disabled" class="w-full sm:w-auto shrink-0 inline-flex justify-center items-center px-5 py-3 bg-slate-900 hover:bg-slate-800 active:scale-95 text-white rounded-xl font-bold text-sm transition-all shadow-sm gap-2 cursor-pointer">
+                <button type="button" wire:click="checkNip" wire:loading.attr="disabled" class="w-full sm:w-auto shrink-0 inline-flex justify-center items-center px-5 py-3 bg-slate-900 hover:bg-slate-800 active:scale-95 text-white rounded-xl font-bold text-sm transition-all shadow-sm gap-2 cursor-pointer disabled:opacity-50">
                     <svg wire:loading.remove wire:target="checkNip" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                     </svg>
@@ -375,7 +375,7 @@ new #[Layout('layouts.guest')] class extends Component {
         </div>
 
         <!-- Signature Pad Component & Submit Button -->
-        <div x-show="tab === 'eksternal' || @js($nip_checked)" class="space-y-6 pt-4 border-t border-slate-100" x-data="signaturePad()" x-cloak>
+        <div x-show="tab === 'eksternal' || nipChecked" class="space-y-6 pt-4 border-t border-slate-100" x-data="signaturePad()" x-cloak>
             <div>
                 <div class="flex items-center justify-between mb-3">
                     <label class="block text-sm font-extrabold text-slate-900">Tanda Tangan</label>
@@ -506,6 +506,11 @@ new #[Layout('layouts.guest')] class extends Component {
                         this.setupCanvas();
                     });
                     this.$watch('tab', () => {
+                        this.$nextTick(() => {
+                            this.setupCanvas();
+                        });
+                    });
+                    this.$watch('nipChecked', () => {
                         this.$nextTick(() => {
                             this.setupCanvas();
                         });
