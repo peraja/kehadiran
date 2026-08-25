@@ -153,72 +153,81 @@ new #[Layout('layouts.guest')] class extends Component {
 
     public function confirmCheckIn(?string $signatureData = null)
     {
-        if (!empty($signatureData)) {
-            $this->signature = $signatureData;
-        }
+        try {
+            if (!empty($signatureData)) {
+                $this->signature = $signatureData;
+            }
 
-        if ($this->meeting->status !== 'ongoing') {
-            $this->status = 'not_available';
-            $this->message = 'Presensi hanya dibuka saat rapat berlangsung.';
-            return;
-        }
-
-        $this->validate([
-            'signature' => 'required|string',
-        ], [
-            'signature.required' => 'Tanda tangan wajib diisi.'
-        ]);
-
-        $now = now();
-        $this->recorded_time = $now->format('H:i') . ' WITA';
-
-        if ($this->participant_type == 'internal') {
-            if (!$this->nip_checked || !$this->employee_id) {
-                $this->addError('nip', 'Silakan cek NIP terlebih dahulu.');
+            if ($this->meeting->status !== 'ongoing') {
+                $this->status = 'not_available';
+                $this->message = 'Presensi hanya dibuka saat rapat berlangsung.';
                 return;
             }
 
-            // Check again if already checked in
-            $existingAttendance = $this->meeting->attendances()->where('user_id', $this->employee_id)->first();
-            if ($existingAttendance) {
-                $this->status = 'success';
-                $this->message = 'Presensi sudah tercatat sebelumnya.';
-                return;
-            }
-
-            $this->meeting->attendances()->create([
-                'user_id' => $this->employee_id,
-                'signature' => $this->signature,
-                'check_in' => $now,
-                'method' => 'qr',
-                'device_info' => request()->userAgent()
-            ]);
-        } else {
-            // Guest check-in
             $this->validate([
-                'guest_name' => 'required|string|max:255',
-                'guest_agency' => 'required|string|max:255',
-                'guest_position' => 'nullable|string|max:255',
+                'signature' => 'required|string',
             ], [
-                'guest_name.required' => 'Nama wajib diisi.',
-                'guest_agency.required' => 'Instansi wajib diisi.',
+                'signature.required' => 'Tanda tangan wajib diisi.'
             ]);
 
-            $this->meeting->attendances()->create([
-                'guest_name' => $this->guest_name,
-                'guest_agency' => $this->guest_agency,
-                'guest_position' => $this->guest_position,
-                'signature' => $this->signature,
-                'check_in' => $now,
-                'method' => 'qr',
-                'device_info' => request()->userAgent()
-            ]);
+            $now = now();
+            $this->recorded_time = $now->format('H:i') . ' WITA';
 
-            $this->employee_name = $this->guest_name;
+            if ($this->participant_type == 'internal') {
+                if (!$this->nip_checked || !$this->employee_id) {
+                    $this->addError('nip', 'Silakan cek NIP terlebih dahulu.');
+                    return;
+                }
+
+                // Check again if already checked in
+                $existingAttendance = $this->meeting->attendances()->where('user_id', $this->employee_id)->first();
+                if ($existingAttendance) {
+                    $this->status = 'success';
+                    $this->employee_name = $this->employee_name ?: ($existingAttendance->user?->name ?? 'Pegawai');
+                    $this->recorded_time = $existingAttendance->check_in ? $existingAttendance->check_in->format('H:i') . ' WITA' : $this->recorded_time;
+                    $this->message = 'Presensi sudah tercatat sebelumnya.';
+                    return;
+                }
+
+                $this->meeting->attendances()->create([
+                    'user_id' => $this->employee_id,
+                    'signature' => $this->signature,
+                    'check_in' => $now,
+                    'method' => 'qr',
+                    'device_info' => request()->userAgent()
+                ]);
+            } else {
+                // Guest check-in
+                $this->validate([
+                    'guest_name' => 'required|string|max:255',
+                    'guest_agency' => 'required|string|max:255',
+                    'guest_position' => 'nullable|string|max:255',
+                ], [
+                    'guest_name.required' => 'Nama wajib diisi.',
+                    'guest_agency.required' => 'Instansi wajib diisi.',
+                ]);
+
+                $this->meeting->attendances()->create([
+                    'guest_name' => $this->guest_name,
+                    'guest_agency' => $this->guest_agency,
+                    'guest_position' => $this->guest_position,
+                    'signature' => $this->signature,
+                    'check_in' => $now,
+                    'method' => 'qr',
+                    'device_info' => request()->userAgent()
+                ]);
+
+                $this->employee_name = $this->guest_name;
+            }
+
+            $this->status = 'success';
+            $this->message = 'Presensi berhasil dicatat.';
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            throw $e;
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('CheckIn Error: ' . $e->getMessage() . "\n" . $e->getTraceAsString());
+            $this->addError('signature', 'Gagal menyimpan presensi: ' . $e->getMessage());
         }
-
-        $this->status = 'success';
-        $this->message = 'Presensi berhasil dicatat.';
     }
 }; ?>
 

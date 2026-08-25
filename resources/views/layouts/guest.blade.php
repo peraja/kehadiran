@@ -22,6 +22,7 @@
 
         <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
+        @livewireStyles
     </head>
     <body class="h-full font-sans text-slate-900 antialiased selection:bg-primary-500 selection:text-white relative">
         <!-- Top Loading Bar indicator for Livewire -->
@@ -52,5 +53,6 @@
                 <span>&copy; {{ date('Y') }} <strong class="text-slate-700 font-bold">Diskominfo-SP Sinjai</strong></span>
             </footer>
         </div>
+        @livewireScripts
     </body>
 </html>
