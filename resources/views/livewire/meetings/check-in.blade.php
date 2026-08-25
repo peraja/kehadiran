@@ -352,17 +352,17 @@ new #[Layout('layouts.guest')] class extends Component {
         <div class="space-y-5 bg-slate-50 p-5 rounded-2xl border border-slate-200">
             <div>
                 <label for="guest_name" class="block text-sm font-bold text-slate-700 mb-1">Nama Lengkap</label>
-                <input wire:model="guest_name" id="guest_name" type="text" class="block w-full py-2.5 px-3 rounded-xl border border-slate-300 text-base sm:text-sm focus:ring-primary-500 focus:border-primary-500 transition-colors" placeholder="Contoh: Ahmad Yani" required />
+                <input wire:model.blur="guest_name" id="guest_name" type="text" class="block w-full py-2.5 px-3 rounded-xl border border-slate-300 text-base sm:text-sm focus:ring-primary-500 focus:border-primary-500 transition-colors" placeholder="Contoh: Ahmad Yani" required />
                 @error('guest_name') <span class="text-xs text-rose-600 mt-1 block font-bold">{{ $message }}</span> @enderror
             </div>
             <div>
                 <label for="guest_agency" class="block text-sm font-bold text-slate-700 mb-1">Instansi / Lembaga</label>
-                <input wire:model="guest_agency" id="guest_agency" type="text" class="block w-full py-2.5 px-3 rounded-xl border border-slate-300 text-base sm:text-sm focus:ring-primary-500 focus:border-primary-500 transition-colors" placeholder="Contoh: Polres Sinjai" required />
+                <input wire:model.blur="guest_agency" id="guest_agency" type="text" class="block w-full py-2.5 px-3 rounded-xl border border-slate-300 text-base sm:text-sm focus:ring-primary-500 focus:border-primary-500 transition-colors" placeholder="Contoh: Polres Sinjai" required />
                 @error('guest_agency') <span class="text-xs text-rose-600 mt-1 block font-bold">{{ $message }}</span> @enderror
             </div>
             <div>
                 <label for="guest_position" class="block text-sm font-bold text-slate-700 mb-1">Jabatan (Opsional)</label>
-                <input wire:model="guest_position" id="guest_position" type="text" class="block w-full py-2.5 px-3 rounded-xl border border-slate-300 text-base sm:text-sm focus:ring-primary-500 focus:border-primary-500 transition-colors" placeholder="Contoh: Staf Humas" />
+                <input wire:model.blur="guest_position" id="guest_position" type="text" class="block w-full py-2.5 px-3 rounded-xl border border-slate-300 text-base sm:text-sm focus:ring-primary-500 focus:border-primary-500 transition-colors" placeholder="Contoh: Staf Humas" />
                 @error('guest_position') <span class="text-xs text-rose-600 mt-1 block font-bold">{{ $message }}</span> @enderror
             </div>
         </div>
@@ -370,7 +370,7 @@ new #[Layout('layouts.guest')] class extends Component {
 
         @if($participant_type === 'eksternal' || $nip_checked)
         <!-- Signature Pad Component & Submit Button -->
-        <div class="space-y-6 pt-4 border-t border-slate-100" x-data="signaturePad()">
+        <div class="space-y-6 pt-4 border-t border-slate-100" x-data="signaturePad()" wire:key="sig-pad-{{ $participant_type }}-{{ $nip_checked ? 'checked' : 'init' }}">
             <div>
                 <div class="flex items-center justify-between mb-3">
                     <label class="block text-sm font-extrabold text-slate-900">Tanda Tangan Digital</label>
@@ -382,7 +382,7 @@ new #[Layout('layouts.guest')] class extends Component {
                     </button>
                 </div>
 
-                <div class="relative border-2 border-dashed border-slate-300 rounded-2xl overflow-hidden bg-slate-50">
+                <div class="relative border-2 border-dashed border-slate-300 rounded-2xl overflow-hidden bg-slate-50" wire:ignore>
                     <canvas x-ref="canvas" class="w-full h-48 touch-none cursor-crosshair select-none block"
                         @mousedown="startDrawing" @mousemove="draw" @mouseup="stopDrawing" @mouseleave="stopDrawing"
                         @touchstart.prevent="startDrawing" @touchmove.prevent="draw" @touchend.prevent="stopDrawing">
@@ -401,7 +401,7 @@ new #[Layout('layouts.guest')] class extends Component {
             </div>
 
             <div>
-                <button type="button" @click="submitCheckIn()" wire:loading.attr="disabled" wire:target="confirmCheckIn" class="w-full flex justify-center items-center px-6 py-3 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl font-bold text-sm transition-all shadow-sm gap-2 cursor-pointer">
+                <button type="button" @click.prevent="submitCheckIn()" wire:loading.attr="disabled" wire:target="confirmCheckIn" class="w-full flex justify-center items-center px-6 py-3 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl font-bold text-sm transition-all shadow-sm gap-2 cursor-pointer">
                     <svg wire:loading.remove wire:target="confirmCheckIn" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>

@@ -23,6 +23,9 @@ Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/
 - **Optimalisasi Perilaku Auto Focus Form**:
   - Menghapus auto focus pada form Presensi/Check-In ([`resources/views/livewire/meetings/check-in.blade.php`](file:///Users/abedzul/Desktop/htdocs/rapat/resources/views/livewire/meetings/check-in.blade.php)) guna mencegah keyboard virtual mobile menutupi informasi rapat saat halaman dibuka via scan QR.
   - Memperkuat auto focus pada input NIP form Login ([`resources/views/livewire/pages/auth/login.blade.php`](file:///Users/abedzul/Desktop/htdocs/rapat/resources/views/livewire/pages/auth/login.blade.php)) menggunakan Alpine.js agar selalu aktif saat transisi navigasi SPA.
+- **Isolasi State Signature Pad & Sinkronisasi Input Eksternal**:
+  - Menambahkan isolasi DOM dinamis `wire:key` dan `wire:ignore` pada kanvas tanda tangan presensi ([`resources/views/livewire/meetings/check-in.blade.php`](file:///Users/abedzul/Desktop/htdocs/rapat/resources/views/livewire/meetings/check-in.blade.php)) agar konteks kanvas tidak tereset saat berpindah tab kategori peserta (*Pemkab Sinjai* vs *Eksternal*).
+  - Menggunakan `wire:model.blur` pada input tamu eksternal guna memastikan seluruh nilai field tersinkronisasi sebelum data tanda tangan dikirim.
 
 ## [1.4.3] - 2026-08-26
 
