@@ -26,6 +26,9 @@ Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/
   - Penghapusan pemanggilan HTTP sinkron pengecekan status sertifikat BSrE pada setiap siklus render Livewire `with()` guna menghilangkan latensi perpindahan halaman dan pembukaan modal.
   - Penambahan mekanisme cache status sertifikat dan *local simulation fallback* mandiri pada [`BsreEsignService.php`](file:///Users/abedzul/Desktop/htdocs/rapat/app/Services/BsreEsignService.php).
 
+### Diperbaiki
+- **Perbaikan Sintaks Direktif Readonly pada Form Presensi**: Mengganti atribut `:readonly="$nip_checked"` menjadi direktif native Blade `@readonly($nip_checked)` pada [`livewire/meetings/check-in.blade.php`](file:///Users/abedzul/Desktop/htdocs/rapat/resources/views/livewire/meetings/check-in.blade.php) guna mencegah error JavaScript *Alpine Expression Error* di sisi client.
+
 ## [1.3.8] - 2026-08-25
 
 ### Diperbaiki

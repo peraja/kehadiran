@@ -265,7 +265,7 @@ new #[Layout('layouts.guest')] class extends Component {
                     <input wire:model="nip" id="nip" type="text"
                         class="block w-full py-2.5 px-3 rounded-xl border border-slate-300 text-sm font-mono focus:ring-primary-500 focus:border-primary-500 transition-colors {{ $nip_checked ? 'bg-slate-50 text-slate-500 opacity-70' : 'bg-white' }}"
                         placeholder="Contoh: 198501012010011001"
-                        :readonly="$nip_checked"
+                        @readonly($nip_checked)
                         wire:keydown.enter.prevent="checkNip"
                         required autofocus />
                     @error('nip') <span class="text-xs text-rose-600 mt-1.5 block font-bold">{{ $message }}</span> @enderror
