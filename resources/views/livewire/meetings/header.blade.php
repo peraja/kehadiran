@@ -540,75 +540,86 @@ new class extends Component {
             $signableDocs[] = 'Notulen';
         }
         $signableCount = count($signableDocs);
+
+        $showPimpinanSignAll = $meeting->status === 'completed' && auth()->user()->hasActiveRole('pimpinan') && $signableCount > 0;
+        $canManage = $this->canManageMeeting();
+        $showStartMeeting = $canManage && $meeting->status == 'scheduled';
+        $showFinishMeeting = $canManage && $meeting->status == 'ongoing';
+        $showQrCode = $canManage && $meeting->status == 'ongoing';
+        $showReopenMeeting = $canManage && $meeting->status == 'completed' && !$this->signerLocked && !auth()->user()?->hasActiveRole('pimpinan');
+        $showEditMeeting = $canManage && $meeting->status !== 'completed';
+
+        $hasActionButtons = $showPimpinanSignAll || $showStartMeeting || $showFinishMeeting || $showQrCode || $showReopenMeeting || $showEditMeeting;
     @endphp
 
-    <div class="flex flex-col md:flex-row md:items-start justify-between gap-5 relative z-10">
-        <div class="space-y-2.5 flex-1 min-w-0">
+    <div class="flex flex-col md:flex-row md:items-start justify-between gap-3 sm:gap-4 md:gap-5 relative z-10">
+        <div class="space-y-1.5 sm:space-y-2 flex-1 min-w-0">
             <div class="flex flex-wrap items-center gap-2">
                 <x-meeting-status-badge :meeting="$meeting" />
             </div>
 
-            <h1 class="font-extrabold text-2xl sm:text-3xl text-slate-900 tracking-tight leading-tight break-words">{{ trim($meeting->title) }}</h1>
+            <h1 class="font-extrabold text-xl sm:text-2xl md:text-3xl text-slate-900 tracking-tight leading-snug break-words">{{ trim($meeting->title) }}</h1>
 
             @php
                 $opdName = $meeting->opd?->name ?? $meeting->creator?->unit_name ?? 'Pemerintah Kabupaten Sinjai';
             @endphp
-            <p class="text-sm font-semibold text-slate-600 pt-0.5 break-words">{{ $opdName }}</p>
+            <p class="text-xs sm:text-sm font-semibold text-slate-500 break-words">{{ $opdName }}</p>
         </div>
 
-        <div class="flex flex-wrap items-center gap-2 sm:gap-2.5 shrink-0 w-full sm:w-auto mt-2 md:mt-0">
-            @if($meeting->status === 'completed' && auth()->user()->hasActiveRole('pimpinan') && $signableCount > 0)
-                <button type="button" x-data="" x-on:click.prevent="$dispatch('open-modal', 'sign-all-modal'); $wire.openSignModal()" class="flex-1 sm:flex-none inline-flex justify-center items-center px-3.5 sm:px-4 py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl font-bold text-xs sm:text-sm transition-all shadow-sm gap-2 whitespace-nowrap cursor-pointer">
-                    <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        @if($hasActionButtons)
+        <div class="grid grid-cols-2 gap-2.5 w-full sm:flex sm:flex-wrap sm:items-center sm:gap-3 sm:w-auto pt-1 md:pt-0 shrink-0">
+            @if($showPimpinanSignAll)
+                <button type="button" x-data="" x-on:click.prevent="$dispatch('open-modal', 'sign-all-modal'); $wire.openSignModal()" class="col-span-2 sm:col-span-1 sm:flex-none inline-flex justify-center items-center px-4 sm:px-6 py-2.5 sm:py-3.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl sm:rounded-2xl font-extrabold text-sm sm:text-base transition-all shadow-sm hover:shadow-md gap-2 sm:gap-2.5 whitespace-nowrap cursor-pointer">
+                    <svg class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                     </svg>
                     <span>TTE Semua</span>
                 </button>
             @endif
 
-            @if($this->canManageMeeting())
-                @if($meeting->status == 'scheduled')
-                <button wire:click="startMeeting" wire:loading.attr="disabled" wire:target="startMeeting" wire:confirm="Mulai rapat ini?" class="flex-1 sm:flex-none inline-flex justify-center items-center px-3.5 sm:px-4 py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl font-bold text-xs sm:text-sm transition-all shadow-sm hover:shadow-md gap-2 whitespace-nowrap cursor-pointer">
-                    <svg wire:loading.remove wire:target="startMeeting" class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            @if($canManage)
+                @if($showStartMeeting)
+                <button wire:click="startMeeting" wire:loading.attr="disabled" wire:target="startMeeting" wire:confirm="Mulai rapat ini?" class="col-span-2 sm:col-span-1 sm:flex-none inline-flex justify-center items-center px-4 sm:px-6 py-2.5 sm:py-3.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl sm:rounded-2xl font-extrabold text-sm sm:text-base transition-all shadow-sm hover:shadow-md gap-2 sm:gap-2.5 whitespace-nowrap cursor-pointer">
+                    <svg wire:loading.remove wire:target="startMeeting" class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path>
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                     </svg>
-                    <svg wire:loading wire:target="startMeeting" class="animate-spin w-4 h-4 shrink-0 text-white" fill="none" viewBox="0 0 24 24">
+                    <svg wire:loading wire:target="startMeeting" class="animate-spin w-5 h-5 shrink-0 text-white" fill="none" viewBox="0 0 24 24">
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
                     </svg>
                     <span>Mulai Rapat</span>
                 </button>
-                @elseif($meeting->status == 'ongoing')
-                <button wire:click="finishMeeting" wire:loading.attr="disabled" wire:target="finishMeeting" wire:confirm="Selesaikan rapat ini?" class="flex-1 sm:flex-none inline-flex justify-center items-center px-3.5 sm:px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-xl font-bold text-xs sm:text-sm transition-all shadow-sm hover:shadow-md gap-2 whitespace-nowrap cursor-pointer">
-                    <svg wire:loading.remove wire:target="finishMeeting" class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                @elseif($showFinishMeeting)
+                <button wire:click="finishMeeting" wire:loading.attr="disabled" wire:target="finishMeeting" wire:confirm="Selesaikan rapat ini?" class="col-span-2 sm:col-span-1 sm:flex-none inline-flex justify-center items-center px-4 sm:px-6 py-2.5 sm:py-3.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-xl sm:rounded-2xl font-extrabold text-sm sm:text-base transition-all shadow-sm hover:shadow-md gap-2 sm:gap-2.5 whitespace-nowrap cursor-pointer">
+                    <svg wire:loading.remove wire:target="finishMeeting" class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                     </svg>
-                    <svg wire:loading wire:target="finishMeeting" class="animate-spin w-4 h-4 shrink-0 text-white" fill="none" viewBox="0 0 24 24">
+                    <svg wire:loading wire:target="finishMeeting" class="animate-spin w-5 h-5 shrink-0 text-white" fill="none" viewBox="0 0 24 24">
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
                     </svg>
                     <span>Selesaikan</span>
                 </button>
 
-                <button x-data="" x-on:click.prevent="$dispatch('open-modal', 'qr-presensi-modal')" class="flex-1 sm:flex-none inline-flex justify-center items-center px-3.5 sm:px-4 py-2.5 bg-white hover:bg-slate-50 border border-slate-300 hover:border-slate-400 active:scale-95 text-slate-700 rounded-xl font-bold text-xs sm:text-sm transition-all shadow-sm gap-2 whitespace-nowrap cursor-pointer">
-                    <svg class="w-4 h-4 text-primary-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <button x-data="" x-on:click.prevent="$dispatch('open-modal', 'qr-presensi-modal')" class="col-span-1 sm:flex-none inline-flex justify-center items-center px-4 sm:px-6 py-2.5 sm:py-3.5 bg-white hover:bg-slate-50 border border-slate-300 hover:border-slate-400 active:scale-95 text-slate-700 rounded-xl sm:rounded-2xl font-extrabold text-sm sm:text-base transition-all shadow-sm gap-2 sm:gap-2.5 whitespace-nowrap cursor-pointer">
+                    <svg class="w-5 h-5 text-primary-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
                     </svg>
                     <span>QR Code</span>
                 </button>
-                @elseif($meeting->status == 'completed' && !$this->signerLocked && !auth()->user()?->hasActiveRole('pimpinan'))
-                <button wire:click="reopenMeeting" wire:loading.attr="disabled" wire:target="reopenMeeting" wire:confirm="Lanjutkan rapat ini ke status sedang berlangsung?" class="flex-1 sm:flex-none inline-flex justify-center items-center px-3.5 sm:px-4 py-2.5 bg-white hover:bg-amber-50 border border-amber-300 hover:border-amber-400 active:scale-95 text-amber-800 rounded-xl font-bold text-xs sm:text-sm transition-all shadow-sm gap-2 whitespace-nowrap cursor-pointer">
-                    <svg class="w-4 h-4 text-amber-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                @elseif($showReopenMeeting)
+                <button wire:click="reopenMeeting" wire:loading.attr="disabled" wire:target="reopenMeeting" wire:confirm="Lanjutkan rapat ini ke status sedang berlangsung?" class="col-span-2 sm:col-span-1 sm:flex-none inline-flex justify-center items-center px-4 sm:px-6 py-2.5 sm:py-3.5 bg-white hover:bg-amber-50 border border-amber-300 hover:border-amber-400 active:scale-95 text-amber-800 rounded-xl sm:rounded-2xl font-extrabold text-sm sm:text-base transition-all shadow-sm gap-2 sm:gap-2.5 whitespace-nowrap cursor-pointer">
+                    <svg class="w-5 h-5 text-amber-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                     </svg>
                     <span>Lanjutkan Rapat</span>
                 </button>
                 @endif
 
-                @if($meeting->status !== 'completed')
-                <button x-data="" x-on:click.prevent="$dispatch('open-modal', 'edit-meeting-modal'); $wire.openEditModal()" class="flex-1 sm:flex-none inline-flex justify-center items-center px-3.5 sm:px-4 py-2.5 bg-white border border-slate-300 hover:bg-slate-50 hover:border-slate-400 active:scale-95 text-slate-700 rounded-xl font-bold text-xs sm:text-sm transition-all shadow-sm gap-2 whitespace-nowrap cursor-pointer">
-                    <svg class="w-4 h-4 text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                @if($showEditMeeting)
+                <button x-data="" x-on:click.prevent="$dispatch('open-modal', 'edit-meeting-modal'); $wire.openEditModal()" class="{{ $meeting->status === 'ongoing' ? 'col-span-1' : 'col-span-2' }} sm:col-span-1 sm:flex-none inline-flex justify-center items-center px-4 sm:px-6 py-2.5 sm:py-3.5 bg-white border border-slate-300 hover:bg-slate-50 hover:border-slate-400 active:scale-95 text-slate-700 rounded-xl sm:rounded-2xl font-extrabold text-sm sm:text-base transition-all shadow-sm gap-2 sm:gap-2.5 whitespace-nowrap cursor-pointer">
+                    <svg class="w-5 h-5 text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
                     </svg>
                     <span>Edit</span>
@@ -616,6 +627,7 @@ new class extends Component {
                 @endif
             @endif
         </div>
+        @endif
     </div>
 
     <!-- Modal Edit Rapat -->

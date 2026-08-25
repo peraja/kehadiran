@@ -9,6 +9,8 @@ use Livewire\Attributes\On;
 new #[Layout('layouts.app')] class extends Component {
     public Meeting $meeting;
     public bool $canEdit = false;
+    public ?string $successMessage = null;
+    public int $alertKey = 0;
 
     // Single Document TTE BSrE State
     public bool $showSignModal = false;
@@ -95,6 +97,8 @@ new #[Layout('layouts.app')] class extends Component {
         }
 
         $this->meeting->refresh();
+        $this->alertKey = hrtime(true);
+        $this->successMessage = $msg;
         session()->flash('message', $msg);
         $this->dispatch('meeting-updated');
     }
@@ -143,6 +147,8 @@ new #[Layout('layouts.app')] class extends Component {
             if ($result['success']) {
                 $this->meeting->refresh();
                 $this->closeSignModal();
+                $this->alertKey = hrtime(true);
+                $this->successMessage = $result['message'];
                 session()->flash('message', $result['message']);
                 $this->dispatch('meeting-updated');
             } else {
@@ -163,9 +169,9 @@ new #[Layout('layouts.app')] class extends Component {
 }; ?>
 
 <x-meeting-layout :meeting="$meeting" activeTab="overview">
-    @if (session()->has('message'))
-    <x-alert type="success" class="mb-5">
-        {{ session('message') }}
+    @if ($successMessage || session()->has('message'))
+    <x-alert type="success" class="mb-5" :wire:key="'overview-alert-'.$alertKey">
+        {{ $successMessage ?? session('message') }}
     </x-alert>
     @endif
 
@@ -180,22 +186,22 @@ new #[Layout('layouts.app')] class extends Component {
             <div class="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden">
                 <div class="divide-y divide-slate-100 text-sm">
                     <!-- 1. Presensi -->
-                    <div class="flex flex-col sm:flex-row sm:items-center justify-between py-3.5 sm:py-4 px-4 sm:px-6 gap-3 sm:gap-6 hover:bg-slate-50/50 transition-colors">
-                        <div class="text-slate-900 font-bold text-sm shrink-0">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between py-4 sm:py-4.5 px-4 sm:px-6 gap-3 sm:gap-6 hover:bg-slate-50/50 transition-colors">
+                        <div class="text-slate-900 font-extrabold text-sm sm:text-base shrink-0">
                             Presensi
                         </div>
-                        <div class="flex flex-wrap items-center gap-2 shrink-0">
+                        <div class="grid grid-cols-2 sm:flex items-center gap-2.5 sm:gap-3 w-full sm:w-auto shrink-0">
                             @if($meeting->hasDocumentContent('attendance'))
                                 @if($meeting->attendance_signed_at)
-                                <a href="{{ route('meetings.export.attendance', $meeting->id) }}" target="_blank" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 active:scale-95 text-emerald-700 border border-emerald-300 rounded-xl text-xs font-bold transition-all shadow-2xs">
-                                    <svg class="w-4 h-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <a href="{{ route('meetings.export.attendance', $meeting->id) }}" target="_blank" class="only:col-span-2 w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-50 hover:bg-emerald-100 active:scale-95 text-emerald-800 border border-emerald-300 hover:border-emerald-400 rounded-xl text-sm font-bold transition-all shadow-2xs cursor-pointer">
+                                    <svg class="w-4 h-4 text-emerald-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                                     </svg>
                                     <span>Lihat PDF</span>
                                 </a>
                                 @else
-                                <a href="{{ route('meetings.export.attendance', $meeting->id) }}" target="_blank" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-slate-50 active:scale-95 text-slate-700 border border-slate-300 rounded-xl text-xs font-bold transition-all shadow-2xs">
-                                    <svg class="w-4 h-4 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <a href="{{ route('meetings.export.attendance', $meeting->id) }}" target="_blank" class="only:col-span-2 w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white hover:bg-slate-50 active:scale-95 text-slate-700 border border-slate-300 hover:border-slate-400 rounded-xl text-sm font-bold transition-all shadow-sm cursor-pointer">
+                                    <svg class="w-4 h-4 text-rose-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                     </svg>
                                     <span>Lihat PDF</span>
@@ -203,36 +209,36 @@ new #[Layout('layouts.app')] class extends Component {
                                 @endif
 
                                 @if(!$meeting->attendance_signed_at && $meeting->status === 'completed')
-                                <button type="button" wire:click="openSingleSignModal('attendance')" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl text-xs font-bold transition-all shadow-2xs cursor-pointer">
-                                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <button type="button" wire:click="openSingleSignModal('attendance')" class="only:col-span-2 w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl text-sm font-bold transition-all shadow-sm cursor-pointer">
+                                    <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                                     </svg>
                                     <span>TTE Presensi</span>
                                 </button>
                                 @endif
                             @else
-                                <span class="text-xs text-slate-400 font-medium italic">Presensi kosong</span>
+                                <span class="col-span-2 text-xs text-slate-400 font-medium italic">Presensi kosong</span>
                             @endif
                         </div>
                     </div>
 
                     <!-- 2. Dokumentasi -->
-                    <div class="flex flex-col sm:flex-row sm:items-center justify-between py-3.5 sm:py-4 px-4 sm:px-6 gap-3 sm:gap-6 hover:bg-slate-50/50 transition-colors">
-                        <div class="text-slate-900 font-bold text-sm shrink-0">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between py-4 sm:py-4.5 px-4 sm:px-6 gap-3 sm:gap-6 hover:bg-slate-50/50 transition-colors">
+                        <div class="text-slate-900 font-extrabold text-sm sm:text-base shrink-0">
                             Dokumentasi
                         </div>
-                        <div class="flex flex-wrap items-center gap-2 shrink-0">
+                        <div class="grid grid-cols-2 sm:flex items-center gap-2.5 sm:gap-3 w-full sm:w-auto shrink-0">
                             @if($meeting->hasDocumentContent('photos'))
                                 @if($meeting->photos_signed_at)
-                                <a href="{{ route('meetings.export.photos', $meeting->id) }}" target="_blank" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 active:scale-95 text-emerald-700 border border-emerald-300 rounded-xl text-xs font-bold transition-all shadow-2xs">
-                                    <svg class="w-4 h-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <a href="{{ route('meetings.export.photos', $meeting->id) }}" target="_blank" class="only:col-span-2 w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-50 hover:bg-emerald-100 active:scale-95 text-emerald-800 border border-emerald-300 hover:border-emerald-400 rounded-xl text-sm font-bold transition-all shadow-2xs cursor-pointer">
+                                    <svg class="w-4 h-4 text-emerald-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                                     </svg>
                                     <span>Lihat PDF</span>
                                 </a>
                                 @else
-                                <a href="{{ route('meetings.export.photos', $meeting->id) }}" target="_blank" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-slate-50 active:scale-95 text-slate-700 border border-slate-300 rounded-xl text-xs font-bold transition-all shadow-2xs">
-                                    <svg class="w-4 h-4 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <a href="{{ route('meetings.export.photos', $meeting->id) }}" target="_blank" class="only:col-span-2 w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white hover:bg-slate-50 active:scale-95 text-slate-700 border border-slate-300 hover:border-slate-400 rounded-xl text-sm font-bold transition-all shadow-sm cursor-pointer">
+                                    <svg class="w-4 h-4 text-rose-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                     </svg>
                                     <span>Lihat PDF</span>
@@ -240,36 +246,36 @@ new #[Layout('layouts.app')] class extends Component {
                                 @endif
 
                                 @if(!$meeting->photos_signed_at && $meeting->status === 'completed')
-                                <button type="button" wire:click="openSingleSignModal('photos')" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl text-xs font-bold transition-all shadow-2xs cursor-pointer">
-                                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <button type="button" wire:click="openSingleSignModal('photos')" class="only:col-span-2 w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl text-sm font-bold transition-all shadow-sm cursor-pointer">
+                                    <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                                     </svg>
                                     <span>TTE Dokumentasi</span>
                                 </button>
                                 @endif
                             @else
-                                <span class="text-xs text-slate-400 font-medium italic">Dokumentasi kosong</span>
+                                <span class="col-span-2 text-xs text-slate-400 font-medium italic">Dokumentasi kosong</span>
                             @endif
                         </div>
                     </div>
 
                     <!-- 3. Notulen -->
-                    <div class="flex flex-col sm:flex-row sm:items-center justify-between py-3.5 sm:py-4 px-4 sm:px-6 gap-3 sm:gap-6 hover:bg-slate-50/50 transition-colors">
-                        <div class="text-slate-900 font-bold text-sm shrink-0">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between py-4 sm:py-4.5 px-4 sm:px-6 gap-3 sm:gap-6 hover:bg-slate-50/50 transition-colors">
+                        <div class="text-slate-900 font-extrabold text-sm sm:text-base shrink-0">
                             Notulen
                         </div>
-                        <div class="flex flex-wrap items-center gap-2 shrink-0">
+                        <div class="grid grid-cols-2 sm:flex items-center gap-2.5 sm:gap-3 w-full sm:w-auto shrink-0">
                             @if($meeting->hasDocumentContent('minutes'))
                                 @if($meeting->minutes_signed_at)
-                                <a href="{{ route('meetings.export.minutes', $meeting->id) }}" target="_blank" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 active:scale-95 text-emerald-700 border border-emerald-300 rounded-xl text-xs font-bold transition-all shadow-2xs">
-                                    <svg class="w-4 h-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <a href="{{ route('meetings.export.minutes', $meeting->id) }}" target="_blank" class="only:col-span-2 w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-50 hover:bg-emerald-100 active:scale-95 text-emerald-800 border border-emerald-300 hover:border-emerald-400 rounded-xl text-sm font-bold transition-all shadow-2xs cursor-pointer">
+                                    <svg class="w-4 h-4 text-emerald-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                                     </svg>
                                     <span>Lihat PDF</span>
                                 </a>
                                 @else
-                                <a href="{{ route('meetings.export.minutes', $meeting->id) }}" target="_blank" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-slate-50 active:scale-95 text-slate-700 border border-slate-300 rounded-xl text-xs font-bold transition-all shadow-2xs">
-                                    <svg class="w-4 h-4 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <a href="{{ route('meetings.export.minutes', $meeting->id) }}" target="_blank" class="only:col-span-2 w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white hover:bg-slate-50 active:scale-95 text-slate-700 border border-slate-300 hover:border-slate-400 rounded-xl text-sm font-bold transition-all shadow-sm cursor-pointer">
+                                    <svg class="w-4 h-4 text-rose-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                     </svg>
                                     <span>Lihat PDF</span>
@@ -277,15 +283,15 @@ new #[Layout('layouts.app')] class extends Component {
                                 @endif
 
                                 @if(!$meeting->minutes_signed_at && $meeting->status === 'completed')
-                                <button type="button" wire:click="openSingleSignModal('minutes')" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl text-xs font-bold transition-all shadow-2xs cursor-pointer">
-                                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <button type="button" wire:click="openSingleSignModal('minutes')" class="only:col-span-2 w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl text-sm font-bold transition-all shadow-sm cursor-pointer">
+                                    <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                                     </svg>
                                     <span>TTE Notulen</span>
                                 </button>
                                 @endif
                             @else
-                                <span class="text-xs text-slate-400 font-medium italic">Notulen kosong</span>
+                                <span class="col-span-2 text-xs text-slate-400 font-medium italic">Notulen kosong</span>
                             @endif
                         </div>
                     </div>

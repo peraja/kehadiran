@@ -15,6 +15,8 @@ new #[Layout('layouts.app')] class extends Component {
     public $content = '';
     public $canEdit = false;
     public $lastSaved = null;
+    public ?string $successMessage = null;
+    public int $alertKey = 0;
 
     // State TTE BSrE
     public bool $showSignModal = false;
@@ -22,7 +24,6 @@ new #[Layout('layouts.app')] class extends Component {
     public string $errorMessage = '';
 
     // State AI Notulen Modal
-    public bool $showAiModal = false;
     public string $aiResult = '';
     public string $aiErrorMessage = '';
 
@@ -64,6 +65,16 @@ new #[Layout('layouts.app')] class extends Component {
     public function refreshMeeting(): void
     {
         $this->meeting->refresh();
+        $this->minutes = $this->meeting->minutes()->first();
+        if ($this->minutes) {
+            $this->content = $this->minutes->content ?? '';
+            $this->lastSaved = $this->minutes->updated_at ? $this->minutes->updated_at->format('H:i') . ' WITA' : null;
+        }
+    }
+
+    public function notifyEmptyContent(): void
+    {
+        $this->addError('content', 'Uraikan catatan rapat terlebih dahulu sebelum menggunakan Notulen AI.');
     }
 
     public function processAi(GeminiAiService $aiService): void
@@ -72,13 +83,13 @@ new #[Layout('layouts.app')] class extends Component {
             abort(403, 'Akses tidak diizinkan.');
         }
 
+        $this->resetErrorBag('content');
         $this->aiErrorMessage = '';
         $this->aiResult = '';
-        $this->showAiModal = true;
-        $this->dispatch('open-modal', 'ai-minutes-modal');
 
         if (!$aiService->isConfigured()) {
             $this->aiErrorMessage = 'API Key Gemini belum dikonfigurasi.';
+            $this->dispatch('ai-done');
             return;
         }
 
@@ -86,6 +97,7 @@ new #[Layout('layouts.app')] class extends Component {
 
         if (empty($rawText) || mb_strlen($rawText) < 5) {
             $this->aiErrorMessage = 'Editor notulen masih kosong. Uraikan catatan rapat terlebih dahulu.';
+            $this->dispatch('ai-done');
             return;
         }
 
@@ -96,12 +108,14 @@ new #[Layout('layouts.app')] class extends Component {
         } else {
             $this->aiErrorMessage = $response['message'];
         }
+
+        $this->dispatch('ai-done');
     }
 
     public function closeAiModal(): void
     {
-        $this->showAiModal = false;
         $this->aiErrorMessage = '';
+        $this->aiResult = '';
         $this->dispatch('close-modal', 'ai-minutes-modal');
     }
 
@@ -126,8 +140,12 @@ new #[Layout('layouts.app')] class extends Component {
         );
 
         $this->lastSaved = now()->format('H:i') . ' WITA';
-        $this->aiResult = '';
-        $this->closeAiModal();
+        $this->meeting->unsetRelation('minutes');
+        $this->meeting->refresh();
+        $this->dispatch('meeting-updated');
+        $this->dispatch('close-modal', 'ai-minutes-modal');
+        $this->alertKey = hrtime(true);
+        $this->successMessage = 'Notulen AI berhasil diterapkan.';
         session()->flash('message', 'Notulen AI berhasil diterapkan.');
     }
 
@@ -174,6 +192,8 @@ new #[Layout('layouts.app')] class extends Component {
             if ($result['success']) {
                 $this->meeting->refresh();
                 $this->closeSignModal();
+                $this->alertKey = hrtime(true);
+                $this->successMessage = $result['message'];
                 session()->flash('message', $result['message']);
                 $this->dispatch('meeting-updated');
             } else {
@@ -208,6 +228,8 @@ new #[Layout('layouts.app')] class extends Component {
         ]);
 
         $this->meeting->refresh();
+        $this->alertKey = hrtime(true);
+        $this->successMessage = 'Kunci notulen dibuka untuk revisi.';
         session()->flash('message', 'Kunci notulen dibuka untuk revisi.');
         $this->dispatch('meeting-updated');
     }
@@ -222,26 +244,32 @@ new #[Layout('layouts.app')] class extends Component {
             'content' => 'nullable|string',
         ]);
 
-        $this->meeting->minutes()->updateOrCreate(
+        $this->minutes = $this->meeting->minutes()->updateOrCreate(
             ['meeting_id' => $this->meeting->id],
             ['content' => $this->content]
         );
 
         $this->lastSaved = now()->format('H:i') . ' WITA';
+        $this->meeting->unsetRelation('minutes');
         $this->meeting->refresh();
+        $this->dispatch('meeting-updated');
+        $this->alertKey = hrtime(true);
+        $this->successMessage = 'Notulen berhasil disimpan.';
         session()->flash('message', 'Notulen berhasil disimpan.');
     }
 
     public function with(): array
     {
-        return [];
+        return [
+            'minutes' => $this->minutes,
+        ];
     }
 }; ?>
 
 <x-meeting-layout :meeting="$meeting" activeTab="notulen">
-    @if (session()->has('message'))
-    <x-alert type="success" class="mb-5">
-        {{ session('message') }}
+    @if ($successMessage || session()->has('message'))
+    <x-alert type="success" class="mb-5" :wire:key="'notulen-alert-'.$alertKey">
+        {{ $successMessage ?? session('message') }}
     </x-alert>
     @endif
 
@@ -252,13 +280,24 @@ new #[Layout('layouts.app')] class extends Component {
                 <h3 class="text-lg font-extrabold text-slate-900 tracking-tight">Notulen Rapat</h3>
             </div>
 
-            <div class="flex flex-wrap items-center gap-3 self-start sm:self-auto">
+            <div class="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2.5 sm:gap-3 w-full sm:w-auto self-start sm:self-auto">
                 @if($canEdit && !$meeting->minutes_signed_at)
-                <!-- Tombol Notulen AI (Langsung Buka Modal & Jalankan AI) -->
+                <!-- Tombol Notulen AI (Validasi Input Sebelum Buka Modal) -->
                 <button type="button"
                     x-data=""
-                    x-on:click.prevent="$dispatch('open-modal', 'ai-minutes-modal'); $dispatch('ai-loading-start'); $wire.processAi().finally(() => $dispatch('ai-loading-stop'))"
-                    class="inline-flex items-center gap-2 px-4 py-2.5 bg-purple-50 hover:bg-purple-100 active:scale-95 text-purple-700 border border-purple-200/80 rounded-xl font-bold text-sm transition-all shadow-sm cursor-pointer">
+                    x-on:click.prevent="
+                        let val = (document.getElementById('content')?.value || '').trim();
+                        if (val.length < 5) {
+                            $wire.notifyEmptyContent();
+                            document.getElementById('content')?.focus();
+                        } else {
+                            $dispatch('open-modal', 'ai-minutes-modal');
+                            $wire.processAi().finally(() => {
+                                $dispatch('ai-done');
+                            });
+                        }
+                    "
+                    class="only:col-span-2 w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-purple-50 hover:bg-purple-100 active:scale-95 text-purple-700 border border-purple-200/80 rounded-xl font-bold text-xs sm:text-sm transition-all shadow-sm cursor-pointer">
                     <svg class="w-4 h-4 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
                     </svg>
@@ -266,10 +305,8 @@ new #[Layout('layouts.app')] class extends Component {
                 </button>
                 @endif
 
-                @if(!auth()->user()->hasActiveRole('pimpinan') && !$meeting->minutes_signed_at)
-                    {{-- No badge needed when not signed --}}
-                @elseif(auth()->user()->hasActiveRole('pimpinan') && !$meeting->minutes_signed_at && $meeting->status === 'completed' && $minutes && !empty($minutes->content))
-                <button type="button" wire:click="openSignModal" class="inline-flex items-center gap-2 px-4 py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl font-bold text-sm shadow-sm transition-all cursor-pointer">
+                @if(auth()->user()->hasActiveRole('pimpinan') && !$meeting->minutes_signed_at && $meeting->status === 'completed' && $minutes && !empty($minutes->content))
+                <button type="button" wire:click="openSignModal" class="only:col-span-2 w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl font-bold text-xs sm:text-sm shadow-sm transition-all cursor-pointer">
                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                     </svg>
@@ -279,14 +316,14 @@ new #[Layout('layouts.app')] class extends Component {
 
                 @if($meeting->status === 'completed' && $minutes && !empty($minutes->content))
                     @if($meeting->minutes_signed_at)
-                    <a href="{{ route('meetings.export.minutes', $meeting->id) }}" target="_blank" class="inline-flex justify-center items-center px-4 py-2.5 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 hover:border-emerald-400 active:scale-95 text-emerald-800 rounded-xl font-bold text-sm transition-all shadow-2xs gap-2">
+                    <a href="{{ route('meetings.export.minutes', $meeting->id) }}" target="_blank" class="only:col-span-2 w-full sm:w-auto inline-flex justify-center items-center px-4 py-2.5 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 hover:border-emerald-400 active:scale-95 text-emerald-800 rounded-xl font-bold text-xs sm:text-sm transition-all shadow-2xs gap-2">
                         <svg class="w-4 h-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                         </svg>
                         <span>Lihat PDF</span>
                     </a>
                     @else
-                    <a href="{{ route('meetings.export.minutes', $meeting->id) }}" target="_blank" class="inline-flex justify-center items-center px-4 py-2.5 bg-white hover:bg-slate-50 border border-slate-300 hover:border-slate-400 active:scale-95 text-slate-700 rounded-xl font-bold text-sm transition-all shadow-sm gap-2">
+                    <a href="{{ route('meetings.export.minutes', $meeting->id) }}" target="_blank" class="only:col-span-2 w-full sm:w-auto inline-flex justify-center items-center px-4 py-2.5 bg-white hover:bg-slate-50 border border-slate-300 hover:border-slate-400 active:scale-95 text-slate-700 rounded-xl font-bold text-xs sm:text-sm transition-all shadow-sm gap-2">
                         <svg class="w-4 h-4 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
@@ -299,17 +336,17 @@ new #[Layout('layouts.app')] class extends Component {
 
         @if($meeting->minutes_signed_at)
         <!-- Locked Banner (TTE Signed) -->
-        <div class="flex items-center gap-2.5 p-3.5 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 font-medium justify-between flex-wrap">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 sm:p-4 bg-amber-50 border border-amber-200 rounded-2xl text-xs text-amber-800 font-medium">
             <div class="flex items-center gap-2.5">
                 <svg class="w-4 h-4 text-amber-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                 </svg>
-                <span>Notulen dikunci — sudah TTE.</span>
+                <span class="font-semibold text-amber-900">Notulen dikunci — sudah TTE.</span>
             </div>
             @if($canEdit)
             <button wire:click="unlockForRevision"
                 wire:confirm="Buka kunci notulen untuk revisi? Dokumen perlu ditandatangani ulang setelahnya."
-                class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-amber-600 hover:bg-amber-700 active:scale-95 text-white rounded-xl text-xs font-bold transition-all shadow-sm shrink-0 self-start sm:self-auto">
+                class="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2.5 sm:py-2 bg-amber-600 hover:bg-amber-700 active:scale-95 text-white rounded-xl text-xs font-bold transition-all shadow-sm shrink-0 cursor-pointer">
                 <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
                 </svg>
@@ -332,14 +369,14 @@ new #[Layout('layouts.app')] class extends Component {
             </div>
             @error('content') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
 
-            <div class="flex items-center justify-between pt-1">
+            <div class="flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-3 pt-1">
                 <div class="text-xs font-semibold text-slate-400">
                     @if($lastSaved)
                     <span>Terakhir disimpan: {{ $lastSaved }}</span>
                     @endif
                 </div>
 
-                <button type="submit" wire:loading.attr="disabled" wire:target="saveMinutes" class="inline-flex justify-center items-center px-6 py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl font-bold text-sm transition-all shadow-sm gap-2 cursor-pointer">
+                <button type="submit" wire:loading.attr="disabled" wire:target="saveMinutes" class="w-full sm:w-auto inline-flex justify-center items-center px-6 py-3 sm:py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl font-bold text-sm transition-all shadow-sm gap-2 cursor-pointer">
                     <svg wire:loading.remove wire:target="saveMinutes" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
                     </svg>
@@ -371,17 +408,17 @@ new #[Layout('layouts.app')] class extends Component {
     </div>
 
     <!-- Modal Hasil AI Notulen -->
-    <x-modal name="ai-minutes-modal" maxWidth="3xl" :show="$showAiModal">
-        <div x-data="{ isProcessing: false }"
-             x-on:ai-loading-start.window="isProcessing = true"
-             x-on:ai-loading-stop.window="isProcessing = false"
+    <x-modal name="ai-minutes-modal" maxWidth="3xl">
+        <div x-data="{ isProcessing: true }"
+             x-on:open-modal.window="if ($event.detail === 'ai-minutes-modal' || $event.detail?.name === 'ai-minutes-modal' || (Array.isArray($event.detail) && $event.detail[0] === 'ai-minutes-modal')) isProcessing = true"
+             x-on:ai-done.window="isProcessing = false"
              class="p-6 space-y-4">
             <!-- Header Modal -->
             <div class="flex justify-between items-center pb-3 border-b border-slate-100">
                 <h2 class="text-base font-extrabold text-slate-900">
                     Notulen AI
                 </h2>
-                <button type="button" x-on:click="show = false" wire:click="closeAiModal" class="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer" title="Tutup">
+                <button type="button" x-on:click="$dispatch('close-modal', 'ai-minutes-modal')" wire:click="closeAiModal" class="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer" title="Tutup">
                     <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                     </svg>
@@ -390,7 +427,10 @@ new #[Layout('layouts.app')] class extends Component {
 
             <!-- Loading State Saat AI Memproses -->
             <div x-show="isProcessing" class="py-24 flex flex-col items-center justify-center text-center space-y-3 w-full">
-                <div class="w-9 h-9 rounded-full border-2 border-primary-600 border-t-transparent animate-spin"></div>
+                <svg class="animate-spin w-10 h-10 text-primary-600 mx-auto" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                </svg>
                 <p class="text-sm font-semibold text-slate-600">Merapikan notulen...</p>
             </div>
 
@@ -403,17 +443,25 @@ new #[Layout('layouts.app')] class extends Component {
                     </svg>
                     <span class="flex-1 leading-relaxed">{{ $aiErrorMessage }}</span>
                 </div>
+
+                <div class="flex justify-end pt-3 border-t border-slate-100">
+                    <button type="button" x-on:click="$dispatch('close-modal', 'ai-minutes-modal')" wire:click="closeAiModal" class="w-full sm:w-auto px-5 py-2.5 bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-700 font-bold text-xs rounded-xl transition-all cursor-pointer text-center">
+                        Tutup
+                    </button>
+                </div>
                 @endif
 
                 @if($aiResult)
                 <div class="p-4 sm:p-5 bg-slate-50 border border-slate-200 rounded-2xl max-h-[55vh] sm:max-h-[420px] overflow-y-auto text-xs sm:text-sm text-slate-800 leading-relaxed whitespace-pre-wrap font-sans select-text">{{ trim($aiResult) }}</div>
 
                 <div class="flex flex-col-reverse sm:flex-row justify-end gap-2.5 pt-3 border-t border-slate-100">
-                    <button type="button" x-on:click="show = false" wire:click="closeAiModal" class="w-full sm:w-auto px-4 py-2.5 bg-white hover:bg-slate-50 active:scale-95 text-slate-700 border border-slate-300 rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer text-center">
+                    <button type="button" x-on:click="$dispatch('close-modal', 'ai-minutes-modal')" wire:click="closeAiModal" class="w-full sm:w-auto px-4 py-2.5 bg-white hover:bg-slate-50 active:scale-95 text-slate-700 border border-slate-300 rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer text-center">
                         Batal
                     </button>
                     <button type="button" 
+                            x-on:click="$dispatch('close-modal', 'ai-minutes-modal')"
                             wire:click="applyAiMinutes"
+                            wire:loading.attr="disabled"
                             class="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-5 py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer">
                         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />

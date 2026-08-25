@@ -4,6 +4,33 @@ Semua perubahan penting pada proyek ini dicatat dalam berkas ini.
 
 Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/1.0.0/), dan proyek ini mematuhi [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.3] - 2026-08-26
+
+### Ditambahkan
+- **Indeks Database Performa Query**:
+  - Menambahkan migrasi penambahan indeks pada kolom `status`, `date`, `signer_nip`, dan komposit `[status, date]` pada tabel `meetings` ([`2026_08_26_000001_add_performance_indexes_to_meetings_table.php`](file:///Users/abedzul/Desktop/htdocs/rapat/database/migrations/2026_08_26_000001_add_performance_indexes_to_meetings_table.php)) guna mempercepat kueri filtering data dan otorisasi role di production.
+- **Kompresi Aset & Browser Caching Web Server**:
+  - Menambahkan konfigurasi Gzip compression (`mod_deflate`), browser caching 1 tahun (`mod_expires`), dan security headers pada [`public/.htaccess`](file:///Users/abedzul/Desktop/htdocs/rapat/public/.htaccess) untuk mempercepat transfer berkas statis di cPanel / Apache / LiteSpeed.
+- **Panduan Deploy & Optimasi Production**:
+  - Menambahkan panduan maintenance, konfigurasi lingkungan `.env`, dan automasi *artisan caching* pada [`README.md`](file:///Users/abedzul/Desktop/htdocs/rapat/README.md).
+
+### Diubah
+- **Reposisi Navigasi 4 Tab Workspace Rapat**:
+  - Memindahkan navigasi 4 tab (*Ringkasan, Presensi, Dokumentasi, Notulen*) dari kartu header ke bagian atas kartu konten ([`components/meeting-layout.blade.php`](file:///Users/abedzul/Desktop/htdocs/rapat/resources/views/components/meeting-layout.blade.php)) sebagai sub-header tab dengan garis pembatas halus.
+- **Standardisasi Layout & Ukuran Tombol Aksi di Mobile**:
+  - Menerapkan sistem **Auto Grid & Full-Width** pada toolbar tab Presensi, Dokumentasi, dan Notulen: tombol otomatis melebar penuh jika tunggal (`only:col-span-2 w-full`), dan membagi 2 kolom berdampingan secara simetris jika terdapat 2 tombol.
+  - Memperbesar tombol **Lihat PDF** dan **TTE Dokumen** di tab Ringkasan (khusus pimpinan) ke standar `text-sm font-bold` dengan padding `px-4 py-2.5` dan ikon `w-4 h-4` yang proporsional.
+  - Menyesuaikan tombol **Simpan Notulen**, **Upload Foto**, dan banner **Buka Revisi** agar melebar penuh (*full-width*) di mobile dengan touch target yang nyaman.
+  - Menghilangkan *blank space* di bawah nama OPD pada kartu header rapat di mobile dengan conditional rendering `@if($hasActionButtons)` dan normalisasi padding kartu.
+
+### Diperbaiki
+- **Stabilitas Modal Notulen AI & Transisi Keluar Mulus**:
+  - Memperbaiki glitch saat menerapkan notulen AI dengan mempertahankan variabel `$aiResult` selama animasi *fade-out* dan memancarkan event penutupan modal eksplisit.
+  - Memperbaiki posisi loading spinner SVG di modal agar selalu terpusat sempurna di tengah layar.
+  - Menambahkan validasi instan di sisi klien jika konten editor notulen masih kosong (< 5 karakter) sebelum membuka modal AI.
+- **Reaktivitas Alert Notifikasi Sukses**:
+  - Mengatasi alert sukses yang langsung hilang setelah aksi Simpan Notulen, Upload/Hapus Foto, TTE Dokumen, dan Buka Revisi dengan mengimplementasikan properti reaktif `$successMessage` dan dynamic `:wire:key` berbasis timestamp agar alert tampil stabil selama 4 detik penuh di setiap pembaruan.
+
 ## [1.4.2] - 2026-08-26
 
 ### Ditambahkan

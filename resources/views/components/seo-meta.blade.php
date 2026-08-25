@@ -11,7 +11,7 @@
     $defaultTitle = 'eRapat | Pemkab Sinjai';
     $finalTitle = $title ? $title : $defaultTitle;
 
-    $defaultDescription = 'Aplikasi Manajemen Rapat Resmi Pemerintah Kabupaten Sinjai';
+    $defaultDescription = 'Manajemen Rapat Pemerintah Kabupaten Sinjai';
     $finalDescription = $description ? $description : $defaultDescription;
 
     $finalImage = $image ? $image : asset('img/meta.png');

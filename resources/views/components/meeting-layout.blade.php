@@ -1,26 +1,29 @@
 @props(['meeting', 'activeTab'])
 
 <div class="w-full">
-    <!-- Breadcrumb & Navigation -->
-    <nav class="flex items-center text-xs font-bold text-slate-500 mb-2">
-        <a href="{{ route('meetings.index') }}" wire:navigate class="inline-flex items-center gap-2 hover:text-primary-600 transition-colors">
-            <div class="p-1 rounded-xl bg-slate-200/50">
-                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
-            </div>
-            Kembali ke Daftar Rapat
+    <!-- Breadcrumb & Back Navigation -->
+    <div class="mb-4 sm:mb-5">
+        <a href="{{ route('meetings.index') }}" wire:navigate class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-white border border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-slate-900 hover:border-slate-300 text-xs font-bold uppercase tracking-wider shadow-2xs group">
+            <svg class="w-3.5 h-3.5 text-slate-400 group-hover:text-slate-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+            <span>Kembali ke Daftar Rapat</span>
         </a>
-    </nav>
+    </div>
 
     <!-- Workspace Header Card -->
-    <div class="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-4 sm:p-6 md:p-8 relative overflow-hidden mb-6">
+    <div class="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-4 sm:p-6 md:p-8 relative overflow-hidden mb-4 sm:mb-6">
         <!-- Decorative Blob -->
         <div class="absolute top-0 right-0 -mt-16 -mr-16 w-64 h-64 bg-gradient-to-br from-primary-50 to-indigo-50 rounded-full blur-3xl opacity-70 pointer-events-none"></div>
         
         <livewire:meetings.header :meeting="$meeting" :key="'meeting-header-'.$meeting->id" />
-        
+    </div>
+
+    <!-- Workspace Content Card -->
+    <div class="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-4 sm:p-6 md:p-8 min-h-[400px]">
         @unless(auth()->user()?->hasActiveRole('pimpinan'))
-        <!-- Premium Tabs (Pills) -->
-        <nav class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-4 gap-2.5 mt-6 sm:mt-8 relative z-10">
+        <!-- Sub-Header Tabs (Pills) -->
+        <nav class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-4 gap-2.5 pb-6 sm:pb-8 mb-6 sm:mb-8 border-b border-slate-100 relative z-10">
             @php
                 $tabs = [
                     'overview' => [
@@ -49,11 +52,11 @@
             @foreach($tabs as $key => $tab)
                 <a href="{{ route('meetings.'.$key, $meeting->id) }}"
                    wire:navigate
-                   class="flex items-center justify-center gap-2 px-3 sm:px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all shadow-sm w-full {{ $activeTab === $key ? 'bg-slate-900 text-white hover:bg-slate-800' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 hover:text-slate-900 hover:border-slate-300' }}">
+                   class="flex items-center justify-center gap-2 px-3 sm:px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all shadow-xs w-full {{ $activeTab === $key ? 'bg-slate-900 text-white hover:bg-slate-800' : 'bg-slate-50 text-slate-600 border border-slate-200/80 hover:bg-slate-100 hover:text-slate-900 hover:border-slate-300' }}">
                     {!! $tab['icon'] !!}
                     <span>{{ $tab['label'] }}</span>
                     @if($tab['count'] !== null)
-                        <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold {{ $activeTab === $key ? 'bg-slate-700 text-slate-300' : 'bg-slate-100 text-slate-500' }}">
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold {{ $activeTab === $key ? 'bg-slate-700 text-slate-300' : 'bg-slate-200/80 text-slate-600' }}">
                             {{ $tab['count'] }}
                         </span>
                     @endif
@@ -61,10 +64,7 @@
             @endforeach
         </nav>
         @endunless
-    </div>
 
-    <!-- Workspace Content Card -->
-    <div class="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-4 sm:p-6 md:p-8 min-h-[400px]">
         {{ $slot }}
     </div>
 </div>

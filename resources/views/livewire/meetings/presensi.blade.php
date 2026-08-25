@@ -14,6 +14,8 @@ new #[Layout('layouts.app')] class extends Component {
     public bool $showSignModal = false;
     public string $passphrase = '';
     public string $errorMessage = '';
+    public ?string $successMessage = null;
+    public int $alertKey = 0;
 
     public function mount(Meeting $meeting)
     {
@@ -92,6 +94,8 @@ new #[Layout('layouts.app')] class extends Component {
             if ($result['success']) {
                 $this->meeting->refresh();
                 $this->closeSignModal();
+                $this->alertKey = hrtime(true);
+                $this->successMessage = $result['message'];
                 session()->flash('message', $result['message']);
                 $this->dispatch('meeting-updated');
             } else {
@@ -124,6 +128,8 @@ new #[Layout('layouts.app')] class extends Component {
         ]);
 
         $this->meeting->refresh();
+        $this->alertKey = hrtime(true);
+        $this->successMessage = 'Kunci presensi dibuka untuk revisi.';
         session()->flash('message', 'Kunci presensi dibuka untuk revisi.');
         $this->dispatch('meeting-updated');
     }
@@ -135,9 +141,9 @@ new #[Layout('layouts.app')] class extends Component {
 }; ?>
 
 <x-meeting-layout :meeting="$meeting" activeTab="presensi">
-    @if (session()->has('message'))
-    <x-alert type="success" class="mb-5">
-        {{ session('message') }}
+    @if ($successMessage || session()->has('message'))
+    <x-alert type="success" class="mb-5" :wire:key="'presensi-alert-'.$alertKey">
+        {{ $successMessage ?? session('message') }}
     </x-alert>
     @endif
 
@@ -150,11 +156,9 @@ new #[Layout('layouts.app')] class extends Component {
             </div>
 
             @if($meeting->attendances->count() > 0)
-            <div class="flex flex-wrap items-center gap-3 self-start sm:self-auto">
-                @if(!auth()->user()->hasActiveRole('pimpinan') && !$meeting->attendance_signed_at)
-                    {{-- No badge needed when not signed, or keep blank --}}
-                @elseif(auth()->user()->hasActiveRole('pimpinan') && !$meeting->attendance_signed_at && $meeting->status === 'completed')
-                <button type="button" x-data="" x-on:click.prevent="$dispatch('open-modal', 'sign-attendance-modal'); $wire.openSignModal()" class="inline-flex justify-center items-center px-4 py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl font-bold text-sm transition-all shadow-sm gap-2">
+            <div class="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2.5 sm:gap-3 w-full sm:w-auto self-start sm:self-auto">
+                @if(auth()->user()->hasActiveRole('pimpinan') && !$meeting->attendance_signed_at && $meeting->status === 'completed')
+                <button type="button" x-data="" x-on:click.prevent="$dispatch('open-modal', 'sign-attendance-modal'); $wire.openSignModal()" class="only:col-span-2 w-full sm:w-auto inline-flex justify-center items-center px-4 py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl font-bold text-xs sm:text-sm transition-all shadow-sm gap-2 cursor-pointer">
                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                     </svg>
@@ -164,14 +168,14 @@ new #[Layout('layouts.app')] class extends Component {
 
                 @if($meeting->status === 'completed')
                     @if($meeting->attendance_signed_at)
-                    <a href="{{ route('meetings.export.attendance', $meeting->id) }}" target="_blank" class="inline-flex justify-center items-center px-4 py-2.5 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 hover:border-emerald-400 active:scale-95 text-emerald-800 rounded-xl font-bold text-sm transition-all shadow-2xs gap-2">
+                    <a href="{{ route('meetings.export.attendance', $meeting->id) }}" target="_blank" class="only:col-span-2 w-full sm:w-auto inline-flex justify-center items-center px-4 py-2.5 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 hover:border-emerald-400 active:scale-95 text-emerald-800 rounded-xl font-bold text-xs sm:text-sm transition-all shadow-2xs gap-2">
                         <svg class="w-4 h-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                         </svg>
                         <span>Lihat PDF</span>
                     </a>
                     @else
-                    <a href="{{ route('meetings.export.attendance', $meeting->id) }}" target="_blank" class="inline-flex justify-center items-center px-4 py-2.5 bg-white hover:bg-slate-50 border border-slate-300 hover:border-slate-400 active:scale-95 text-slate-700 rounded-xl font-bold text-sm transition-all shadow-sm gap-2">
+                    <a href="{{ route('meetings.export.attendance', $meeting->id) }}" target="_blank" class="only:col-span-2 w-full sm:w-auto inline-flex justify-center items-center px-4 py-2.5 bg-white hover:bg-slate-50 border border-slate-300 hover:border-slate-400 active:scale-95 text-slate-700 rounded-xl font-bold text-xs sm:text-sm transition-all shadow-sm gap-2">
                         <svg class="w-4 h-4 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
@@ -185,15 +189,15 @@ new #[Layout('layouts.app')] class extends Component {
 
         @if($meeting->attendance_signed_at)
         <!-- Locked Banner (TTE Signed) -->
-        <div class="flex items-center gap-2.5 p-3.5 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 font-medium justify-between flex-wrap">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 sm:p-4 bg-amber-50 border border-amber-200 rounded-2xl text-xs text-amber-800 font-medium">
             <div class="flex items-center gap-2.5">
                 <svg class="w-4 h-4 text-amber-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-                <span>Presensi dikunci — sudah TTE.</span>
+                <span class="font-semibold text-amber-900">Presensi dikunci — sudah TTE.</span>
             </div>
             @if($canEdit)
             <button wire:click="unlockForRevision"
                 wire:confirm="Buka kunci presensi untuk revisi? Dokumen perlu ditandatangani ulang setelahnya."
-                class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-amber-600 hover:bg-amber-700 active:scale-95 text-white rounded-xl text-xs font-bold transition-all shadow-sm shrink-0 self-start sm:self-auto">
+                class="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2.5 sm:py-2 bg-amber-600 hover:bg-amber-700 active:scale-95 text-white rounded-xl text-xs font-bold transition-all shadow-sm shrink-0 cursor-pointer">
                 <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
                 </svg>

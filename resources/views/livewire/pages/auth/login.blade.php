@@ -7,7 +7,7 @@ use Livewire\Volt\Component;
 
 new #[Layout('layouts.guest', [
     'title' => 'Login | eRapat',
-    'description' => 'Halaman login eRapat Pemerintah Kabupaten Sinjai.',
+    'description' => 'Login eRapat Pemerintah Kabupaten Sinjai',
     'robots' => 'noindex, nofollow',
 ])] class extends Component
 {
@@ -18,17 +18,22 @@ new #[Layout('layouts.guest', [
      */
     public function login(): void
     {
-        $this->validate();
+        try {
+            $this->validate();
 
-        $this->form->authenticate();
+            $this->form->authenticate();
 
-        Session::regenerate();
+            Session::regenerate();
 
-        $this->redirectIntended(default: route('dashboard', absolute: false), navigate: true);
+            $this->redirectIntended(default: route('dashboard', absolute: false), navigate: false);
+        } catch (\Throwable $e) {
+            $this->dispatch('login-failed');
+            throw $e;
+        }
     }
 }; ?>
 
-<div>
+<div x-data="{ isLoggingIn: false }" x-on:login-failed.window="isLoggingIn = false">
     <div class="mb-6 text-center">
         <h2 class="text-lg font-bold text-slate-900">Login NIP dan Password ENIKDA</h2>
     </div>
@@ -36,7 +41,7 @@ new #[Layout('layouts.guest', [
     <!-- Session Status -->
     <x-auth-session-status class="mb-4" :status="session('status')" />
 
-    <form wire:submit="login" class="space-y-4">
+    <form wire:submit="login" @submit="isLoggingIn = true" class="space-y-4">
         <!-- NIP -->
         <div>
             <x-input-label for="nip" value="NIP" />
@@ -71,21 +76,25 @@ new #[Layout('layouts.guest', [
         </div>
 
         <div class="pt-2">
-            <x-primary-button wire:loading.attr="disabled" wire:target="login" class="w-full justify-center py-2.5 shadow-xs gap-2">
-                <svg wire:loading.remove wire:target="login" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <x-primary-button 
+                type="submit" 
+                x-bind:disabled="isLoggingIn" 
+                class="w-full justify-center py-2.5 shadow-xs gap-2 disabled:opacity-75 disabled:cursor-not-allowed cursor-pointer"
+            >
+                <svg x-show="!isLoggingIn" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
                 </svg>
-                <svg wire:loading wire:target="login" class="animate-spin w-4 h-4 text-white" fill="none" viewBox="0 0 24 24">
+                <svg x-show="isLoggingIn" x-cloak class="animate-spin w-4 h-4 text-white" fill="none" viewBox="0 0 24 24">
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
-                Login
+                <span>Login</span>
             </x-primary-button>
         </div>
     </form>
 
     <div class="mt-6 pt-4 border-t border-slate-100 text-center">
-        <a href="{{ url('/') }}" wire:navigate class="inline-flex items-center text-xs font-bold text-slate-500 hover:text-primary-600 transition-colors">
+        <a href="{{ url('/') }}" wire:navigate class="inline-flex items-center text-xs font-bold text-slate-500 hover:text-primary-600 uppercase tracking-wider transition-colors">
             &larr; Kembali ke Beranda
         </a>
     </div>

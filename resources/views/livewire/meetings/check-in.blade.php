@@ -249,7 +249,7 @@ new #[Layout('layouts.guest')] class extends Component {
     <x-slot:seo>
         <x-seo-meta
             :title="'Presensi | ' . $meeting->title"
-            :description="'Presensi kehadiran rapat ' . $meeting->title . ' (' . ($meeting->opd?->name ?? 'Pemerintah Kabupaten Sinjai') . ').'"
+            :description="'Presensi ' . $meeting->title . ' - Pemerintah Kabupaten Sinjai'"
             robots="noindex, nofollow"
         />
     </x-slot:seo>
@@ -482,7 +482,7 @@ new #[Layout('layouts.guest')] class extends Component {
         <h3 class="text-xl font-extrabold text-slate-900 mb-3">Presensi Tidak Tersedia</h3>
         <p class="text-sm font-medium text-slate-600 max-w-sm mx-auto leading-relaxed mb-8">{{ $message }}</p>
 
-        <a href="{{ url('/') }}" class="inline-flex justify-center items-center px-6 py-3 bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-700 rounded-xl font-bold text-sm transition-all shadow-sm">
+        <a href="{{ url('/') }}" class="inline-flex justify-center items-center px-6 py-3 bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-700 rounded-xl font-bold text-xs uppercase tracking-wider transition-all shadow-sm">
             &larr; Kembali ke Beranda
         </a>
     </div>

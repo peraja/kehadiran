@@ -474,6 +474,17 @@ new #[Layout('layouts.app')] class extends Component {
                             <div class="text-xs text-slate-500 font-medium mt-1">
                                 <span>{{ $meeting->location ?: 'Ruang Rapat' }}</span>
                             </div>
+                            @if(auth()->user()->hasActiveRole('admin'))
+                            @php
+                                $opdName = $meeting->opd?->name ?? ($meeting->creator?->unit_name ?? 'Pemerintah Kabupaten Sinjai');
+                            @endphp
+                            <div class="mt-1.5 flex items-center">
+                                <span class="inline-flex items-center text-[11px] font-bold text-slate-600 bg-slate-100 hover:bg-slate-200/80 transition-colors border border-slate-200/80 px-2 py-0.5 rounded-md max-w-[280px] sm:max-w-md truncate cursor-default shadow-2xs"
+                                    title="{{ $opdName }}">
+                                    <span class="truncate">{{ $opdName }}</span>
+                                </span>
+                            </div>
+                            @endif
                         </td>
 
                         <!-- Tanggal & Waktu -->
