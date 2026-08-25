@@ -348,7 +348,7 @@ new #[Layout('layouts.guest')] class extends Component {
 
         @if($participant_type === 'eksternal' || $nip_checked)
         <!-- Signature Pad Component & Submit Button -->
-        <div class="space-y-6 pt-4 border-t border-slate-100" x-data="signaturePad(@entangle('signature'))">
+        <div class="space-y-6 pt-4 border-t border-slate-100" x-data="signaturePad()">
             <div>
                 <div class="flex items-center justify-between mb-3">
                     <label class="block text-sm font-extrabold text-slate-900">Tanda Tangan Digital</label>
@@ -469,12 +469,11 @@ new #[Layout('layouts.guest')] class extends Component {
     <!-- Script for High-Precision Signature Canvas -->
     <script>
         document.addEventListener('alpine:init', () => {
-            Alpine.data('signaturePad', (signatureData) => ({
+            Alpine.data('signaturePad', () => ({
                 isDrawing: false,
                 hasDrawn: false,
                 ctx: null,
                 pathData: '',
-                signature: signatureData,
 
                 init() {
                     this.$nextTick(() => {
@@ -556,31 +555,22 @@ new #[Layout('layouts.guest')] class extends Component {
                     this.ctx.clearRect(0, 0, canvas.width, canvas.height);
                     this.hasDrawn = false;
                     this.pathData = '';
-                    this.signature = '';
                 },
 
                 updateSignatureData() {
                     const canvas = this.$refs.canvas;
                     if (!canvas || !this.hasDrawn || !this.pathData) {
-                        this.signature = '';
                         return '';
                     }
 
                     // Export crisp, ultra-lightweight SVG (~300 bytes)
                     const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${canvas.width} ${canvas.height}"><path d="${this.pathData}" fill="none" stroke="#0f172a" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
-                    const dataUrl = 'data:image/svg+xml;base64,' + btoa(svg);
-                    this.signature = dataUrl;
-                    return dataUrl;
+                    return 'data:image/svg+xml;base64,' + btoa(svg);
                 },
 
                 submitCheckIn() {
                     const sig = this.updateSignatureData();
-                    if (!sig) {
-                        this.$wire.set('signature', '');
-                        this.$wire.confirmCheckIn();
-                        return;
-                    }
-                    this.$wire.confirmCheckIn(sig);
+                    this.$wire.confirmCheckIn(sig || '');
                 }
             }));
         });
