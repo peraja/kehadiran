@@ -28,6 +28,11 @@ Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/
 
 ### Diperbaiki
 - **Perbaikan Sintaks Direktif Readonly pada Form Presensi**: Mengganti atribut `:readonly="$nip_checked"` menjadi direktif native Blade `@readonly($nip_checked)` pada [`livewire/meetings/check-in.blade.php`](file:///Users/abedzul/Desktop/htdocs/rapat/resources/views/livewire/meetings/check-in.blade.php) guna mencegah error JavaScript *Alpine Expression Error* di sisi client.
+- **Penanganan Error 405 Method Not Allowed pada Request Livewire di Server cPanel**:
+  - Penambahan konfigurasi `$middleware->trustProxies(at: '*')` pada [`bootstrap/app.php`](file:///Users/abedzul/Desktop/htdocs/rapat/bootstrap/app.php) guna memastikan Laravel mendeteksi header SSL/HTTPS dari reverse proxy cPanel.
+  - Penegasan skema HTTPS global (`URL::forceScheme('https')`) pada [`app/Providers/AppServiceProvider.php`](file:///Users/abedzul/Desktop/htdocs/rapat/app/Providers/AppServiceProvider.php) untuk lingkungan produksi.
+  - Pembatasan aturan redirect *trailing slash* pada [`public/.htaccess`](file:///Users/abedzul/Desktop/htdocs/rapat/public/.htaccess) hanya untuk metode `GET` (`RewriteCond %{REQUEST_METHOD} =GET`) guna mencegah konversi request `POST /livewire/update` menjadi `GET` akibat redirect 301.
+  - Penambahan direktif `Options -MultiViews -Indexes` pada root [`.htaccess`](file:///Users/abedzul/Desktop/htdocs/rapat/.htaccess).
 
 ## [1.3.8] - 2026-08-25
 
