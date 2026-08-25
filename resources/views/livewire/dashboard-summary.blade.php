@@ -107,6 +107,13 @@ new class extends Component {
                   ->orWhereNull('attendance_signed_at')
                   ->orWhereNull('photos_signed_at');
             })
+            ->where(function($q) {
+                $q->has('attendances')
+                  ->orHas('photos')
+                  ->orWhereHas('minutes', function($mq) {
+                      $mq->whereNotNull('content')->where('content', '!=', '');
+                  });
+            })
             ->with(['opd', 'creator', 'attendances', 'photos', 'minutes'])
             ->orderBy('date', 'desc')
             ->take(6)
@@ -370,7 +377,7 @@ new class extends Component {
                                 {{ $meeting->start_time->format('H:i') }} WITA
                             </div>
                         </div>
-                        <x-meeting-status-badge :status="$meeting->status" />
+                        <x-meeting-status-badge :meeting="$meeting" />
                     </div>
                 @empty
                     <div class="py-14 px-6 text-center flex flex-col items-center justify-center h-full">

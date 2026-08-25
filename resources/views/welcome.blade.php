@@ -123,7 +123,7 @@
 
                         <!-- Status Badge -->
                         <div class="shrink-0 self-start sm:self-center">
-                            <x-meeting-status-badge :status="$m->status" />
+                            <x-meeting-status-badge :meeting="$m" :with-document-status="false" />
                         </div>
                     </div>
                     @endforeach

@@ -246,6 +246,16 @@ new #[Layout('layouts.app')] class extends Component {
                         $oq->where('leader_name', $user->name);
                     }
                 });
+            })->where(function ($q) {
+                // Jangan tampilkan jika belum ada berkas dokumen (presensi, foto, atau notulen) dan belum pernah di-TTE
+                $q->has('attendances')
+                    ->orHas('photos')
+                    ->orWhereHas('minutes', function ($mq) {
+                        $mq->whereNotNull('content')->where('content', '!=', '');
+                    })
+                    ->orWhereNotNull('minutes_signed_at')
+                    ->orWhereNotNull('attendance_signed_at')
+                    ->orWhereNotNull('photos_signed_at');
             });
         } elseif ($user->hasActiveRole('admin_opd')) {
             // Admin OPD melihat seluruh rapat di lingkungan unit kerjanya
@@ -445,10 +455,7 @@ new #[Layout('layouts.app')] class extends Component {
                     <tr class="text-[11px] font-extrabold uppercase tracking-wider">
                         <th class="py-4 px-6 text-left">Agenda & Lokasi</th>
                         <th class="py-4 px-6 text-left">Tanggal & Waktu</th>
-                        @unless(auth()->user()->hasActiveRole('pimpinan'))
-                        <th class="py-4 px-6 text-center w-32">Status Rapat</th>
-                        @endunless
-                        <th class="py-4 px-6 text-center w-36">Status Dokumen</th>
+                        <th class="py-4 px-6 text-center w-52">Status</th>
                         <th class="py-4 px-6 text-right w-24">Aksi</th>
                     </tr>
                 </thead>
@@ -475,16 +482,9 @@ new #[Layout('layouts.app')] class extends Component {
                             </div>
                         </td>
 
-                        @unless(auth()->user()->hasActiveRole('pimpinan'))
-                        <!-- Status Rapat -->
+                        <!-- Status -->
                         <td class="py-4 px-6 text-center whitespace-nowrap">
-                            <x-meeting-status-badge :status="$meeting->status" />
-                        </td>
-                        @endunless
-
-                        <!-- Status Dokumen -->
-                        <td class="py-4 px-6 text-center whitespace-nowrap">
-                            <x-document-status-badge :meeting="$meeting" />
+                            <x-meeting-status-badge :meeting="$meeting" />
                         </td>
 
                         <!-- Aksi -->
@@ -500,7 +500,7 @@ new #[Layout('layouts.app')] class extends Component {
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="{{ auth()->user()->hasActiveRole('pimpinan') ? 4 : 5 }}" class="py-16 px-6 text-center">
+                        <td colspan="4" class="py-16 px-6 text-center">
                             <div class="flex flex-col items-center justify-center max-w-sm mx-auto">
                                 <div class="w-14 h-14 bg-slate-100 rounded-2xl flex items-center justify-center mb-3 text-slate-400">
                                     <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">

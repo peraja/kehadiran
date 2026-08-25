@@ -57,6 +57,7 @@ new #[Layout('layouts.app')] class extends Component {
     {
         $this->passphrase = '';
         $this->errorMessage = '';
+        $this->resetErrorBag();
         $this->showSignModal = true;
         $this->dispatch('open-modal', 'sign-photos-modal');
     }
@@ -66,6 +67,7 @@ new #[Layout('layouts.app')] class extends Component {
         $this->showSignModal = false;
         $this->passphrase = '';
         $this->errorMessage = '';
+        $this->resetErrorBag();
         $this->dispatch('close-modal', 'sign-photos-modal');
     }
 
@@ -75,22 +77,34 @@ new #[Layout('layouts.app')] class extends Component {
             abort(403, 'Anda bukan pejabat penandatangan yang ditunjuk untuk rapat ini.');
         }
 
+        if (empty(auth()->user()->nik)) {
+            $this->errorMessage = 'Hubungi Admin OPD untuk mendaftarkan NIK.';
+            return;
+        }
+
         $this->errorMessage = '';
+        $this->resetErrorBag();
         $this->validate([
             'passphrase' => 'required|string',
         ], [
-            'passphrase.required' => 'Passphrase BSrE wajib diisi.',
+            'passphrase.required' => 'Passphrase wajib diisi.',
         ]);
 
-        $result = $esignService->signDocument($this->meeting, auth()->user(), 'photos', $this->passphrase);
+        try {
+            $result = $esignService->signDocument($this->meeting, auth()->user(), 'photos', $this->passphrase);
 
-        if ($result['success']) {
-            $this->meeting->refresh();
-            $this->closeSignModal();
-            session()->flash('message', $result['message']);
-            $this->dispatch('meeting-updated');
-        } else {
-            $this->errorMessage = $result['message'];
+            if ($result['success']) {
+                $this->meeting->refresh();
+                $this->closeSignModal();
+                session()->flash('message', $result['message']);
+                $this->dispatch('meeting-updated');
+            } else {
+                $this->errorMessage = $result['message'];
+                $this->passphrase = '';
+            }
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('TTE Photos Error: ' . $e->getMessage());
+            $this->errorMessage = 'Gagal memproses TTE. Silakan coba beberapa saat lagi.';
             $this->passphrase = '';
         }
     }
@@ -216,11 +230,9 @@ new #[Layout('layouts.app')] class extends Component {
         }
     }
 
-    public function with(BsreEsignService $esignService): array
+    public function with(): array
     {
-        return [
-            'tteStatus' => $esignService->checkUserStatus(auth()->user()?->nik),
-        ];
+        return [];
     }
 }; ?>
 
@@ -525,14 +537,39 @@ new #[Layout('layouts.app')] class extends Component {
             </div>
 
             @if($errorMessage)
-            <div class="mb-5 p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-xs font-semibold text-rose-700 flex items-start gap-2.5">
-                <svg class="w-4 h-4 text-rose-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <span class="flex-1 leading-relaxed">{{ $errorMessage }}</span>
+            <div class="mb-5 p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-xs font-semibold text-rose-700 flex items-start justify-between gap-2.5">
+                <div class="flex items-start gap-2.5 flex-1 min-w-0">
+                    <svg class="w-4 h-4 text-rose-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span class="flex-1 leading-relaxed break-words">{{ $errorMessage }}</span>
+                </div>
+                <button type="button" wire:click="$set('errorMessage', '')" class="text-rose-400 hover:text-rose-600 cursor-pointer shrink-0 ml-1">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
             </div>
             @endif
 
+            @if(empty(auth()->user()->nik))
+            <div class="text-center py-4">
+                <div class="w-14 h-14 bg-rose-50 text-rose-500 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-rose-100">
+                    <svg class="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                </div>
+                <h3 class="text-base font-extrabold text-slate-900 mb-1.5">NIK Belum Terdaftar</h3>
+                <p class="text-xs text-slate-500 max-w-xs mx-auto leading-relaxed mb-6">
+                    Hubungi <strong>Admin OPD</strong> untuk mendaftarkan NIK.
+                </p>
+                <div class="flex items-center justify-center">
+                    <button type="button" x-on:click="$dispatch('close')" wire:click="closeSignModal" class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-700 font-bold text-xs rounded-xl transition-all cursor-pointer">
+                        Tutup
+                    </button>
+                </div>
+            </div>
+            @else
             <form wire:submit="executeSign" class="space-y-5">
                 <div class="p-4 bg-slate-50 border border-slate-200/80 rounded-2xl space-y-2.5 text-sm">
                     <div class="flex items-center justify-between text-xs sm:text-sm">
@@ -545,28 +582,12 @@ new #[Layout('layouts.app')] class extends Component {
                     </div>
                     <div class="flex items-center justify-between text-xs sm:text-sm">
                         <span class="text-slate-500 font-medium">NIK</span>
-                        <span class="font-mono font-bold text-slate-800 text-right">{{ auth()->user()->nik ?: '-' }}</span>
-                    </div>
-                    <div class="flex items-center justify-between text-xs sm:text-sm pt-2.5 border-t border-slate-200/70">
-                        <span class="text-slate-500 font-medium">Status TTE</span>
-                        <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold border {{ $tteStatus['badge_class'] }}">
-                            <span class="w-1.5 h-1.5 rounded-full {{ $tteStatus['dot_class'] ?? ($tteStatus['can_sign'] ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500') }}"></span>
-                            {{ $tteStatus['label'] }}
-                        </span>
+                        <span class="font-mono font-bold text-slate-800 text-right">{{ auth()->user()->nik }}</span>
                     </div>
                 </div>
-
-                @if(!$tteStatus['can_sign'])
-                <div class="p-3 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-800 flex items-center gap-2.5">
-                    <svg class="w-4 h-4 text-amber-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <span class="font-medium leading-relaxed">{{ $tteStatus['description'] }}</span>
-                </div>
-                @endif
 
                 <div x-data="{ showPassphrase: false }">
-                    <label for="passphrase_photos" class="block text-sm font-bold text-slate-700 mb-1">Passphrase BSrE</label>
+                    <label for="passphrase_photos" class="block text-sm font-bold text-slate-700 mb-1">Passphrase</label>
                     <div class="relative">
                         <input wire:model="passphrase"
                                id="passphrase_photos"
@@ -607,6 +628,7 @@ new #[Layout('layouts.app')] class extends Component {
                     </button>
                 </div>
             </form>
+            @endif
         </div>
     </x-modal>
 </x-meeting-layout>

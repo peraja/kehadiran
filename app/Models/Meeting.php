@@ -142,6 +142,41 @@ class Meeting extends Model
     }
 
     /**
+     * Check if a specific document type has actual content.
+     */
+    public function hasDocumentContent(string $type): bool
+    {
+        return match ($type) {
+            'minutes' => !empty(trim((string)($this->minutes?->content ?? ''))),
+            'attendance' => $this->attendances()->count() > 0,
+            'photos', 'documentation' => $this->photos()->count() > 0,
+            default => false,
+        };
+    }
+
+    /**
+     * Check if at least one document has actual content.
+     */
+    public function hasAnyDocumentContent(): bool
+    {
+        return $this->hasDocumentContent('minutes')
+            || $this->hasDocumentContent('attendance')
+            || $this->hasDocumentContent('photos');
+    }
+
+    /**
+     * Count how many documents have content and are eligible for TTE.
+     */
+    public function readyForTteCount(): int
+    {
+        $count = 0;
+        if (empty($this->attendance_signed_at) && $this->hasDocumentContent('attendance')) $count++;
+        if (empty($this->photos_signed_at) && $this->hasDocumentContent('photos')) $count++;
+        if (empty($this->minutes_signed_at) && $this->hasDocumentContent('minutes')) $count++;
+        return $count;
+    }
+
+    /**
      * Count how many documents have already been signed with TTE.
      */
     public function signedTteCount(): int

@@ -4,6 +4,28 @@ Semua perubahan penting pada proyek ini dicatat dalam berkas ini.
 
 Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/1.0.0/), dan proyek ini mematuhi [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.9] - 2026-08-25
+
+### Diubah
+- **Penyempurnaan Halaman Detail Dokumen Rapat (Akun Pimpinan)**:
+  - Menampilkan seluruh baris dokumen rapat (*Presensi*, *Dokumentasi*, *Notulen*) secara konsisten pada tabel Dokumen Rapat akun pimpinan ([`overview.blade.php`](file:///Users/abedzul/Desktop/htdocs/rapat/resources/views/livewire/meetings/overview.blade.php)) meskipun belum memiliki isi.
+  - Peringkasan nama dokumen pada baris tabel menjadi *Presensi*, *Dokumentasi*, dan *Notulen*.
+  - Penyederhanaan keterangan status dokumen kosong menjadi *Presensi kosong*, *Dokumentasi kosong*, dan *Notulen kosong*.
+  - Penghapusan badge *Belum TTE* dan *Sudah TTE* pada tabel ringkasan untuk tampilan antarmuka yang lebih bersih dan minimalis.
+  - Penyeragaman ikon tombol *Lihat PDF* yang telah ditandatangani menggunakan ikon perisai terverifikasi (*verified shield* hijau).
+- **Optimalisasi Tombol dan Modal TTE Akun Pimpinan**:
+  - Penggunaan label tombol statis **`TTE Semua`** pada *card header* rapat akun pimpinan ([`header.blade.php`](file:///Users/abedzul/Desktop/htdocs/rapat/resources/views/livewire/meetings/header.blade.php)).
+  - Penanganan dinamis dokumen kosong pada proses TTE massal di modal (`sign-all-modal`) dan backend [`BsreEsignService.php`](file:///Users/abedzul/Desktop/htdocs/rapat/app/Services/BsreEsignService.php), di mana hanya dokumen yang memiliki isi yang diproses secara otomatis tanpa memicu error.
+  - Peningkatan pesan hasil TTE massal agar membedakan proses 1 dokumen (*"Dokumen [Nama Dokumen] berhasil ditandatangani"*) dan multi-dokumen (*"[Jumlah] dokumen berhasil ditandatangani"*).
+  - Penyederhanaan form modal TTE: Label diubah menjadi *"Passphrase"*, notifikasi NIK kosong dipersingkat menjadi *"Hubungi Admin OPD untuk mendaftarkan NIK"*, serta penambahan tombol tutup (*dismiss*) pada banner error.
+  - Penambahan proteksi *try-catch* dan reset error bag saat membuka/menutup modal TTE di seluruh 5 komponen TTE.
+- **Penyempurnaan Badge Status Rapat**:
+  - Pembaruan label badge status rapat yang belum memiliki berkas dokumen dari **Draft Dokumen** menjadi **Draft TTE** pada [`meeting-status-badge.blade.php`](file:///Users/abedzul/Desktop/htdocs/rapat/resources/views/components/meeting-status-badge.blade.php).
+  - Penonaktifan tampilan badge status dokumen pada landing page ([`welcome.blade.php`](file:///Users/abedzul/Desktop/htdocs/rapat/resources/views/welcome.blade.php)) sehingga hanya menampilkan badge status murni rapat (*Dijadwalkan*, *Berlangsung*, *Selesai*).
+- **Peningkatan Performa & Respon Sistem**:
+  - Penghapusan pemanggilan HTTP sinkron pengecekan status sertifikat BSrE pada setiap siklus render Livewire `with()` guna menghilangkan latensi perpindahan halaman dan pembukaan modal.
+  - Penambahan mekanisme cache status sertifikat dan *local simulation fallback* mandiri pada [`BsreEsignService.php`](file:///Users/abedzul/Desktop/htdocs/rapat/app/Services/BsreEsignService.php).
+
 ## [1.3.8] - 2026-08-25
 
 ### Diperbaiki

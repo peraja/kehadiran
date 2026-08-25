@@ -47,53 +47,62 @@ class BsreEsignService
             ];
         }
 
-        try {
-            $response = Http::timeout(8)
-                ->withBasicAuth($this->username, $this->password)
-                ->post("{$this->url}/user/check/status", [
-                    'nik' => $nik,
-                ]);
-
-            if ($response->successful()) {
-                $data = $response->json();
-                $rawStatus = strtoupper(trim((string)(
-                    $data['status'] ?? $data['status_user'] ?? $data['statusUser'] ?? 'UNKNOWN'
-                )));
-
-                return $this->formatStatusResponse($rawStatus, $data['message'] ?? null);
-            }
-
-            $statusCode = $response->status();
-            $data = $response->json();
-            $rawStatus = strtoupper(trim((string)(
-                $data['status'] ?? $data['status_user'] ?? $data['statusUser'] ?? ''
-            )));
-
-            if ($rawStatus) {
-                return $this->formatStatusResponse($rawStatus, $data['message'] ?? null);
-            }
-
-            if ($statusCode === 404) {
-                return $this->formatStatusResponse('NOT_REGISTERED');
-            }
-
-        } catch (\Throwable $e) {
-            Log::warning("BSrE Check Status Error for NIK {$nik}: " . $e->getMessage());
-        }
-
-        // Local / test fallback simulation
-        if (app()->environment('local', 'testing') || empty($this->username)) {
+        // Return immediately if credentials are not configured or running local dummy endpoint
+        if (empty($this->username) || empty($this->password) || (app()->environment('local', 'testing') && (str_contains($this->url, 'localhost') || str_contains($this->url, '127.0.0.1')))) {
             return $this->formatStatusResponse('ISSUE', 'Sertifikat elektronik aktif dan siap digunakan.');
         }
 
-        return [
-            'status' => 'UNKNOWN',
-            'label' => 'Offline',
-            'description' => 'Tidak dapat terhubung ke server BSrE.',
-            'can_sign' => false,
-            'badge_class' => 'bg-amber-50 text-amber-700 border-amber-200',
-            'dot_class' => 'bg-amber-500',
-        ];
+        // Cache live BSrE check for 10 minutes to ensure instant UI response
+        return \Illuminate\Support\Facades\Cache::remember("bsre_status_{$nik}", 600, function () use ($nik) {
+            try {
+                $timeout = app()->environment('local', 'testing') ? 1.5 : 3;
+                $response = Http::timeout($timeout)
+                    ->withBasicAuth($this->username, $this->password)
+                    ->post("{$this->url}/user/check/status", [
+                        'nik' => $nik,
+                    ]);
+
+                if ($response->successful()) {
+                    $data = $response->json();
+                    $rawStatus = strtoupper(trim((string)(
+                        $data['status'] ?? $data['status_user'] ?? $data['statusUser'] ?? 'UNKNOWN'
+                    )));
+
+                    return $this->formatStatusResponse($rawStatus, $data['message'] ?? null);
+                }
+
+                $statusCode = $response->status();
+                $data = $response->json();
+                $rawStatus = strtoupper(trim((string)(
+                    $data['status'] ?? $data['status_user'] ?? $data['statusUser'] ?? ''
+                )));
+
+                if ($rawStatus) {
+                    return $this->formatStatusResponse($rawStatus, $data['message'] ?? null);
+                }
+
+                if ($statusCode === 404) {
+                    return $this->formatStatusResponse('NOT_REGISTERED');
+                }
+
+            } catch (\Throwable $e) {
+                Log::warning("BSrE Check Status Error for NIK {$nik}: " . $e->getMessage());
+            }
+
+            // Fallback if BSrE server is unreachable
+            if (app()->environment('local', 'testing')) {
+                return $this->formatStatusResponse('ISSUE', 'Sertifikat elektronik aktif dan siap digunakan.');
+            }
+
+            return [
+                'status' => 'UNKNOWN',
+                'label' => 'Offline',
+                'description' => 'Tidak dapat terhubung ke server BSrE.',
+                'can_sign' => false,
+                'badge_class' => 'bg-amber-50 text-amber-700 border-amber-200',
+                'dot_class' => 'bg-amber-500',
+            ];
+        });
     }
 
     /**
@@ -224,9 +233,16 @@ class BsreEsignService
             ];
         }
 
+        $documentName = $this->getDocumentLabel($type);
+        if (!$meeting->hasDocumentContent($type)) {
+            return [
+                'success' => false,
+                'message' => "Dokumen {$documentName} belum memiliki data/isi dan tidak dapat ditandatangani.",
+            ];
+        }
+
         // 1. Generate fresh PDF content based on document type
         $pdfOutput = $this->renderDocumentPdf($meeting, $type);
-        $documentName = $this->getDocumentLabel($type);
         $reason = $this->generateReason($meeting, $type);
 
         // 2. Call BSrE API /sign/pdf if configured and reachable
@@ -281,7 +297,7 @@ class BsreEsignService
         } catch (\Illuminate\Http\Client\ConnectionException $e) {
             Log::warning("BSrE Connection Exception: " . $e->getMessage());
 
-            if (app()->environment('local', 'testing') && empty($this->username)) {
+            if (app()->environment('local', 'testing')) {
                 $filename = "signed_documents/{$type}_{$meeting->id}_" . time() . ".pdf";
                 Storage::disk('public')->put($filename, $pdfOutput);
                 $this->updateMeetingSignedStatus($meeting, $user, $type, $filename);
@@ -300,6 +316,18 @@ class BsreEsignService
 
         } catch (\Throwable $e) {
             Log::warning("BSrE API Error: " . $e->getMessage());
+
+            if (app()->environment('local', 'testing')) {
+                $filename = "signed_documents/{$type}_{$meeting->id}_" . time() . ".pdf";
+                Storage::disk('public')->put($filename, $pdfOutput);
+                $this->updateMeetingSignedStatus($meeting, $user, $type, $filename);
+
+                return [
+                    'success' => true,
+                    'message' => "Dokumen {$documentName} berhasil ditandatangani (Simulasi).",
+                    'path' => $filename,
+                ];
+            }
 
             return [
                 'success' => false,
@@ -371,20 +399,20 @@ class BsreEsignService
     public function signAllDocuments(Meeting $meeting, User $user, string $passphrase): array
     {
         $types = [];
-        if (!$meeting->minutes_signed_at) {
+        if (!$meeting->minutes_signed_at && $meeting->hasDocumentContent('minutes')) {
             $types[] = 'minutes';
         }
-        if (!$meeting->attendance_signed_at) {
+        if (!$meeting->attendance_signed_at && $meeting->hasDocumentContent('attendance')) {
             $types[] = 'attendance';
         }
-        if (!$meeting->photos_signed_at) {
+        if (!$meeting->photos_signed_at && $meeting->hasDocumentContent('photos')) {
             $types[] = 'photos';
         }
 
         if (empty($types)) {
             return [
-                'success' => true,
-                'message' => 'Semua dokumen telah ditandatangani.',
+                'success' => false,
+                'message' => 'Belum ada berkas dokumen rapat yang memiliki isi/data untuk ditandatangani.',
                 'signed_count' => 0,
             ];
         }
@@ -410,9 +438,13 @@ class BsreEsignService
             ];
         }
 
+        $message = $successCount === 1
+            ? "Dokumen {$this->getDocumentLabel($types[0])} berhasil ditandatangani."
+            : "{$successCount} dokumen berhasil ditandatangani.";
+
         return [
             'success' => true,
-            'message' => "{$successCount} dokumen berhasil ditandatangani.",
+            'message' => $message,
             'signed_count' => $successCount,
         ];
     }
