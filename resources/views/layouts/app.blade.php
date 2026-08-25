@@ -44,22 +44,22 @@
         <!-- Main Content Area (Offset by sidebar width on desktop) -->
         <div class="lg:pl-72 flex flex-col min-h-screen">
             <!-- Top App-Bar -->
-            <header class="sticky top-0 z-30 flex h-16 sm:h-20 shrink-0 items-center justify-between gap-x-4 border-b border-slate-200 bg-white/80 px-4 sm:px-6 lg:px-8 backdrop-blur-md shadow-sm">
-                <div class="flex items-center gap-x-4">
-                    <button type="button" @click="sidebarOpen = true" class="-m-2.5 p-2.5 text-slate-700 lg:hidden rounded-xl hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-primary-500 active:scale-95 transition-all" aria-label="Buka navigasi">
+            <header class="sticky top-0 z-30 flex h-16 sm:h-20 shrink-0 items-center justify-between gap-x-2.5 sm:gap-x-4 border-b border-slate-200 bg-white/80 px-4 sm:px-6 lg:px-8 backdrop-blur-md shadow-sm">
+                <div class="flex items-center gap-x-2.5 sm:gap-x-4 min-w-0">
+                    <button type="button" @click="sidebarOpen = true" class="-m-2 p-2 sm:-m-2.5 sm:p-2.5 text-slate-700 lg:hidden rounded-xl hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-primary-500 active:scale-95 transition-all shrink-0" aria-label="Buka navigasi">
                         <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
                         </svg>
                     </button>
 
-                    <div class="hidden sm:flex items-center">
-                        <span class="inline-flex items-center px-3 py-1.5 rounded-full bg-slate-100 text-slate-700 font-bold text-sm tracking-wide shadow-inner">
+                    <div class="flex items-center min-w-0">
+                        <span class="inline-flex items-center px-3 py-1.5 rounded-full bg-slate-100 text-slate-700 font-bold text-sm tracking-wide shadow-inner truncate">
                             {{ \Carbon\Carbon::now()->translatedFormat('l, d F Y') }}
                         </span>
                     </div>
                 </div>
 
-                <div class="flex items-center gap-x-4">
+                <div class="flex items-center gap-x-4 shrink-0">
                     <livewire:layout.topbar-profile />
                 </div>
             </header>

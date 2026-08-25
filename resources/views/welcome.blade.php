@@ -10,7 +10,7 @@
     <!-- Dynamic SEO & Open Graph Meta -->
     <x-seo-meta
         title="eRapat | Pemkab Sinjai"
-        description="Manajemen Rapat Pemerintah Kabupaten Sinjai"
+        description="Portal Rapat Elektronik Pemerintah Kabupaten Sinjai"
         robots="index, follow"
     />
 
@@ -66,11 +66,15 @@
 
         <!-- Hero Container -->
         <div class="max-w-4xl w-full text-center relative z-10">
-            <!-- Main Heading -->
-            <h1 class="font-extrabold text-slate-900 tracking-tight leading-[1.15] mb-10 sm:mb-14">
-                <span class="block text-4xl sm:text-6xl md:text-7xl font-black">Manajemen Rapat</span>
-                <span class="block text-2xl sm:text-4xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-primary-600 to-indigo-600 mt-1.5 sm:mt-2.5">Pemerintah Kabupaten Sinjai</span>
-            </h1>
+            <!-- Main Heading (Eyebrow Tag Style) -->
+            <div class="mb-10 sm:mb-14">
+                <span class="block text-xs sm:text-sm md:text-base font-extrabold uppercase tracking-[0.18em] text-primary-600 mb-2 sm:mb-3">
+                    Pemerintah Kabupaten Sinjai
+                </span>
+                <h1 class="text-4xl sm:text-6xl md:text-7xl font-black text-slate-900 tracking-tight leading-[1.1]">
+                    Portal Rapat Elektronik
+                </h1>
+            </div>
 
             <!-- Today's Meetings Section -->
             @php
@@ -134,13 +138,13 @@
                 </div>
             </div>
             @else
-            <div class="bg-white/70 backdrop-blur-md rounded-3xl border border-slate-200 shadow-sm max-w-2xl mx-auto overflow-hidden p-8 text-center">
-                <div class="inline-flex items-center gap-2 px-3 py-1 bg-white border border-slate-200 text-slate-600 rounded-full text-xs font-bold shadow-2xs mb-4">
+            <div class="bg-white/80 backdrop-blur-md rounded-3xl border border-slate-200 shadow-sm max-w-xl mx-auto overflow-hidden p-6 sm:p-7 text-center">
+                <div class="inline-flex items-center gap-2 px-3 py-1 bg-slate-100 text-slate-600 border border-slate-200/70 rounded-full text-xs font-bold shadow-2xs mb-3.5">
                     <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
                     {{ \Carbon\Carbon::now()->translatedFormat('l, d F Y') }}
                 </div>
-                <div class="w-12 h-12 bg-slate-100 text-slate-400 rounded-2xl flex items-center justify-center mx-auto mb-3">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div class="w-12 h-12 bg-slate-100 text-slate-400 rounded-2xl flex items-center justify-center mx-auto mb-2.5 shadow-2xs">
+                    <svg class="w-6 h-6 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
                 </div>
@@ -149,18 +153,83 @@
                 </h3>
                 @auth
                 @unless(auth()->user()->hasRole('pimpinan'))
-                <div class="mt-5">
-                    <a href="{{ route('meetings.index') }}" wire:navigate class="inline-flex items-center justify-center px-4 py-2 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl text-xs font-bold transition-all shadow-sm gap-2">
+                <div class="mt-4">
+                    <a href="{{ route('meetings.index') }}" wire:navigate class="inline-flex items-center justify-center px-4 py-2 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl text-xs font-bold transition-all shadow-sm gap-1.5">
                         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                         </svg>
-                        Buat Rapat
+                        <span>Buat Rapat</span>
                     </a>
                 </div>
                 @endunless
                 @endauth
             </div>
             @endif
+        </div>
+
+        <!-- Features Showcase Section -->
+        <div class="mt-12 sm:mt-16 max-w-5xl w-full relative z-10">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
+                <!-- 1. Presensi Digital -->
+                <div class="bg-white/80 backdrop-blur-md rounded-2xl p-4 sm:p-5 border border-slate-200 shadow-2xs hover:shadow-md transition-all group">
+                    <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-3 group-hover:scale-105 transition-transform shadow-2xs">
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
+                        </svg>
+                    </div>
+                    <h3 class="font-extrabold text-slate-900 text-sm mb-1 group-hover:text-emerald-700 transition-colors">
+                        Presensi Digital
+                    </h3>
+                    <p class="text-xs text-slate-500 leading-relaxed font-medium">
+                        Presensi via QR Code dan tanda tangan digital.
+                    </p>
+                </div>
+
+                <!-- 2. TTE BSrE -->
+                <div class="bg-white/80 backdrop-blur-md rounded-2xl p-4 sm:p-5 border border-slate-200 shadow-2xs hover:shadow-md transition-all group">
+                    <div class="w-10 h-10 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center mb-3 group-hover:scale-105 transition-transform shadow-2xs">
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                        </svg>
+                    </div>
+                    <h3 class="font-extrabold text-slate-900 text-sm mb-1 group-hover:text-sky-700 transition-colors">
+                        TTE BSrE - BSSN
+                    </h3>
+                    <p class="text-xs text-slate-500 leading-relaxed font-medium">
+                        Pengesahan dokumen resmi tersertifikasi elektronik.
+                    </p>
+                </div>
+
+                <!-- 3. Notulen AI -->
+                <div class="bg-white/80 backdrop-blur-md rounded-2xl p-4 sm:p-5 border border-slate-200 shadow-2xs hover:shadow-md transition-all group">
+                    <div class="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center mb-3 group-hover:scale-105 transition-transform shadow-2xs">
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z" />
+                        </svg>
+                    </div>
+                    <h3 class="font-extrabold text-slate-900 text-sm mb-1 group-hover:text-purple-700 transition-colors">
+                        Notulen AI
+                    </h3>
+                    <p class="text-xs text-slate-500 leading-relaxed font-medium">
+                        Perapian dan ringkasan notulen otomatis.
+                    </p>
+                </div>
+
+                <!-- 4. Ekspor Dokumen -->
+                <div class="bg-white/80 backdrop-blur-md rounded-2xl p-4 sm:p-5 border border-slate-200 shadow-2xs hover:shadow-md transition-all group">
+                    <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center mb-3 group-hover:scale-105 transition-transform shadow-2xs">
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                    </div>
+                    <h3 class="font-extrabold text-slate-900 text-sm mb-1 group-hover:text-amber-700 transition-colors">
+                        Ekspor Dokumen
+                    </h3>
+                    <p class="text-xs text-slate-500 leading-relaxed font-medium">
+                        Cetak PDF resmi dan unduh arsip dokumentasi.
+                    </p>
+                </div>
+            </div>
         </div>
     </main>
 

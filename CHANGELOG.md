@@ -4,6 +4,23 @@ Semua perubahan penting pada proyek ini dicatat dalam berkas ini.
 
 Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/1.0.0/), dan proyek ini mematuhi [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.4] - 2026-08-26
+
+### Ditambahkan
+- **4 Kartu Layanan Unggulan di Landing Page**:
+  - Menambahkan kartu ringkas fitur utama eRapat (*Presensi Digital*, *TTE BSrE - BSSN*, *Notulen AI*, *Ekspor Dokumen*) pada [`resources/views/welcome.blade.php`](file:///Users/abedzul/Desktop/htdocs/rapat/resources/views/welcome.blade.php) sehingga halaman depan selalu informatif, hidup, dan profesional saat tidak ada jadwal rapat aktif.
+
+### Diubah
+- **Redesain Hero Section & Header Landing Page**:
+  - Mengubah susunan judul hero menjadi gaya *eyebrow tag* institusional resmi dengan teks instansi `PEMERINTAH KABUPATEN SINJAI` dan judul utama `Portal Rapat Elektronik`.
+  - Menyederhanakan kartu *empty state* rapat hari ini dengan badge tanggal dinamis dan tombol aksi cepat *Buat Rapat*.
+- **Grid 2x2 Kompak Kartu Statistik Dashboard di Mobile**:
+  - Mengubah susunan 4 kartu statistik (*Hari Ini, Minggu Ini, Bulan Ini, Tahun Ini*) pada [`resources/views/livewire/dashboard-summary.blade.php`](file:///Users/abedzul/Desktop/htdocs/rapat/resources/views/livewire/dashboard-summary.blade.php) dari 1 kolom bertumpuk menjadi grid 2 kolom x 2 baris simetris (`grid-cols-2 lg:grid-cols-4`) guna menghemat ruang vertikal layar smartphone.
+- **Auto-Fit Dropdown Profil Topbar Mobile**:
+  - Mengubah lebar dropdown menu profil di mobile ([`resources/views/livewire/layout/topbar-profile.blade.php`](file:///Users/abedzul/Desktop/htdocs/rapat/resources/views/livewire/layout/topbar-profile.blade.php)) menjadi `w-max min-w-[200px] max-w-[calc(100vw-2rem)]` agar otomatis menyesuaikan panjang nama pengguna dan gelar tanpa terpotong.
+- **Penyelarasan Badge Tanggal Topbar Mobile**:
+  - Menampilkan badge tanggal hari ini (`l, d F Y`) pada topbar mobile ([`resources/views/layouts/app.blade.php`](file:///Users/abedzul/Desktop/htdocs/rapat/resources/views/layouts/app.blade.php)) dengan style dan format yang seragam dengan desktop.
+
 ## [1.4.3] - 2026-08-26
 
 ### Ditambahkan

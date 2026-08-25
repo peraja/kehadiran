@@ -32,7 +32,7 @@ new class extends Component
     };
     @endphp
 
-    <x-dropdown align="right" width="w-56">
+    <x-dropdown align="right" width="w-max min-w-[200px] max-w-[calc(100vw-2rem)] sm:min-w-[220px] sm:w-auto">
         <x-slot name="trigger">
             <button type="button" class="flex items-center gap-2.5 p-1.5 sm:py-2 sm:px-3.5 rounded-2xl bg-slate-50/80 hover:bg-slate-100/80 border border-slate-200/80 outline-none focus:outline-none focus-visible:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/25 active:scale-[0.99] transition-all shadow-2xs select-none cursor-pointer" aria-label="Menu profil">
                 <!-- Avatar Icon (Selalu Tampil) -->
@@ -60,8 +60,12 @@ new class extends Component
         <x-slot name="content">
             <!-- Header Nama & Role khusus di Mobile saat dropdown dibuka -->
             <div class="block sm:hidden px-4 py-3 border-b border-slate-100 bg-slate-50/70">
-                <div class="text-sm font-bold text-slate-900 truncate">{{ $user->name }}</div>
-                <div class="text-xs text-slate-500 font-semibold mt-0.5">{{ $roleLabel }}</div>
+                <div class="text-sm font-extrabold text-slate-900 leading-snug whitespace-nowrap">{{ $user->name }}</div>
+                <div class="text-xs text-slate-500 font-semibold mt-1 flex items-center gap-1.5">
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border {{ $roleBadgeColors }}">
+                        {{ $roleLabel }}
+                    </span>
+                </div>
             </div>
 
             <!-- Menu Links -->
