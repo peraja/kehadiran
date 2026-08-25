@@ -381,24 +381,24 @@ new #[Layout('layouts.app')] class extends Component {
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div class="sm:col-span-2">
                     <label class="block text-sm font-bold text-slate-700 mb-1">Nama OPD</label>
-                    <input type="text" value="{{ $name }}" disabled class="w-full text-sm py-2.5 px-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-500 font-bold cursor-not-allowed shadow-inner" />
+                    <input type="text" value="{{ $name }}" disabled class="w-full text-base sm:text-sm py-2.5 px-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-500 font-bold cursor-not-allowed shadow-inner" />
                 </div>
 
                 <div class="sm:col-span-2">
                     <label for="address" class="block text-sm font-bold text-slate-700 mb-1">Alamat</label>
-                    <textarea wire:model="address" id="address" rows="2" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Alamat kantor"></textarea>
+                    <textarea wire:model="address" id="address" rows="2" class="w-full text-base sm:text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Alamat kantor"></textarea>
                     @error('address') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                 </div>
 
                 <div>
                     <label for="phone" class="block text-sm font-bold text-slate-700 mb-1">Telepon</label>
-                    <input wire:model="phone" id="phone" type="text" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Nomor telepon" />
+                    <input wire:model="phone" id="phone" type="text" class="w-full text-base sm:text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Nomor telepon" />
                     @error('phone') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                 </div>
 
                 <div>
                     <label for="email" class="block text-sm font-bold text-slate-700 mb-1">Email</label>
-                    <input wire:model="email" id="email" type="email" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="email@sinjaikab.go.id" />
+                    <input wire:model="email" id="email" type="email" class="w-full text-base sm:text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="email@sinjaikab.go.id" />
                     @error('email') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                 </div>
             </div>
@@ -632,7 +632,7 @@ new #[Layout('layouts.app')] class extends Component {
                 <!-- Nama Lengkap (Paling Atas) -->
                 <div>
                     <label for="signer_name" class="block text-sm font-bold text-slate-700 mb-1">Nama Lengkap</label>
-                    <input wire:model="signer_name" id="signer_name" type="text" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Contoh: Dr. H. Ahmad Yani, M.Si" required />
+                    <input wire:model="signer_name" id="signer_name" type="text" class="w-full text-base sm:text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Contoh: Dr. H. Ahmad Yani, M.Si" required />
                     @error('signer_name') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                 </div>
 
@@ -641,7 +641,7 @@ new #[Layout('layouts.app')] class extends Component {
                     <div>
                         <label for="signer_nip" class="block text-sm font-bold text-slate-700 mb-1">NIP</label>
                         <div class="flex items-center gap-2">
-                            <input wire:model="signer_nip" wire:keydown.enter.prevent="checkNipFromApi" id="signer_nip" type="text" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 font-mono focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Contoh: 198501012010011001" />
+                            <input wire:model="signer_nip" wire:keydown.enter.prevent="checkNipFromApi" id="signer_nip" type="text" class="w-full text-base sm:text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 font-mono focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Contoh: 198501012010011001" />
 
                             <button type="button" wire:click="checkNipFromApi" wire:loading.attr="disabled" wire:target="checkNipFromApi" class="shrink-0 inline-flex items-center justify-center px-3 py-2.5 bg-slate-800 hover:bg-slate-900 active:scale-95 text-white rounded-xl font-bold text-xs transition-all shadow-sm gap-1.5" title="Tarik dari SIMPEG">
                                 <svg wire:loading.remove wire:target="checkNipFromApi" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -660,7 +660,7 @@ new #[Layout('layouts.app')] class extends Component {
                     <!-- NIK -->
                     <div>
                         <label for="signer_nik" class="block text-sm font-bold text-slate-700 mb-1">NIK</label>
-                        <input wire:model="signer_nik" id="signer_nik" type="text" maxlength="16" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 font-mono focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Contoh: 7307010101850001" />
+                        <input wire:model="signer_nik" id="signer_nik" type="text" maxlength="16" class="w-full text-base sm:text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 font-mono focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Contoh: 7307010101850001" />
                         @error('signer_nik') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                     </div>
                 </div>
@@ -689,7 +689,7 @@ new #[Layout('layouts.app')] class extends Component {
                     <!-- Eselon -->
                     <div>
                         <label for="signer_eselon" class="block text-sm font-bold text-slate-700 mb-1">Eselon</label>
-                        <select wire:model="signer_eselon" id="signer_eselon" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors">
+                        <select wire:model="signer_eselon" id="signer_eselon" class="w-full text-base sm:text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors">
                             <option value="II.a">Eselon II.a</option>
                             <option value="II.b">Eselon II.b</option>
                             <option value="III.a">Eselon III.a</option>
@@ -704,7 +704,7 @@ new #[Layout('layouts.app')] class extends Component {
                     <!-- Pangkat -->
                     <div>
                         <label for="signer_rank" class="block text-sm font-bold text-slate-700 mb-1">Pangkat</label>
-                        <input wire:model="signer_rank" id="signer_rank" type="text" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Contoh: Pembina" />
+                        <input wire:model="signer_rank" id="signer_rank" type="text" class="w-full text-base sm:text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Contoh: Pembina" />
                         @error('signer_rank') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                     </div>
                 </div>
@@ -712,7 +712,7 @@ new #[Layout('layouts.app')] class extends Component {
                 <!-- Jabatan -->
                 <div>
                     <label for="signer_title" class="block text-sm font-bold text-slate-700 mb-1">Jabatan</label>
-                    <input wire:model="signer_title" id="signer_title" type="text" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Contoh: Kepala Bidang Hubungan Masyarakat" required />
+                    <input wire:model="signer_title" id="signer_title" type="text" class="w-full text-base sm:text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Contoh: Kepala Bidang Hubungan Masyarakat" required />
                     @error('signer_title') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                 </div>
 
@@ -720,7 +720,7 @@ new #[Layout('layouts.app')] class extends Component {
                 <!-- Unit Kerja -->
                 <div>
                     <label for="signer_bidang" class="block text-sm font-bold text-slate-700 mb-1">Unit Kerja</label>
-                    <input wire:model="signer_bidang" id="signer_bidang" type="text" class="w-full text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Contoh: Bidang Informasi dan Komunikasi Publik" />
+                    <input wire:model="signer_bidang" id="signer_bidang" type="text" class="w-full text-base sm:text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Contoh: Bidang Informasi dan Komunikasi Publik" />
                     @error('signer_bidang') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                 </div>
                 @endif

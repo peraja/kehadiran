@@ -32,11 +32,11 @@ new class extends Component
     };
     @endphp
 
-    <x-dropdown align="right" width="w-48">
+    <x-dropdown align="right" width="w-56">
         <x-slot name="trigger">
-            <button type="button" class="flex items-center gap-2.5 p-1 sm:py-2 sm:px-3.5 rounded-2xl bg-slate-50/80 hover:bg-slate-100/80 border border-slate-200/80 outline-none focus:outline-none focus-visible:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/25 active:scale-[0.99] transition-all shadow-2xs select-none cursor-pointer" aria-label="Menu profil">
+            <button type="button" class="flex items-center gap-2.5 p-1.5 sm:py-2 sm:px-3.5 rounded-2xl bg-slate-50/80 hover:bg-slate-100/80 border border-slate-200/80 outline-none focus:outline-none focus-visible:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/25 active:scale-[0.99] transition-all shadow-2xs select-none cursor-pointer" aria-label="Menu profil">
                 <!-- Avatar Icon (Selalu Tampil) -->
-                <div class="w-9 h-9 rounded-xl bg-primary-600 text-white font-extrabold text-sm flex items-center justify-center shadow-xs shrink-0">
+                <div class="w-9 h-9 sm:w-9 sm:h-9 rounded-xl bg-primary-600 text-white font-extrabold text-sm flex items-center justify-center shadow-xs shrink-0">
                     {{ strtoupper(substr($user->name, 0, 2)) }}
                 </div>
 
@@ -59,15 +59,15 @@ new class extends Component
 
         <x-slot name="content">
             <!-- Header Nama & Role khusus di Mobile saat dropdown dibuka -->
-            <div class="block sm:hidden px-4 py-2.5 border-b border-slate-100 bg-slate-50/50">
-                <div class="text-xs font-bold text-slate-900 truncate">{{ $user->name }}</div>
-                <div class="text-[10px] text-slate-500 font-semibold mt-0.5">{{ $roleLabel }}</div>
+            <div class="block sm:hidden px-4 py-3 border-b border-slate-100 bg-slate-50/70">
+                <div class="text-sm font-bold text-slate-900 truncate">{{ $user->name }}</div>
+                <div class="text-xs text-slate-500 font-semibold mt-0.5">{{ $roleLabel }}</div>
             </div>
 
             <!-- Menu Links -->
-            <div class="py-1">
-                <x-dropdown-link :href="route('profile')" wire:navigate class="flex items-center gap-2.5 px-4 py-2 text-xs sm:text-sm font-semibold text-slate-700 hover:text-primary-600 hover:bg-slate-50">
-                    <svg class="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div class="py-1.5">
+                <x-dropdown-link :href="route('profile')" wire:navigate class="flex items-center gap-3 px-4 py-3 sm:py-2.5 text-sm font-semibold text-slate-700 hover:text-primary-600 hover:bg-slate-50 active:bg-slate-100 transition-colors">
+                    <svg class="w-5 h-5 sm:w-4 sm:h-4 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                     </svg>
                     <span>Profil</span>
@@ -76,8 +76,8 @@ new class extends Component
                 @if($hasMultipleRoles)
                 <button type="button" 
                         x-on:click="$dispatch('open-modal', 'switch-role-modal')" 
-                        class="w-full flex items-center gap-2.5 px-4 py-2 text-xs sm:text-sm font-semibold text-slate-700 hover:text-primary-600 hover:bg-slate-50 transition-colors text-left cursor-pointer">
-                    <svg class="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        class="w-full flex items-center gap-3 px-4 py-3 sm:py-2.5 text-sm font-semibold text-slate-700 hover:text-primary-600 hover:bg-slate-50 active:bg-slate-100 transition-colors text-left cursor-pointer">
+                    <svg class="w-5 h-5 sm:w-4 sm:h-4 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
                     </svg>
                     <span>Role</span>
@@ -87,8 +87,8 @@ new class extends Component
                 <form method="POST" action="{{ route('logout') }}" class="w-full">
                     @csrf
                     <button type="submit" class="w-full text-start">
-                        <x-dropdown-link :href="route('logout')" onclick="event.preventDefault(); this.closest('form').submit();" class="flex items-center gap-2.5 px-4 py-2 text-xs sm:text-sm font-semibold text-rose-600 hover:text-rose-700 hover:bg-rose-50">
-                            <svg class="w-4 h-4 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <x-dropdown-link :href="route('logout')" onclick="event.preventDefault(); this.closest('form').submit();" class="flex items-center gap-3 px-4 py-3 sm:py-2.5 text-sm font-semibold text-rose-600 hover:text-rose-700 hover:bg-rose-50 active:bg-rose-100 transition-colors">
+                            <svg class="w-5 h-5 sm:w-4 sm:h-4 text-rose-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                             </svg>
                             <span>Logout</span>

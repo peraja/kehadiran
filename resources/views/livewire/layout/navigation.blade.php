@@ -18,7 +18,12 @@ new class extends Component
 
 <div>
     <!-- Mobile Sidebar Backdrop & Drawer -->
-    <div x-show="sidebarOpen" class="relative z-[100] lg:hidden" role="dialog" aria-modal="true" style="display: none;">
+    <div x-show="sidebarOpen"
+        x-on:keydown.escape.window="sidebarOpen = false"
+        class="relative z-[100] lg:hidden"
+        role="dialog"
+        aria-modal="true"
+        style="display: none;">
         <!-- Backdrop -->
         <div x-show="sidebarOpen"
             x-transition:enter="transition-opacity ease-linear duration-300"
@@ -30,7 +35,7 @@ new class extends Component
             class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm"
             @click="sidebarOpen = false"></div>
 
-        <div class="fixed inset-0 flex">
+        <div class="fixed inset-0 flex" @click="sidebarOpen = false">
             <!-- Drawer Menu -->
             <div x-show="sidebarOpen"
                 x-transition:enter="transition ease-in-out duration-300 transform"
@@ -39,17 +44,8 @@ new class extends Component
                 x-transition:leave="transition ease-in-out duration-300 transform"
                 x-transition:leave-start="translate-x-0"
                 x-transition:leave-end="-translate-x-full"
-                class="relative mr-16 flex w-full max-w-xs flex-1">
-
-                <!-- Close Button -->
-                <div class="absolute left-full top-0 flex w-16 justify-center pt-5">
-                    <button type="button" @click="sidebarOpen = false" class="-m-2.5 p-2.5 text-white/70 hover:text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-white transition-colors">
-                        <span class="sr-only">Tutup navigasi</span>
-                        <svg class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                    </button>
-                </div>
+                class="relative mr-16 flex w-full max-w-xs flex-1"
+                @click.stop>
 
                 <!-- Drawer Content -->
                 <div class="flex grow flex-col overflow-y-auto bg-slate-900 px-6 pb-4 shadow-2xl">

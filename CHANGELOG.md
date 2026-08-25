@@ -4,6 +4,26 @@ Semua perubahan penting pada proyek ini dicatat dalam berkas ini.
 
 Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/1.0.0/), dan proyek ini mematuhi [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.1] - 2026-08-25
+
+### Diubah
+- **Standardisasi Layout CSS Grid pada Seluruh Toolbar & Filter Tabel**:
+  - Mengubah seluruh toolbar dan filter tabel (*Daftar Rapat*, *Riwayat Rapat*, *Manajemen Pengguna*, *Master Data OPD*, dan *Log Audit*) menggunakan layout responsif **CSS Grid** (`grid-cols-*`) sehingga proporsi tombol filter status/role, search input, date range picker, dan tombol reset tersusun simetris dan rapi di semua ukuran layar.
+- **Pencegahan Mobile Auto-Zoom pada Seluruh Input Form**:
+  - Menetapkan ukuran font seluruh input teks, password, date picker, search bar, select, dan textarea di seluruh komponen aplikasi menjadi `text-base sm:text-sm` (16px di layar HP <640px) guna mencegah browser iOS Safari dan Chrome mobile melakukan *auto-zoom* otomatis saat input difokuskan.
+  - Menambahkan `maximum-scale=1` pada viewport meta tag di [`layouts/guest.blade.php`](file:///Users/abedzul/Desktop/htdocs/rapat/resources/views/layouts/guest.blade.php), [`layouts/app.blade.php`](file:///Users/abedzul/Desktop/htdocs/rapat/resources/views/layouts/app.blade.php), dan [`welcome.blade.php`](file:///Users/abedzul/Desktop/htdocs/rapat/resources/views/welcome.blade.php).
+- **Penyempurnaan Navigasi Sidebar Mobile**:
+  - Menambahkan penutupan sidebar mobile secara instan saat pengguna menyentuh/mengklik area luar drawer atau backdrop gelap, serta melalui tombol keyboard `Esc`.
+  - Menghapus tombol *close* (ikon silang X di luar laci) untuk tampilan mobile yang lebih bersih dan minimalis.
+- **Optimalisasi Tombol Aksi Header Rapat di Mobile**:
+  - Menambahkan `whitespace-nowrap`, `shrink-0`, dan penyesuaian padding pada tombol-tombol aksi header rapat (*QR Code*, *Mulai*, *Selesaikan*, *TTE Semua*, *Edit*) agar tidak terpotong menjadi 2 baris di layar kecil.
+
+### Diperbaiki
+- **Perbaikan Glitch Scroll dan Scroll-Bleed pada Modal Global**:
+  - Menghapus manipulasi `overflow: hidden` pada `document.documentElement` (hanya disematkan pada `document.body`) guna mengatasi bug loncatan posisi scroll ke paling atas saat membuka modal di halaman yang sedang di-scroll.
+  - Menambahkan opsi `focus({ preventScroll: true })` saat memfokuskan input pertama di modal.
+  - Menambahkan `overscroll-contain` dan `overflow-x-hidden` pada backdrop dan kartu modal guna mencegah *scroll bleed* ke halaman belakang serta mencegah goyangan scroll horizontal di mobile.
+
 ## [1.4.0] - 2026-08-25
 
 ### Ditambahkan

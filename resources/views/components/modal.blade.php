@@ -38,10 +38,10 @@ $maxWidth = [
     }"
     x-init="$watch('show', value => {
         if (value) {
-            document.body.classList.add('overflow-y-hidden');
-            {{ $attributes->has('focusable') ? 'setTimeout(() => firstFocusable().focus(), 100)' : '' }}
+            document.body.classList.add('overflow-hidden');
+            {{ $attributes->has('focusable') ? 'setTimeout(() => firstFocusable()?.focus({ preventScroll: true }), 100)' : '' }}
         } else {
-            document.body.classList.remove('overflow-y-hidden');
+            document.body.classList.remove('overflow-hidden');
         }
     })"
     x-on:open-modal.window="($event.detail == '{{ $name }}' || (Array.isArray($event.detail) && $event.detail[0] == '{{ $name }}') || ($event.detail && $event.detail.name == '{{ $name }}')) ? show = true : null"
@@ -57,14 +57,15 @@ $maxWidth = [
     <template x-teleport="body">
         <div
             x-show="show"
-            class="fixed inset-0 z-[150] overflow-hidden"
+            class="fixed inset-0 z-[150] overflow-hidden overscroll-contain"
             style="display: {{ $show ? 'block' : 'none' }};"
         >
             <!-- Modal Backdrop -->
             <div
                 x-show="show"
-                class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity"
+                class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity overscroll-contain"
                 @if($dismissible) x-on:click="show = false" @endif
+                x-on:touchmove.prevent
                 x-transition:enter="ease-out duration-300"
                 x-transition:enter-start="opacity-0"
                 x-transition:enter-end="opacity-100"
@@ -74,11 +75,11 @@ $maxWidth = [
             ></div>
 
             <!-- Centering & Viewport Boundary Wrapper -->
-            <div class="fixed inset-0 z-10 flex items-center justify-center p-4 sm:p-6 text-center pointer-events-none">
+            <div class="fixed inset-0 z-10 flex items-center justify-center p-4 sm:p-6 text-center pointer-events-none overscroll-contain overflow-x-hidden">
                 <!-- Modal Content Card with Internal Scroll -->
                 <div
                     x-show="show"
-                    class="relative w-full {{ $maxWidth }} max-h-[calc(100dvh-2rem)] sm:max-h-[calc(100dvh-3.5rem)] transform overflow-y-auto rounded-3xl bg-white text-left shadow-2xl border border-slate-200/80 transition-all pointer-events-auto"
+                    class="relative w-full {{ $maxWidth }} max-h-[calc(100dvh-2rem)] sm:max-h-[calc(100dvh-3.5rem)] transform overflow-y-auto overflow-x-hidden overscroll-contain rounded-3xl bg-white text-left shadow-2xl border border-slate-200/80 transition-all pointer-events-auto"
                     x-transition:enter="ease-out duration-300"
                     x-transition:enter-start="opacity-0 scale-95 translate-y-2"
                     x-transition:enter-end="opacity-100 scale-100 translate-y-0"

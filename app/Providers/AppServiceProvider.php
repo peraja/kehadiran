@@ -19,9 +19,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // Force HTTPS pada server produksi / saat APP_URL menggunakan https
-        // agar tidak memicu error SSL pada development server lokal (php artisan serve).
-        if (app()->isProduction() || str_starts_with(config('app.url', ''), 'https://')) {
+        // Force HTTPS pada server produksi / saat APP_URL menggunakan https / reverse proxy tunnel
+        if (app()->isProduction() || str_starts_with(config('app.url', ''), 'https://') || request()->header('X-Forwarded-Proto') === 'https') {
             \Illuminate\Support\Facades\URL::forceScheme('https');
         }
 

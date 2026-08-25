@@ -290,7 +290,7 @@ new #[Layout('layouts.guest')] class extends Component {
             <div class="flex flex-col sm:flex-row sm:items-start gap-3">
                 <div class="flex-1 w-full">
                     <input wire:model="nip" id="nip" type="text"
-                        class="block w-full py-2.5 px-3 rounded-xl border border-slate-300 text-sm font-mono focus:ring-primary-500 focus:border-primary-500 transition-colors {{ $nip_checked ? 'bg-slate-50 text-slate-500 opacity-70' : 'bg-white' }}"
+                        class="block w-full py-2.5 px-3 rounded-xl border border-slate-300 text-base sm:text-sm font-mono focus:ring-primary-500 focus:border-primary-500 transition-colors {{ $nip_checked ? 'bg-slate-50 text-slate-500 opacity-70' : 'bg-white' }}"
                         placeholder="Contoh: 198501012010011001"
                         @readonly($nip_checked)
                         wire:keydown.enter.prevent="checkNip"
@@ -344,17 +344,17 @@ new #[Layout('layouts.guest')] class extends Component {
         <div class="space-y-5 bg-slate-50 p-5 rounded-2xl border border-slate-200">
             <div>
                 <label for="guest_name" class="block text-sm font-bold text-slate-700 mb-1">Nama Lengkap</label>
-                <input wire:model="guest_name" id="guest_name" type="text" class="block w-full py-2.5 px-3 rounded-xl border border-slate-300 text-sm focus:ring-primary-500 focus:border-primary-500 transition-colors" placeholder="Contoh: Ahmad Yani" required />
+                <input wire:model="guest_name" id="guest_name" type="text" class="block w-full py-2.5 px-3 rounded-xl border border-slate-300 text-base sm:text-sm focus:ring-primary-500 focus:border-primary-500 transition-colors" placeholder="Contoh: Ahmad Yani" required />
                 @error('guest_name') <span class="text-xs text-rose-600 mt-1 block font-bold">{{ $message }}</span> @enderror
             </div>
             <div>
                 <label for="guest_agency" class="block text-sm font-bold text-slate-700 mb-1">Instansi / Lembaga</label>
-                <input wire:model="guest_agency" id="guest_agency" type="text" class="block w-full py-2.5 px-3 rounded-xl border border-slate-300 text-sm focus:ring-primary-500 focus:border-primary-500 transition-colors" placeholder="Contoh: Polres Sinjai" required />
+                <input wire:model="guest_agency" id="guest_agency" type="text" class="block w-full py-2.5 px-3 rounded-xl border border-slate-300 text-base sm:text-sm focus:ring-primary-500 focus:border-primary-500 transition-colors" placeholder="Contoh: Polres Sinjai" required />
                 @error('guest_agency') <span class="text-xs text-rose-600 mt-1 block font-bold">{{ $message }}</span> @enderror
             </div>
             <div>
                 <label for="guest_position" class="block text-sm font-bold text-slate-700 mb-1">Jabatan (Opsional)</label>
-                <input wire:model="guest_position" id="guest_position" type="text" class="block w-full py-2.5 px-3 rounded-xl border border-slate-300 text-sm focus:ring-primary-500 focus:border-primary-500 transition-colors" placeholder="Contoh: Staf Humas" />
+                <input wire:model="guest_position" id="guest_position" type="text" class="block w-full py-2.5 px-3 rounded-xl border border-slate-300 text-base sm:text-sm focus:ring-primary-500 focus:border-primary-500 transition-colors" placeholder="Contoh: Staf Humas" />
                 @error('guest_position') <span class="text-xs text-rose-600 mt-1 block font-bold">{{ $message }}</span> @enderror
             </div>
         </div>

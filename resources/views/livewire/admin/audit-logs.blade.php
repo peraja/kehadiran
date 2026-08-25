@@ -124,8 +124,8 @@ new #[Layout('layouts.app')] class extends Component {
     <div class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
         <!-- Toolbar (Top Pills + Filter Bar) -->
         <div class="p-4 sm:p-6 border-b border-slate-100 bg-slate-50/50 space-y-4">
-            <!-- Filter Pills (Kategori Aksi) -->
-            <div class="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2 w-full md:w-auto">
+            <!-- Filter Pills (Grid) -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 w-full">
                 <button wire:click="$set('actionFilter', '')"
                     class="inline-flex items-center justify-center gap-1.5 h-10 px-3 sm:px-4 rounded-xl text-xs font-bold transition-all {{ $actionFilter === '' ? 'bg-slate-900 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900' }}">
                     Semua
@@ -151,17 +151,18 @@ new #[Layout('layouts.app')] class extends Component {
                 </button>
             </div>
 
-            <!-- Search Field & Date Range (Fluid responsive bar) -->
-            <div class="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+            <!-- Search Field & Date Range (Grid) -->
+            @php $hasActiveFilters = $actionFilter || $date_from || $date_to; @endphp
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-2.5 items-center">
                 <!-- Search Input -->
-                <div class="relative flex-1 min-w-[220px]">
+                <div class="relative lg:col-span-6 xl:col-span-7 w-full">
                     <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
                         <svg class="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                         </svg>
                     </div>
                     <input wire:model.live.debounce.300ms="search" type="text"
-                        class="block w-full h-10 rounded-xl border border-slate-200 pl-9 pr-9 py-2 text-xs sm:text-sm focus:border-primary-500 focus:ring-primary-500 shadow-2xs transition-colors bg-white placeholder:text-slate-400"
+                        class="block w-full h-10 rounded-xl border border-slate-200 pl-9 pr-9 py-2 text-base sm:text-sm focus:border-primary-500 focus:ring-primary-500 shadow-2xs transition-colors bg-white placeholder:text-slate-400"
                         placeholder="Cari nama, NIP, aksi, keterangan, IP...">
                     @if($search)
                     <button wire:click="$set('search', '')" class="absolute inset-y-0 right-0 pr-2.5 flex items-center text-slate-400 hover:text-slate-600 transition-colors" title="Hapus pencarian">
@@ -172,34 +173,33 @@ new #[Layout('layouts.app')] class extends Component {
                     @endif
                 </div>
 
-                <!-- Right Side Date Filter & Reset (Full width on mobile, inline on desktop) -->
-                <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full md:w-auto shrink-0">
-                    <!-- Date Range Container (Full width 2 columns on mobile) -->
-                    <div class="grid grid-cols-2 sm:inline-flex items-center bg-white border border-slate-200 rounded-xl shadow-2xs overflow-hidden h-10 divide-x divide-slate-200 w-full sm:w-auto">
-                        <div class="flex items-center px-2.5 py-1 gap-1.5 min-w-0">
-                            <span class="text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wider text-slate-400 shrink-0">Dari</span>
-                            <input wire:model.live="date_from" type="date"
-                                class="border-0 p-0 text-xs font-semibold text-slate-700 focus:ring-0 bg-transparent cursor-pointer w-full min-w-0" />
-                        </div>
-                        <div class="flex items-center px-2.5 py-1 gap-1.5 min-w-0">
-                            <span class="text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wider text-slate-400 shrink-0">Sampai</span>
-                            <input wire:model.live="date_to" type="date"
-                                class="border-0 p-0 text-xs font-semibold text-slate-700 focus:ring-0 bg-transparent cursor-pointer w-full min-w-0" />
-                        </div>
+                <!-- Date Range Container -->
+                <div class="{{ $hasActiveFilters ? 'lg:col-span-5 xl:col-span-4' : 'lg:col-span-6 xl:col-span-5' }} grid grid-cols-2 items-center bg-white border border-slate-200 rounded-xl shadow-2xs overflow-hidden h-10 divide-x divide-slate-200 w-full">
+                    <div class="flex items-center px-2.5 py-1 gap-1.5 min-w-0">
+                        <span class="text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wider text-slate-400 shrink-0">Dari</span>
+                        <input wire:model.live="date_from" type="date"
+                            class="border-0 p-0 text-base sm:text-xs font-semibold text-slate-700 focus:ring-0 bg-transparent cursor-pointer w-full min-w-0" />
                     </div>
+                    <div class="flex items-center px-2.5 py-1 gap-1.5 min-w-0">
+                        <span class="text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wider text-slate-400 shrink-0">Sampai</span>
+                        <input wire:model.live="date_to" type="date"
+                            class="border-0 p-0 text-base sm:text-xs font-semibold text-slate-700 focus:ring-0 bg-transparent cursor-pointer w-full min-w-0" />
+                    </div>
+                </div>
 
-                    @if($actionFilter || $date_from || $date_to)
-                    <!-- Reset Button -->
+                @if($hasActiveFilters)
+                <!-- Reset Button -->
+                <div class="lg:col-span-1 flex items-center">
                     <button wire:click="resetFilters"
-                        class="h-10 inline-flex items-center justify-center gap-1.5 px-3 rounded-xl text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 active:scale-95 transition-all border border-rose-200/80 shadow-2xs cursor-pointer shrink-0 w-full sm:w-auto"
+                        class="h-10 w-full inline-flex items-center justify-center gap-1.5 px-3 rounded-xl text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 active:scale-95 transition-all border border-rose-200/80 shadow-2xs cursor-pointer"
                         title="Reset semua filter">
                         <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                         </svg>
-                        <span>Reset Filter</span>
+                        <span>Reset</span>
                     </button>
-                    @endif
                 </div>
+                @endif
             </div>
         </div>
 
