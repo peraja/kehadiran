@@ -60,7 +60,4 @@ Volt::route('audit-logs', 'admin.audit-logs')
     ->middleware(['auth'])
     ->name('admin.audit-logs');
 
-// Fallback for accidental GET requests to livewire update endpoint
-Route::get('livewire/update', fn () => response()->noContent());
-
 require __DIR__.'/auth.php';

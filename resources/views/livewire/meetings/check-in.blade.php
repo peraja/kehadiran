@@ -473,6 +473,7 @@ new #[Layout('layouts.guest')] class extends Component {
                 isDrawing: false,
                 hasDrawn: false,
                 ctx: null,
+                pathData: '',
                 signature: signatureData,
 
                 init() {
@@ -533,6 +534,7 @@ new #[Layout('layouts.guest')] class extends Component {
                     const pos = this.getPos(e);
                     this.ctx.beginPath();
                     this.ctx.moveTo(pos.x, pos.y);
+                    this.pathData += `M ${Math.round(pos.x)} ${Math.round(pos.y)} `;
                 },
 
                 draw(e) {
@@ -540,12 +542,12 @@ new #[Layout('layouts.guest')] class extends Component {
                     const pos = this.getPos(e);
                     this.ctx.lineTo(pos.x, pos.y);
                     this.ctx.stroke();
+                    this.pathData += `L ${Math.round(pos.x)} ${Math.round(pos.y)} `;
                 },
 
                 stopDrawing() {
                     if (!this.isDrawing) return;
                     this.isDrawing = false;
-                    this.updateSignatureData();
                 },
 
                 clearSignature() {
@@ -553,24 +555,20 @@ new #[Layout('layouts.guest')] class extends Component {
                     if (!canvas || !this.ctx) return;
                     this.ctx.clearRect(0, 0, canvas.width, canvas.height);
                     this.hasDrawn = false;
+                    this.pathData = '';
                     this.signature = '';
                 },
 
                 updateSignatureData() {
                     const canvas = this.$refs.canvas;
-                    if (!canvas || !this.hasDrawn) {
+                    if (!canvas || !this.hasDrawn || !this.pathData) {
                         this.signature = '';
                         return '';
                     }
 
-                    // Create a compact normalized canvas (400x180) to keep base64 payload lightweight
-                    const exportCanvas = document.createElement('canvas');
-                    exportCanvas.width = 400;
-                    exportCanvas.height = 180;
-                    const exportCtx = exportCanvas.getContext('2d');
-                    exportCtx.drawImage(canvas, 0, 0, 400, 180);
-
-                    const dataUrl = exportCanvas.toDataURL('image/png');
+                    // Export crisp, ultra-lightweight SVG (~300 bytes)
+                    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${canvas.width} ${canvas.height}"><path d="${this.pathData}" fill="none" stroke="#0f172a" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+                    const dataUrl = 'data:image/svg+xml;base64,' + btoa(svg);
                     this.signature = dataUrl;
                     return dataUrl;
                 },
