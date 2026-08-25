@@ -151,8 +151,12 @@ new #[Layout('layouts.guest')] class extends Component {
         $this->nip_checked = true;
     }
 
-    public function confirmCheckIn()
+    public function confirmCheckIn(?string $signatureData = null)
     {
+        if (!empty($signatureData)) {
+            $this->signature = $signatureData;
+        }
+
         if ($this->meeting->status !== 'ongoing') {
             $this->status = 'not_available';
             $this->message = 'Presensi hanya dibuka saat rapat berlangsung.';
@@ -366,7 +370,7 @@ new #[Layout('layouts.guest')] class extends Component {
             </div>
 
             <div>
-                <button type="button" @click="updateSignatureData(); $wire.confirmCheckIn()" wire:loading.attr="disabled" wire:target="confirmCheckIn" class="w-full flex justify-center items-center px-6 py-3 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl font-bold text-sm transition-all shadow-sm gap-2 cursor-pointer">
+                <button type="button" @click="submitCheckIn()" wire:loading.attr="disabled" wire:target="confirmCheckIn" class="w-full flex justify-center items-center px-6 py-3 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl font-bold text-sm transition-all shadow-sm gap-2 cursor-pointer">
                     <svg wire:loading.remove wire:target="confirmCheckIn" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
@@ -545,8 +549,31 @@ new #[Layout('layouts.guest')] class extends Component {
 
                 updateSignatureData() {
                     const canvas = this.$refs.canvas;
-                    if (!canvas) return;
-                    this.signature = canvas.toDataURL('image/png');
+                    if (!canvas || !this.hasDrawn) {
+                        this.signature = '';
+                        return '';
+                    }
+
+                    // Create a compact normalized canvas (400x180) to keep base64 payload lightweight
+                    const exportCanvas = document.createElement('canvas');
+                    exportCanvas.width = 400;
+                    exportCanvas.height = 180;
+                    const exportCtx = exportCanvas.getContext('2d');
+                    exportCtx.drawImage(canvas, 0, 0, 400, 180);
+
+                    const dataUrl = exportCanvas.toDataURL('image/png');
+                    this.signature = dataUrl;
+                    return dataUrl;
+                },
+
+                submitCheckIn() {
+                    const sig = this.updateSignatureData();
+                    if (!sig) {
+                        this.$wire.set('signature', '');
+                        this.$wire.confirmCheckIn();
+                        return;
+                    }
+                    this.$wire.confirmCheckIn(sig);
                 }
             }));
         });
