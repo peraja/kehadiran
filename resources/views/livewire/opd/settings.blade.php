@@ -334,7 +334,7 @@ new #[Layout('layouts.app')] class extends Component {
 
 <div class="space-y-6 pb-10">
     <!-- Header Section -->
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-slate-200 shadow-sm relative overflow-hidden">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 sm:p-6 rounded-3xl border border-slate-200 shadow-sm relative overflow-hidden">
         <div class="absolute right-0 top-0 -mt-10 -mr-10 w-40 h-40 bg-gradient-to-br from-primary-50 to-primary-100 rounded-full blur-3xl pointer-events-none opacity-60"></div>
         <div class="relative z-10">
             <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 mb-1">

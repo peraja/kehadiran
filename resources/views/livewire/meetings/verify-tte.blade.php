@@ -56,6 +56,14 @@ new #[Layout('layouts.guest')] class extends Component {
 }; ?>
 
 <div class="space-y-6">
+    <x-slot:seo>
+        <x-seo-meta
+            :title="'Verifikasi ' . $docTitle . ' | ' . $meeting->title"
+            :description="'Verifikasi TTE ' . $docTitle . ' agenda ' . $meeting->title . ' oleh ' . $signerName . '.'"
+            robots="noindex, nofollow"
+        />
+    </x-slot:seo>
+
     <!-- Verification Status Banner -->
     @if($isSigned)
     <div class="text-center space-y-4">

@@ -275,7 +275,7 @@ new #[Layout('layouts.app')] class extends Component {
 
 <div x-data x-on:trigger-next-sync.window="setTimeout(() => { $wire.syncNextUnit() }, 300)" class="space-y-6 pb-10">
     <!-- Header Section -->
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-slate-200 shadow-sm relative overflow-hidden">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 sm:p-6 rounded-3xl border border-slate-200 shadow-sm relative overflow-hidden">
         <div class="absolute right-0 top-0 -mt-10 -mr-10 w-40 h-40 bg-gradient-to-br from-primary-50 to-primary-100 rounded-full blur-3xl pointer-events-none opacity-60"></div>
         <div class="relative z-10">
             <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 mb-1">
@@ -286,8 +286,8 @@ new #[Layout('layouts.app')] class extends Component {
             </p>
         </div>
 
-        <div class="relative z-10 flex items-center gap-3">
-            <button wire:click="startSync" wire:loading.attr="disabled" :disabled="$wire.isSyncing" class="inline-flex justify-center items-center px-5 py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl font-bold text-sm transition-all shadow-sm gap-2">
+        <div class="relative z-10 w-full sm:w-auto">
+            <button wire:click="startSync" wire:loading.attr="disabled" :disabled="$wire.isSyncing" class="w-full sm:w-auto inline-flex justify-center items-center px-5 py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed text-white rounded-xl font-bold text-sm transition-all shadow-sm gap-2 cursor-pointer">
                 <svg wire:loading.remove wire:target="startSync" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                 </svg>
@@ -316,31 +316,31 @@ new #[Layout('layouts.app')] class extends Component {
     <!-- Main Table Container -->
     <div class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
         <!-- Toolbar -->
-        <div class="p-4 sm:p-6 border-b border-slate-100 bg-slate-50/50">
+        <div class="p-5 sm:p-6 border-b border-slate-100 bg-slate-50/50">
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-3 items-center">
                 <!-- Filter Pills -->
                 <div class="lg:col-span-6 xl:col-span-7 grid grid-cols-3 gap-2 w-full">
                     <button wire:click="$set('statusFilter', '')"
-                        class="inline-flex items-center justify-center gap-1.5 h-10 px-2 sm:px-4 rounded-xl text-xs font-bold transition-all {{ $statusFilter === '' ? 'bg-slate-900 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900' }}">
+                        class="inline-flex items-center justify-center gap-1.5 h-10 px-2 sm:px-4 rounded-xl text-sm font-bold transition-all {{ $statusFilter === '' ? 'bg-slate-900 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900' }}">
                         Semua
-                        <span class="inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-[10px] {{ $statusFilter === '' ? 'bg-slate-800 text-slate-300' : 'bg-slate-100 text-slate-500' }}">{{ $counts['total'] }}</span>
+                        <span class="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-bold {{ $statusFilter === '' ? 'bg-slate-800 text-slate-300' : 'bg-slate-100 text-slate-600' }}">{{ $counts['total'] }}</span>
                     </button>
                     <button wire:click="$set('statusFilter', 'active')"
-                        class="inline-flex items-center justify-center gap-1.5 h-10 px-2 sm:px-4 rounded-xl text-xs font-bold transition-all {{ $statusFilter === 'active' ? 'bg-primary-600 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-primary-300 hover:bg-primary-50 hover:text-primary-700' }}">
+                        class="inline-flex items-center justify-center gap-1.5 h-10 px-2 sm:px-4 rounded-xl text-sm font-bold transition-all {{ $statusFilter === 'active' ? 'bg-primary-600 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-primary-300 hover:bg-primary-50 hover:text-primary-700' }}">
                         <span class="w-1.5 h-1.5 rounded-full {{ $statusFilter === 'active' ? 'bg-primary-200' : 'bg-primary-500' }}"></span>
                         Aktif
-                        <span class="inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-[10px] {{ $statusFilter === 'active' ? 'bg-primary-700 text-primary-100' : 'bg-primary-100 text-primary-700' }}">{{ $counts['active'] }}</span>
+                        <span class="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-bold {{ $statusFilter === 'active' ? 'bg-primary-700 text-primary-100' : 'bg-primary-100 text-primary-700' }}">{{ $counts['active'] }}</span>
                     </button>
                     <button wire:click="$set('statusFilter', 'inactive')"
-                        class="inline-flex items-center justify-center gap-1.5 h-10 px-2 sm:px-4 rounded-xl text-xs font-bold transition-all {{ $statusFilter === 'inactive' ? 'bg-rose-600 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-rose-300 hover:bg-rose-50 hover:text-rose-700' }}">
+                        class="inline-flex items-center justify-center gap-1.5 h-10 px-2 sm:px-4 rounded-xl text-sm font-bold transition-all {{ $statusFilter === 'inactive' ? 'bg-rose-600 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-rose-300 hover:bg-rose-50 hover:text-rose-700' }}">
                         <span class="w-1.5 h-1.5 rounded-full {{ $statusFilter === 'inactive' ? 'bg-rose-200' : 'bg-rose-500' }}"></span>
                         Nonaktif
-                        <span class="inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-[10px] {{ $statusFilter === 'inactive' ? 'bg-rose-700 text-rose-100' : 'bg-rose-100 text-rose-700' }}">{{ $counts['total'] - $counts['active'] }}</span>
+                        <span class="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-bold {{ $statusFilter === 'inactive' ? 'bg-rose-700 text-rose-100' : 'bg-rose-100 text-rose-700' }}">{{ $counts['total'] - $counts['active'] }}</span>
                     </button>
                 </div>
 
                 <!-- Search Field & Reset -->
-                <div class="lg:col-span-6 xl:col-span-5 grid grid-cols-1 {{ $statusFilter ? 'sm:grid-cols-[1fr_auto]' : '' }} gap-2.5 w-full">
+                <div class="lg:col-span-6 xl:col-span-5 grid {{ $statusFilter ? 'grid-cols-[1fr_auto]' : 'grid-cols-1' }} gap-2.5 w-full">
                     <div class="relative w-full">
                         <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
                             <svg class="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">

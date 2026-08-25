@@ -4,16 +4,15 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-    <title>{{ config('app.name', 'eRapat') }} | Pemkab Sinjai</title>
-
     <!-- Favicon -->
     <link rel="icon" type="image/png" href="{{ asset('img/logo.png') }}">
 
-    <!-- Open Graph / Meta Image -->
-    <meta property="og:image" content="{{ asset('img/meta.png') }}">
-    <meta name="twitter:image" content="{{ asset('img/meta.png') }}">
-    <meta property="og:title" content="{{ config('app.name', 'eRapat') }} | Pemkab Sinjai">
-    <meta property="og:description" content="Aplikasi Manajemen Rapat Resmi Pemerintah Kabupaten Sinjai">
+    <!-- Dynamic SEO & Open Graph Meta -->
+    <x-seo-meta
+        title="eRapat | Pemkab Sinjai"
+        description="Aplikasi Manajemen Rapat Resmi Pemerintah Kabupaten Sinjai"
+        robots="index, follow"
+    />
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.bunny.net">
@@ -60,15 +59,15 @@
     </header>
 
     <!-- Hero Section -->
-    <main class="flex-1 flex flex-col items-center pt-16 pb-24 px-4 sm:px-6 lg:px-8 relative z-10">
+    <main class="flex-1 flex flex-col items-center pt-10 sm:pt-16 md:pt-20 pb-16 sm:pb-24 px-4 sm:px-6 lg:px-8 relative z-10">
 
         <div class="max-w-4xl w-full text-center relative z-10">
-            <h1 class="text-3xl sm:text-5xl md:text-6xl font-extrabold text-slate-900 tracking-tight leading-[1.15] mb-4 sm:mb-6">
-                Manajemen Rapat <br class="hidden sm:inline">
-                <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary-600 to-indigo-600">Pemerintah Kabupaten Sinjai</span>
+            <h1 class="font-extrabold text-slate-900 tracking-tight leading-[1.15] mb-4 sm:mb-6">
+                <span class="block text-4xl sm:text-6xl md:text-7xl">Manajemen Rapat</span>
+                <span class="block text-2xl sm:text-4xl md:text-5xl text-transparent bg-clip-text bg-gradient-to-r from-primary-600 to-indigo-600 mt-1.5 sm:mt-2.5">Pemerintah Kabupaten Sinjai</span>
             </h1>
 
-            <p class="text-sm sm:text-base md:text-lg text-slate-600 max-w-2xl mx-auto mb-8 sm:mb-10 font-medium leading-relaxed px-2">
+            <p class="text-sm sm:text-base md:text-lg text-slate-600 max-w-2xl mx-auto mb-8 sm:mb-12 font-medium leading-relaxed px-2">
                 Platform digital resmi untuk pengelolaan agenda rapat, presensi cerdas berbasis QR code, pencatatan notulen, hingga pengarsipan dokumentasi kegiatan.
             </p>
 
@@ -78,7 +77,7 @@
             @endphp
 
             @if($todayMeetings->count() > 0)
-            <div class="mt-14 text-left bg-white/70 backdrop-blur-md rounded-3xl border border-slate-200 shadow-sm hover:shadow-md transition-all max-w-3xl mx-auto overflow-hidden">
+            <div class="mt-10 sm:mt-14 text-left bg-white/70 backdrop-blur-md rounded-3xl border border-slate-200 shadow-sm hover:shadow-md transition-all max-w-3xl mx-auto overflow-hidden">
                 <!-- Header -->
                 <div class="p-6 pb-4 border-b border-slate-200/80 flex items-center justify-between gap-4">
                     <div class="flex items-center gap-3.5">

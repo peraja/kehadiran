@@ -355,7 +355,7 @@ new #[Layout('layouts.app')] class extends Component {
 
 <div class="space-y-6 pb-10">
     <!-- Header Section -->
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-slate-200 shadow-sm relative overflow-hidden">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 sm:p-6 rounded-3xl border border-slate-200 shadow-sm relative overflow-hidden">
         <div class="absolute right-0 top-0 -mt-10 -mr-10 w-40 h-40 bg-gradient-to-br from-primary-50 to-primary-100 rounded-full blur-3xl pointer-events-none opacity-60"></div>
         <div class="relative z-10">
             <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 mb-1">
@@ -366,8 +366,8 @@ new #[Layout('layouts.app')] class extends Component {
             </p>
         </div>
         @unless(auth()->user()->hasActiveRole('pimpinan'))
-        <div class="relative z-10">
-            <button x-data="" x-on:click.prevent="$dispatch('open-modal', 'add-meeting-modal'); $wire.openModal()" class="inline-flex items-center justify-center px-5 py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl font-bold text-sm shadow-sm transition-all gap-2">
+        <div class="relative z-10 w-full sm:w-auto">
+            <button x-data="" x-on:click.prevent="$dispatch('open-modal', 'add-meeting-modal'); $wire.openModal()" class="w-full sm:w-auto inline-flex items-center justify-center px-5 py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl font-bold text-sm shadow-sm transition-all gap-2 cursor-pointer">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                 </svg>
@@ -387,39 +387,39 @@ new #[Layout('layouts.app')] class extends Component {
     <div class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
 
         <!-- Toolbar -->
-        <div class="p-4 sm:p-6 border-b border-slate-100 bg-slate-50/50">
+        <div class="p-5 sm:p-6 border-b border-slate-100 bg-slate-50/50">
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-3 items-center">
                 <!-- Filter Pills -->
                 @unless(auth()->user()->hasActiveRole('pimpinan'))
                 <div class="lg:col-span-7 xl:col-span-8 grid grid-cols-2 sm:grid-cols-4 gap-2 w-full">
                     <button wire:click="$set('statusFilter','')"
-                        class="inline-flex items-center justify-center gap-1.5 h-10 px-3 rounded-xl text-xs font-bold transition-all {{ $statusFilter === '' ? 'bg-slate-900 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900' }}">
+                        class="inline-flex items-center justify-center gap-1.5 h-10 px-3 rounded-xl text-sm font-bold transition-all {{ $statusFilter === '' ? 'bg-slate-900 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900' }}">
                         Semua
-                        <span class="inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-[10px] {{ $statusFilter === '' ? 'bg-slate-800 text-slate-300' : 'bg-slate-100 text-slate-500' }}">{{ $counts['total'] }}</span>
+                        <span class="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-bold {{ $statusFilter === '' ? 'bg-slate-800 text-slate-300' : 'bg-slate-100 text-slate-600' }}">{{ $counts['total'] }}</span>
                     </button>
                     <button wire:click="$set('statusFilter','scheduled')"
-                        class="inline-flex items-center justify-center gap-1.5 h-10 px-3 rounded-xl text-xs font-bold transition-all {{ $statusFilter === 'scheduled' ? 'bg-slate-600 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-700' }}">
+                        class="inline-flex items-center justify-center gap-1.5 h-10 px-3 rounded-xl text-sm font-bold transition-all {{ $statusFilter === 'scheduled' ? 'bg-slate-600 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-700' }}">
                         <span class="w-1.5 h-1.5 rounded-full {{ $statusFilter === 'scheduled' ? 'bg-slate-300' : 'bg-slate-400' }}"></span>
                         Dijadwalkan
-                        <span class="inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-[10px] {{ $statusFilter === 'scheduled' ? 'bg-slate-700 text-slate-100' : 'bg-slate-100 text-slate-700' }}">{{ $counts['scheduled'] }}</span>
+                        <span class="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-bold {{ $statusFilter === 'scheduled' ? 'bg-slate-700 text-slate-100' : 'bg-slate-100 text-slate-700' }}">{{ $counts['scheduled'] }}</span>
                     </button>
                     <button wire:click="$set('statusFilter','ongoing')"
-                        class="inline-flex items-center justify-center gap-1.5 h-10 px-3 rounded-xl text-xs font-bold transition-all {{ $statusFilter === 'ongoing' ? 'bg-rose-600 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-rose-300 hover:bg-rose-50 hover:text-rose-700' }}">
+                        class="inline-flex items-center justify-center gap-1.5 h-10 px-3 rounded-xl text-sm font-bold transition-all {{ $statusFilter === 'ongoing' ? 'bg-rose-600 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-rose-300 hover:bg-rose-50 hover:text-rose-700' }}">
                         <span class="w-1.5 h-1.5 rounded-full {{ $statusFilter === 'ongoing' ? 'bg-rose-200' : 'bg-rose-500' }}"></span>
                         Berlangsung
-                        <span class="inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-[10px] {{ $statusFilter === 'ongoing' ? 'bg-rose-700 text-rose-100' : 'bg-rose-100 text-rose-700' }}">{{ $counts['ongoing'] }}</span>
+                        <span class="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-bold {{ $statusFilter === 'ongoing' ? 'bg-rose-700 text-rose-100' : 'bg-rose-100 text-rose-700' }}">{{ $counts['ongoing'] }}</span>
                     </button>
                     <button wire:click="$set('statusFilter','completed')"
-                        class="inline-flex items-center justify-center gap-1.5 h-10 px-3 rounded-xl text-xs font-bold transition-all {{ $statusFilter === 'completed' ? 'bg-primary-600 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-primary-300 hover:bg-primary-50 hover:text-primary-700' }}">
+                        class="inline-flex items-center justify-center gap-1.5 h-10 px-3 rounded-xl text-sm font-bold transition-all {{ $statusFilter === 'completed' ? 'bg-primary-600 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-primary-300 hover:bg-primary-50 hover:text-primary-700' }}">
                         <span class="w-1.5 h-1.5 rounded-full {{ $statusFilter === 'completed' ? 'bg-primary-200' : 'bg-primary-500' }}"></span>
                         Selesai
-                        <span class="inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-[10px] {{ $statusFilter === 'completed' ? 'bg-primary-700 text-primary-100' : 'bg-primary-100 text-primary-700' }}">{{ $counts['completed'] }}</span>
+                        <span class="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-bold {{ $statusFilter === 'completed' ? 'bg-primary-700 text-primary-100' : 'bg-primary-100 text-primary-700' }}">{{ $counts['completed'] }}</span>
                     </button>
                 </div>
                 @endunless
 
                 <!-- Search Field & Reset -->
-                <div class="{{ auth()->user()->hasActiveRole('pimpinan') ? 'lg:col-span-12' : 'lg:col-span-5 xl:col-span-4' }} grid grid-cols-1 {{ $statusFilter ? 'sm:grid-cols-[1fr_auto]' : '' }} gap-2.5 w-full">
+                <div class="{{ auth()->user()->hasActiveRole('pimpinan') ? 'lg:col-span-12' : 'lg:col-span-5 xl:col-span-4' }} grid {{ $statusFilter ? 'grid-cols-[1fr_auto]' : 'grid-cols-1' }} gap-2.5 w-full">
                     <div class="relative w-full">
                         <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
                             <svg class="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -428,7 +428,7 @@ new #[Layout('layouts.app')] class extends Component {
                         </div>
                         <input wire:model.live.debounce.300ms="search" type="text"
                             class="block w-full h-10 rounded-xl border border-slate-200 pl-9 pr-9 py-2 text-base sm:text-sm focus:border-primary-500 focus:ring-primary-500 shadow-2xs transition-colors bg-white placeholder:text-slate-400"
-                            placeholder="Cari agenda atau lokasi rapat...">
+                            placeholder="Cari agenda atau lokasi...">
                         @if($search)
                         <button wire:click="$set('search', '')" class="absolute inset-y-0 right-0 pr-2.5 flex items-center text-slate-400 hover:text-slate-600 transition-colors" title="Hapus pencarian">
                             <svg class="w-4 h-4 bg-slate-100 rounded-full p-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -634,7 +634,7 @@ new #[Layout('layouts.app')] class extends Component {
                 @if($isAdmin)
                 <!-- OPD Selection (Admin Only) -->
                 <div>
-                    <label for="selected_opd_id" class="block text-sm font-bold text-slate-700 mb-1">OPD / Instansi</label>
+                    <label for="selected_opd_id" class="block text-sm font-bold text-slate-700 mb-1">OPD</label>
                     <select wire:model.live="selected_opd_id" id="selected_opd_id" class="w-full text-base sm:text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors">
                         <option value="">Pilih OPD</option>
                         @foreach($allOpds as $o)

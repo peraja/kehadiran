@@ -4,6 +4,27 @@ Semua perubahan penting pada proyek ini dicatat dalam berkas ini.
 
 Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/1.0.0/), dan proyek ini mematuhi [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.2] - 2026-08-26
+
+### Ditambahkan
+- **Komponen SEO Meta Dinamis Terpusat**:
+  - Menambahkan komponen Blade `<x-seo-meta>` di [`components/seo-meta.blade.php`](file:///Users/abedzul/Desktop/htdocs/rapat/resources/views/components/seo-meta.blade.php) yang mendukung konfigurasi judul, deskripsi kontekstual "Pemerintah Kabupaten Sinjai", tag robots, canonical URL, OpenGraph, dan Twitter Card.
+  - Mengintegrasikan metadata SEO dinamis dan ringkas pada seluruh halaman publik: Landing Page (`eRapat | Pemkab Sinjai`, index follow), Halaman Login (`Login | eRapat`, noindex), Halaman Presensi Publik (`Presensi | [Judul Rapat]`, noindex), dan Verifikasi TTE (`Verifikasi [Dokumen] | [Judul Rapat]`, noindex).
+
+### Diubah
+- **Optimalisasi Tipografi dan Spasi Hero Landing Page**:
+  - Menyesuaikan hirarki ukuran teks judul hero di mobile hingga desktop ("Manajemen Rapat" `text-4xl sm:text-6xl md:text-7xl` dan "Pemerintah Kabupaten Sinjai" `text-2xl sm:text-4xl md:text-5xl`).
+  - Menyelaraskan *vertical spacing* landing page agar proporsional dan tidak terpotong.
+- **Standardisasi Filter Grid, Search & Badge di Seluruh Modul**:
+  - Menyeragamkan ukuran font teks tombol filter pill menjadi `text-sm font-bold` (14px) dan badge angka menjadi `text-xs font-bold` (12px) di semua viewport (termasuk mobile).
+  - Menata kolom pencarian dan tombol Reset menjadi satu baris berdampingan (`grid-cols-[1fr_auto]`) saat filter aktif di mobile.
+  - Menghapus pembagian `col-span` berlebih pada tombol "Semua" di Master Pengguna agar ukuran seluruh pill setara dalam sistem grid.
+  - Memperbaiki kalkulasi 12-kolom grid filter pada Riwayat Rapat agar selalu membentang penuh (100% *full width*) di desktop.
+- **Penyelarasan Padding Seluruh Kartu Header, Tabel, dan Dashboard di Mobile**:
+  - Menyeragamkan *padding* seluruh kartu header, toolbar tabel, dan kartu statistik di halaman *Daftar Rapat*, *Riwayat Rapat*, *Master Pengguna*, *Master OPD*, *Pengaturan OPD*, *Audit Log*, *Profil Pengguna*, dan *Dashboard* menjadi `p-5 sm:p-6` (20px di mobile, 24px di desktop).
+  - Menyesuaikan tombol aksi utama (*Buat Rapat*, *Sinkron SIMPEG*, *Lihat Presensi*, *TTE Dokumen*, *Isi Notulen*) menjadi *full-width* (`w-full sm:w-auto`) di mobile.
+  - Mengubah label input pilihan instansi pada formulir modal Buat Rapat khusus Super Admin dari "OPD / Instansi" menjadi "OPD".
+
 ## [1.4.1] - 2026-08-25
 
 ### Diubah

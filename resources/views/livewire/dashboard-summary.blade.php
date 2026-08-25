@@ -138,7 +138,7 @@ new class extends Component {
 
 <div class="space-y-6">
     <!-- Header Section -->
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-slate-200 shadow-sm relative overflow-hidden">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 sm:p-6 rounded-3xl border border-slate-200 shadow-sm relative overflow-hidden">
         <div class="absolute right-0 top-0 -mt-10 -mr-10 w-40 h-40 bg-gradient-to-br from-primary-50 to-primary-100 rounded-full blur-3xl pointer-events-none opacity-60"></div>
         <div class="relative z-10">
             <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 mb-1">
@@ -149,8 +149,8 @@ new class extends Component {
             </p>
         </div>
         @unless($isPimpinan)
-        <div class="relative z-10 flex items-center gap-3">
-            <a href="{{ route('meetings.index') }}" wire:navigate class="inline-flex items-center justify-center px-5 py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl font-bold text-sm transition-all shadow-sm gap-2">
+        <div class="relative z-10 flex items-center gap-3 w-full sm:w-auto">
+            <a href="{{ route('meetings.index') }}" wire:navigate class="w-full sm:w-auto inline-flex items-center justify-center px-5 py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl font-bold text-sm transition-all shadow-sm gap-2">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                 Buat Rapat
             </a>
@@ -161,7 +161,7 @@ new class extends Component {
     <!-- Stat Cards -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         <!-- Rapat Hari Ini -->
-        <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 flex items-center gap-5 relative overflow-hidden group hover:border-primary-300 transition-colors">
+        <div class="bg-white p-5 sm:p-6 rounded-3xl shadow-sm border border-slate-200 flex items-center gap-5 relative overflow-hidden group hover:border-primary-300 transition-colors">
             <div class="absolute right-0 top-0 w-24 h-24 bg-gradient-to-br from-primary-50 to-primary-100 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
             <div class="w-14 h-14 rounded-2xl bg-primary-50 text-primary-600 flex items-center justify-center shrink-0 relative z-10">
                 <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
@@ -173,7 +173,7 @@ new class extends Component {
         </div>
 
         <!-- Rapat Minggu Ini -->
-        <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 flex items-center gap-5 relative overflow-hidden group hover:border-sky-300 transition-colors">
+        <div class="bg-white p-5 sm:p-6 rounded-3xl shadow-sm border border-slate-200 flex items-center gap-5 relative overflow-hidden group hover:border-sky-300 transition-colors">
             <div class="absolute right-0 top-0 w-24 h-24 bg-gradient-to-br from-sky-50 to-sky-100 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
             <div class="w-14 h-14 rounded-2xl bg-sky-50 text-sky-600 flex items-center justify-center shrink-0 relative z-10">
                 <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
@@ -185,7 +185,7 @@ new class extends Component {
         </div>
 
         <!-- Rapat Bulan Ini -->
-        <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 flex items-center gap-5 relative overflow-hidden group hover:border-indigo-300 transition-colors">
+        <div class="bg-white p-5 sm:p-6 rounded-3xl shadow-sm border border-slate-200 flex items-center gap-5 relative overflow-hidden group hover:border-indigo-300 transition-colors">
             <div class="absolute right-0 top-0 w-24 h-24 bg-gradient-to-br from-indigo-50 to-indigo-100 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
             <div class="w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0 relative z-10">
                 <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2zM9 15h.01M12 15h.01M15 15h.01M9 18h.01M12 18h.01M15 18h.01"></path></svg>
@@ -197,7 +197,7 @@ new class extends Component {
         </div>
 
         <!-- Rapat Tahun Ini -->
-        <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 flex items-center gap-5 relative overflow-hidden group hover:border-amber-300 transition-colors">
+        <div class="bg-white p-5 sm:p-6 rounded-3xl shadow-sm border border-slate-200 flex items-center gap-5 relative overflow-hidden group hover:border-amber-300 transition-colors">
             <div class="absolute right-0 top-0 w-24 h-24 bg-gradient-to-br from-amber-50 to-amber-100 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
             <div class="w-14 h-14 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0 relative z-10">
                 <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
@@ -212,7 +212,7 @@ new class extends Component {
     <!-- Live Ongoing Meetings Widget -->
     @if($ongoingMeetings->isNotEmpty())
     <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
-        <div class="px-6 py-5 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
+        <div class="px-5 py-4 sm:px-6 sm:py-5 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
             <div class="flex items-center gap-2">
                 <span class="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span>
                 <h3 class="font-extrabold text-slate-900 text-sm">Rapat Berlangsung</h3>
@@ -223,7 +223,7 @@ new class extends Component {
         </div>
         <div class="divide-y divide-slate-100">
             @foreach($ongoingMeetings as $meeting)
-            <div class="p-5 hover:bg-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-colors group">
+            <div class="p-5 sm:p-6 hover:bg-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-colors group">
                 <div class="min-w-0 flex-1">
                     <a href="{{ route('meetings.overview', $meeting->id) }}" wire:navigate class="font-extrabold text-sm text-slate-900 group-hover:text-primary-600 transition-colors truncate block">
                         {{ $meeting->title }}
@@ -239,8 +239,8 @@ new class extends Component {
                     </div>
                 </div>
 
-                <div class="flex items-center gap-2 shrink-0">
-                    <a href="{{ route('meetings.presensi', $meeting->id) }}" wire:navigate class="inline-flex items-center justify-center px-4 py-2 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl font-bold text-xs transition-all shadow-sm gap-1.5">
+                <div class="flex items-center gap-2 shrink-0 w-full sm:w-auto">
+                    <a href="{{ route('meetings.presensi', $meeting->id) }}" wire:navigate class="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl font-bold text-xs transition-all shadow-sm gap-1.5">
                         <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
@@ -257,7 +257,7 @@ new class extends Component {
     <!-- Menunggu TTE Widget (Pimpinan, Super Admin, Admin OPD, & Pegawai) -->
     @if($isPimpinan || $pendingTteMeetings->isNotEmpty())
     <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
-        <div class="px-6 py-5 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
+        <div class="px-5 py-4 sm:px-6 sm:py-5 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
             <div class="flex items-center gap-2">
                 <span class="w-2 h-2 rounded-full bg-amber-500"></span>
                 <h3 class="font-extrabold text-slate-900 text-sm">Menunggu TTE</h3>
@@ -270,7 +270,7 @@ new class extends Component {
         </div>
         <div class="divide-y divide-slate-100">
             @forelse($pendingTteMeetings as $meeting)
-            <div class="p-5 hover:bg-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-colors group">
+            <div class="p-5 sm:p-6 hover:bg-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-colors group">
                 <div class="min-w-0 flex-1">
                     <a href="{{ route('meetings.overview', $meeting->id) }}" wire:navigate class="font-extrabold text-sm text-slate-900 group-hover:text-primary-600 transition-colors truncate block">
                         {{ $meeting->title }}
@@ -326,16 +326,16 @@ new class extends Component {
                     </div>
                 </div>
 
-                <div class="flex items-center gap-2 shrink-0">
+                <div class="flex items-center gap-2 shrink-0 w-full sm:w-auto">
                     @if($isPimpinan)
-                    <a href="{{ route('meetings.overview', $meeting->id) }}" wire:navigate class="inline-flex items-center justify-center px-4 py-2 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl font-bold text-xs transition-all shadow-sm gap-1.5">
+                    <a href="{{ route('meetings.overview', $meeting->id) }}" wire:navigate class="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl font-bold text-xs transition-all shadow-sm gap-1.5">
                         <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                         </svg>
                         TTE Dokumen
                     </a>
                     @else
-                    <a href="{{ route('meetings.overview', $meeting->id) }}" wire:navigate class="inline-flex items-center justify-center px-4 py-2 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl font-bold text-xs transition-all shadow-sm gap-1.5">
+                    <a href="{{ route('meetings.overview', $meeting->id) }}" wire:navigate class="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl font-bold text-xs transition-all shadow-sm gap-1.5">
                         <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
@@ -364,13 +364,13 @@ new class extends Component {
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <!-- Rapat Mendatang -->
         <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
-            <div class="px-6 py-5 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center shrink-0">
+            <div class="px-5 py-4 sm:px-6 sm:py-5 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center shrink-0">
                 <h3 class="font-extrabold text-slate-900 text-sm">Rapat Mendatang</h3>
                 <a href="{{ route('meetings.index') }}" wire:navigate class="text-xs text-primary-600 hover:text-primary-700 font-bold focus:outline-none focus:underline">Lihat Semua &rarr;</a>
             </div>
             <div class="divide-y divide-slate-100 flex-1 flex flex-col">
                 @forelse($upcomingMeetings as $meeting)
-                    <div class="p-5 hover:bg-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-colors group">
+                    <div class="p-5 sm:p-6 hover:bg-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-colors group">
                         <div class="min-w-0 flex-1">
                             <a href="{{ route('meetings.overview', $meeting->id) }}" wire:navigate class="font-extrabold text-sm text-slate-900 group-hover:text-primary-600 transition-colors truncate block">{{ $meeting->title }}</a>
                             <div class="flex flex-wrap items-center gap-3 text-xs text-slate-500 mt-1.5 font-medium">
@@ -393,7 +393,7 @@ new class extends Component {
 
         <!-- Perlu Notulen -->
         <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
-            <div class="px-6 py-5 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center shrink-0">
+            <div class="px-5 py-4 sm:px-6 sm:py-5 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center shrink-0">
                 <h3 class="font-extrabold text-slate-900 text-sm">Menunggu Notulen</h3>
             </div>
             <div class="divide-y divide-slate-100 flex-1 flex flex-col">
@@ -401,7 +401,7 @@ new class extends Component {
                     @php
                         $canEditMinute = auth()->user()->hasActiveRole(['admin', 'admin_opd']) || $meeting->created_by === auth()->id();
                     @endphp
-                    <div class="p-5 hover:bg-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-colors">
+                    <div class="p-5 sm:p-6 hover:bg-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-colors">
                         <div class="min-w-0 flex-1">
                             <a href="{{ route('meetings.notulen', $meeting->id) }}" wire:navigate class="font-extrabold text-sm text-slate-900 hover:text-primary-600 truncate block transition-colors">
                                 {{ $meeting->title }}
@@ -411,12 +411,14 @@ new class extends Component {
                             </div>
                         </div>
                         @if($canEditMinute)
-                        <a href="{{ route('meetings.notulen', $meeting->id) }}" wire:navigate class="shrink-0 inline-flex items-center justify-center px-4 py-2 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl font-bold text-xs transition-all shadow-sm gap-1.5">
-                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                            </svg>
-                            Isi Notulen
-                        </a>
+                        <div class="shrink-0 w-full sm:w-auto">
+                            <a href="{{ route('meetings.notulen', $meeting->id) }}" wire:navigate class="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl font-bold text-xs transition-all shadow-sm gap-1.5">
+                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                </svg>
+                                Isi Notulen
+                            </a>
+                        </div>
                         @endif
                     </div>
                 @empty

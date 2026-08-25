@@ -6,16 +6,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>{{ config('app.name', 'eRapat') }} | Pemkab Sinjai</title>
-
     <!-- Favicon -->
     <link rel="icon" type="image/png" href="{{ asset('img/logo.png') }}">
 
-    <!-- Open Graph / Meta Image -->
-    <meta property="og:image" content="{{ asset('img/meta.png') }}">
-    <meta name="twitter:image" content="{{ asset('img/meta.png') }}">
-    <meta property="og:title" content="{{ config('app.name', 'eRapat') }} | Pemkab Sinjai">
-    <meta property="og:description" content="Aplikasi Manajemen Rapat Resmi Pemerintah Kabupaten Sinjai">
+    @if(isset($seo))
+        {{ $seo }}
+    @else
+        @hasSection('seo')
+            @yield('seo')
+        @else
+            <x-seo-meta
+                :title="$title ?? null"
+                :description="$description ?? null"
+                :image="$image ?? null"
+                :url="$url ?? null"
+                :type="$type ?? 'website'"
+                :robots="$robots ?? 'noindex, nofollow'"
+            />
+        @endif
+    @endif
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.bunny.net">

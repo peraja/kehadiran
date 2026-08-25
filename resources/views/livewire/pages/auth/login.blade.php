@@ -5,7 +5,11 @@ use Illuminate\Support\Facades\Session;
 use Livewire\Attributes\Layout;
 use Livewire\Volt\Component;
 
-new #[Layout('layouts.guest')] class extends Component
+new #[Layout('layouts.guest', [
+    'title' => 'Login | eRapat',
+    'description' => 'Halaman login eRapat Pemerintah Kabupaten Sinjai.',
+    'robots' => 'noindex, nofollow',
+])] class extends Component
 {
     public LoginForm $form;
 

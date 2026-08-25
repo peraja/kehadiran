@@ -246,6 +246,14 @@ new #[Layout('layouts.guest')] class extends Component {
 }; ?>
 
 <div>
+    <x-slot:seo>
+        <x-seo-meta
+            :title="'Presensi | ' . $meeting->title"
+            :description="'Presensi kehadiran rapat ' . $meeting->title . ' (' . ($meeting->opd?->name ?? 'Pemerintah Kabupaten Sinjai') . ').'"
+            robots="noindex, nofollow"
+        />
+    </x-slot:seo>
+
     <!-- Meeting Info Header -->
     <div class="mb-6 sm:mb-8 pb-5 sm:pb-6 border-b border-slate-100 text-center">
         <h2 class="text-lg sm:text-2xl font-extrabold text-slate-900 leading-snug break-words">
