@@ -34,6 +34,7 @@ Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/
   - Penegasan skema HTTPS global (`URL::forceScheme('https')`) pada [`app/Providers/AppServiceProvider.php`](file:///Users/abedzul/Desktop/htdocs/rapat/app/Providers/AppServiceProvider.php) untuk lingkungan produksi.
   - Pembatasan aturan redirect *trailing slash* pada [`public/.htaccess`](file:///Users/abedzul/Desktop/htdocs/rapat/public/.htaccess) hanya untuk metode `GET` (`RewriteCond %{REQUEST_METHOD} =GET`) guna mencegah konversi request `POST /livewire/update` menjadi `GET` akibat redirect 301.
   - Penambahan direktif `Options -MultiViews -Indexes` pada root [`.htaccess`](file:///Users/abedzul/Desktop/htdocs/rapat/.htaccess).
+  - **Penyebab sesungguhnya: HTTP 419 CSRF Token Expired** — ditemukan bahwa `POST /livewire/update` sebenarnya ditolak server dengan status **419** (bukan 405 secara langsung). Laravel menerima POST dengan benar namun CSRF token sudah kedaluwarsa saat pengguna terlalu lama di halaman presensi. Livewire kemudian melakukan *retry* dengan GET, yang menghasilkan 405. Solusi: pengecualian verifikasi CSRF untuk rute `livewire/update` dan `livewire/upload-file` pada [`bootstrap/app.php`](file:///Users/abedzul/Desktop/htdocs/rapat/bootstrap/app.php) menggunakan `$middleware->validateCsrfTokens(except: [...])`.
 
 ## [1.3.8] - 2026-08-25
 
