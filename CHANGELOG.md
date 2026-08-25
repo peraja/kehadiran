@@ -26,6 +26,8 @@ Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/
 - **Isolasi State Signature Pad & Sinkronisasi Input Eksternal**:
   - Menambahkan isolasi DOM dinamis `wire:key` dan `wire:ignore` pada kanvas tanda tangan presensi ([`resources/views/livewire/meetings/check-in.blade.php`](file:///Users/abedzul/Desktop/htdocs/rapat/resources/views/livewire/meetings/check-in.blade.php)) agar konteks kanvas tidak tereset saat berpindah tab kategori peserta (*Pemkab Sinjai* vs *Eksternal*).
   - Menggunakan `wire:model.blur` pada input tamu eksternal guna memastikan seluruh nilai field tersinkronisasi sebelum data tanda tangan dikirim.
+- **Transisi Tab Presensi Instan (0ms Client-Side)**:
+  - Mengalihkan sistem perpindahan tab (*Pemkab Sinjai* vs *Eksternal*) pada [`resources/views/livewire/meetings/check-in.blade.php`](file:///Users/abedzul/Desktop/htdocs/rapat/resources/views/livewire/meetings/check-in.blade.php) dari Livewire server roundtrip ke Alpine.js `x-show` murni di sisi client guna menghilangkan latensi jaringan internet dan membuat perpindahan tab instan 0ms tanpa beban server di smartphone.
 - **Penyempurnaan Antarmuka & Validasi Form Presensi**:
   - Menghilangkan kontainer bersarang (*nested card*) pada tab eksternal agar menyatu rapi dengan kartu utama presensi.
   - Menghapus ikon tanggal dan lokasi pada header form presensi untuk estetika yang lebih minimalis.

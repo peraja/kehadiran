@@ -152,8 +152,12 @@ new #[Layout('layouts.guest')] class extends Component {
         $this->nip_checked = true;
     }
 
-    public function confirmCheckIn(?string $signatureData = null)
+    public function confirmCheckIn(?string $signatureData = null, ?string $participantType = null)
     {
+        if ($participantType && in_array($participantType, ['internal', 'eksternal'])) {
+            $this->participant_type = $participantType;
+        }
+
         try {
             if (!empty($signatureData)) {
                 // If data contains '|', it's the raw coordinates format: width|height|pathData
@@ -251,10 +255,10 @@ new #[Layout('layouts.guest')] class extends Component {
 <div>
     <x-slot:seo>
         <x-seo-meta
-            :title="'Presensi | ' . $meeting->title"
-            :description="'Presensi ' . $meeting->title . ' - Pemerintah Kabupaten Sinjai'"
-            robots="noindex, nofollow"
-        />
+            :title="'Presensi: ' . $meeting->title . ' - eRapat Sinjai'"
+            :description="'Laman presensi kehadiran mandiri rapat ' . $meeting->title . ' Pemerintah Kabupaten Sinjai.'"
+            :url="route('meetings.check-in', $meeting->id)"
+            image="https://sinjaikab.go.id/v4/wp-content/uploads/2022/03/logo-sinjai.png" />
     </x-slot:seo>
 
     <!-- Meeting Info Header -->
@@ -270,21 +274,20 @@ new #[Layout('layouts.guest')] class extends Component {
     </div>
 
     @if($status === 'ready')
-    <div class="space-y-6">
+    <div class="space-y-6" x-data="{ tab: @entangle('participant_type') }">
 
         <!-- Category Segmented Control -->
         <div class="flex p-1.5 bg-slate-100 rounded-2xl shadow-inner border border-slate-200/50">
-            <button type="button" wire:click="$set('participant_type', 'internal')" class="flex-1 py-2.5 text-sm font-extrabold rounded-xl transition-all active:scale-95 focus:outline-none {{ $participant_type == 'internal' ? 'bg-white shadow-sm text-primary-700 ring-1 ring-slate-200' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50' }}">
+            <button type="button" @click="tab = 'internal'" :class="tab === 'internal' ? 'bg-white shadow-sm text-primary-700 ring-1 ring-slate-200' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'" class="flex-1 py-2.5 text-sm font-extrabold rounded-xl transition-all active:scale-95 focus:outline-none cursor-pointer">
                 Pemkab Sinjai
             </button>
-            <button type="button" wire:click="$set('participant_type', 'eksternal')" class="flex-1 py-2.5 text-sm font-extrabold rounded-xl transition-all active:scale-95 focus:outline-none {{ $participant_type == 'eksternal' ? 'bg-white shadow-sm text-primary-700 ring-1 ring-slate-200' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50' }}">
+            <button type="button" @click="tab = 'eksternal'" :class="tab === 'eksternal' ? 'bg-white shadow-sm text-primary-700 ring-1 ring-slate-200' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'" class="flex-1 py-2.5 text-sm font-extrabold rounded-xl transition-all active:scale-95 focus:outline-none cursor-pointer">
                 Eksternal
             </button>
         </div>
 
-        @if($participant_type === 'internal')
         <!-- Pegawai Internal NIP Section -->
-        <div class="space-y-3">
+        <div x-show="tab === 'internal'" class="space-y-3">
             <label for="nip" class="block text-sm font-bold text-slate-700">Masukkan NIP</label>
 
             <div class="flex flex-col sm:flex-row sm:items-start gap-3">
@@ -299,7 +302,7 @@ new #[Layout('layouts.guest')] class extends Component {
                         <div class="mt-2 text-xs space-y-1.5">
                             <span class="text-rose-600 font-bold block">{{ $message }}</span>
                             @if(str_contains($message, 'tidak ditemukan'))
-                            <button type="button" wire:click="$set('participant_type', 'eksternal')" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition cursor-pointer">
+                            <button type="button" @click="tab = 'eksternal'" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition cursor-pointer">
                                 <span>Gunakan Tab Eksternal</span>
                                 <svg class="w-3.5 h-3.5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
@@ -351,9 +354,9 @@ new #[Layout('layouts.guest')] class extends Component {
             </div>
             @endif
         </div>
-        @else
+
         <!-- Eksternal Form Section -->
-        <div class="space-y-4">
+        <div x-show="tab === 'eksternal'" class="space-y-4" x-cloak>
             <div>
                 <label for="guest_name" class="block text-sm font-bold text-slate-700 mb-1">Nama Lengkap</label>
                 <input wire:model.blur="guest_name" id="guest_name" type="text" class="block w-full py-2.5 px-3 rounded-xl border border-slate-300 text-base sm:text-sm focus:ring-primary-500 focus:border-primary-500 transition-colors" placeholder="Contoh: Anthony" required />
@@ -370,11 +373,9 @@ new #[Layout('layouts.guest')] class extends Component {
                 @error('guest_position') <span class="text-xs text-rose-600 mt-1 block font-bold">{{ $message }}</span> @enderror
             </div>
         </div>
-        @endif
 
-        @if($participant_type === 'eksternal' || $nip_checked)
         <!-- Signature Pad Component & Submit Button -->
-        <div class="space-y-6 pt-4 border-t border-slate-100" x-data="signaturePad()" wire:key="sig-pad-{{ $participant_type }}-{{ $nip_checked ? 'checked' : 'init' }}">
+        <div x-show="tab === 'eksternal' || @js($nip_checked)" class="space-y-6 pt-4 border-t border-slate-100" x-data="signaturePad()" x-cloak>
             <div>
                 <div class="flex items-center justify-between mb-3">
                     <label class="block text-sm font-extrabold text-slate-900">Tanda Tangan</label>
@@ -417,7 +418,6 @@ new #[Layout('layouts.guest')] class extends Component {
                 </button>
             </div>
         </div>
-        @endif
     </div>
 
     @elseif($status === 'success')
@@ -505,6 +505,11 @@ new #[Layout('layouts.guest')] class extends Component {
                     this.$nextTick(() => {
                         this.setupCanvas();
                     });
+                    this.$watch('tab', () => {
+                        this.$nextTick(() => {
+                            this.setupCanvas();
+                        });
+                    });
                 },
 
                 setupCanvas() {
@@ -590,14 +595,12 @@ new #[Layout('layouts.guest')] class extends Component {
                     }
 
                     // Format: width|height|pathData
-                    // Kami mengirim data mentah (raw coordinates) tanpa tag HTML/Base64
-                    // untuk menghindari pemblokiran XSS oleh Web Application Firewall (WAF) ModSecurity cPanel.
-                    return `${canvas.width}|${canvas.height}|${this.pathData}`;
+                    return `${canvas.width}|${canvas.height}|${this.pathData.trim()}`;
                 },
 
                 submitCheckIn() {
                     const sig = this.updateSignatureData();
-                    this.$wire.confirmCheckIn(sig || '');
+                    this.$wire.confirmCheckIn(sig || '', this.tab);
                 }
             }));
         });
