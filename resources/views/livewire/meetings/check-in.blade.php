@@ -155,7 +155,21 @@ new #[Layout('layouts.guest')] class extends Component {
     {
         try {
             if (!empty($signatureData)) {
-                $this->signature = $signatureData;
+                // If data contains '|', it's the raw coordinates format: width|height|pathData
+                if (str_contains($signatureData, '|')) {
+                    $parts = explode('|', $signatureData, 3);
+                    if (count($parts) === 3) {
+                        $w = (int)$parts[0];
+                        $h = (int)$parts[1];
+                        $path = $parts[2];
+                        $svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 '.$w.' '.$h.'"><path d="'.$path.'" fill="none" stroke="#0f172a" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+                        $this->signature = 'data:image/svg+xml;base64,' . base64_encode($svg);
+                    } else {
+                        $this->signature = $signatureData;
+                    }
+                } else {
+                    $this->signature = $signatureData;
+                }
             }
 
             if ($this->meeting->status !== 'ongoing') {
@@ -563,9 +577,10 @@ new #[Layout('layouts.guest')] class extends Component {
                         return '';
                     }
 
-                    // Export crisp, ultra-lightweight SVG (~300 bytes)
-                    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${canvas.width} ${canvas.height}"><path d="${this.pathData}" fill="none" stroke="#0f172a" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
-                    return 'data:image/svg+xml;base64,' + btoa(svg);
+                    // Format: width|height|pathData
+                    // Kami mengirim data mentah (raw coordinates) tanpa tag HTML/Base64
+                    // untuk menghindari pemblokiran XSS oleh Web Application Firewall (WAF) ModSecurity cPanel.
+                    return `${canvas.width}|${canvas.height}|${this.pathData}`;
                 },
 
                 submitCheckIn() {
