@@ -456,7 +456,10 @@ new #[Layout('layouts.guest')] class extends Component {
                     </div>
                 </div>
 
-                @error('signature') <span class="text-xs text-rose-600 mt-2 block font-bold text-center">{{ $message }}</span> @enderror
+                @error('signature')
+                    <span class="text-xs text-rose-600 mt-2 block font-bold text-center" x-show="!signatureError">{{ $message }}</span>
+                @enderror
+                <span class="text-xs text-rose-600 mt-2 block font-bold text-center" x-show="signatureError" x-text="signatureError" x-cloak></span>
             </div>
 
             <div>
@@ -563,6 +566,7 @@ new #[Layout('layouts.guest')] class extends Component {
                 hasDrawn: false,
                 ctx: null,
                 pathData: '',
+                signatureError: '',
 
                 init() {
                     this.$nextTick(() => {
@@ -629,6 +633,7 @@ new #[Layout('layouts.guest')] class extends Component {
                 startDrawing(e) {
                     this.isDrawing = true;
                     this.hasDrawn = true;
+                    this.signatureError = '';
                     const pos = this.getPos(e);
                     this.ctx.beginPath();
                     this.ctx.moveTo(pos.x, pos.y);
@@ -654,6 +659,7 @@ new #[Layout('layouts.guest')] class extends Component {
                     this.ctx.clearRect(0, 0, canvas.width, canvas.height);
                     this.hasDrawn = false;
                     this.pathData = '';
+                    this.signatureError = '';
                 },
 
                 updateSignatureData() {
@@ -668,7 +674,12 @@ new #[Layout('layouts.guest')] class extends Component {
 
                 submitCheckIn() {
                     const sig = this.updateSignatureData();
-                    this.$wire.confirmCheckIn(sig || '', this.tab);
+                    if (!sig || !this.hasDrawn) {
+                        this.signatureError = 'Tanda Tangan wajib diisi.';
+                        return;
+                    }
+                    this.signatureError = '';
+                    this.$wire.confirmCheckIn(sig, this.tab);
                 }
             }));
         });

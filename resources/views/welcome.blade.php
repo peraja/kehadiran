@@ -34,7 +34,7 @@
     <header class="w-full border-b border-slate-200/80 bg-white/80 backdrop-blur-md sticky top-0 z-50 shadow-2xs">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
             <a href="{{ url('/') }}" class="flex items-center gap-3 group">
-                <img src="{{ asset('img/logo.png') }}" alt="Logo Pemkab Sinjai" class="h-11 w-auto drop-shadow-sm transition-transform group-hover:scale-105">
+                <img src="{{ asset('img/logo.png') }}" alt="Logo Pemkab Sinjai" width="44" height="44" fetchpriority="high" class="h-11 w-auto drop-shadow-sm transition-transform group-hover:scale-105">
                 <div>
                     <span class="text-xl font-black text-slate-900 tracking-tight leading-tight block">e<span class="text-primary-600">Rapat</span></span>
                     <span class="block text-[10px] text-slate-500 font-bold mt-0.5 uppercase tracking-widest">Pemkab Sinjai</span>

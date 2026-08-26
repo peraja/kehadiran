@@ -45,7 +45,7 @@
         <div class="min-h-full flex flex-col justify-center items-center py-8 px-3 sm:py-12 sm:px-6 lg:px-8">
             <div class="text-center group">
                 <a href="/" wire:navigate class="inline-flex flex-col items-center gap-3">
-                    <img src="{{ asset('img/logo.png') }}" alt="Logo Pemkab Sinjai" class="h-12 sm:h-14 w-auto drop-shadow-md group-hover:scale-105 transition-transform duration-300" />
+                    <img src="{{ asset('img/logo.png') }}" alt="Logo Pemkab Sinjai" width="56" height="56" fetchpriority="high" class="h-12 sm:h-14 w-auto drop-shadow-md group-hover:scale-105 transition-transform duration-300" />
                     <div>
                         <span class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight leading-tight">e<span class="text-primary-600">Rapat</span></span>
                         <span class="block text-[10px] sm:text-[11px] text-slate-500 font-bold mt-0.5 sm:mt-1 uppercase tracking-widest">Pemkab Sinjai</span>
