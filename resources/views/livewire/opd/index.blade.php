@@ -319,23 +319,26 @@ new #[Layout('layouts.app')] class extends Component {
         <div class="p-5 sm:p-6 border-b border-slate-100 bg-slate-50/50">
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-3 items-center">
                 <!-- Filter Pills -->
-                <div class="lg:col-span-6 xl:col-span-7 grid grid-cols-3 gap-2 w-full">
-                    <button wire:click="$set('statusFilter', '')"
-                        class="inline-flex items-center justify-center gap-1.5 h-10 px-2 sm:px-4 rounded-xl text-sm font-bold transition-all {{ $statusFilter === '' ? 'bg-slate-900 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900' }}">
+                <div class="lg:col-span-6 xl:col-span-7 grid grid-cols-3 gap-2 w-full" x-data="{ currentFilter: @entangle('statusFilter').live }">
+                    <button @click="currentFilter = ''"
+                        :class="currentFilter === '' ? 'bg-slate-900 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900'"
+                        class="inline-flex items-center justify-center gap-1.5 h-10 px-2 sm:px-4 rounded-xl text-sm font-bold transition-all cursor-pointer">
                         Semua
-                        <span class="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-bold {{ $statusFilter === '' ? 'bg-slate-800 text-slate-300' : 'bg-slate-100 text-slate-600' }}">{{ $counts['total'] }}</span>
+                        <span :class="currentFilter === '' ? 'bg-slate-800 text-slate-300' : 'bg-slate-100 text-slate-600'" class="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-bold">{{ $counts['total'] }}</span>
                     </button>
-                    <button wire:click="$set('statusFilter', 'active')"
-                        class="inline-flex items-center justify-center gap-1.5 h-10 px-2 sm:px-4 rounded-xl text-sm font-bold transition-all {{ $statusFilter === 'active' ? 'bg-primary-600 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-primary-300 hover:bg-primary-50 hover:text-primary-700' }}">
-                        <span class="w-1.5 h-1.5 rounded-full {{ $statusFilter === 'active' ? 'bg-primary-200' : 'bg-primary-500' }}"></span>
+                    <button @click="currentFilter = 'active'"
+                        :class="currentFilter === 'active' ? 'bg-primary-600 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-primary-300 hover:bg-primary-50 hover:text-primary-700'"
+                        class="inline-flex items-center justify-center gap-1.5 h-10 px-2 sm:px-4 rounded-xl text-sm font-bold transition-all cursor-pointer">
+                        <span :class="currentFilter === 'active' ? 'bg-primary-200' : 'bg-primary-500'" class="w-1.5 h-1.5 rounded-full"></span>
                         Aktif
-                        <span class="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-bold {{ $statusFilter === 'active' ? 'bg-primary-700 text-primary-100' : 'bg-primary-100 text-primary-700' }}">{{ $counts['active'] }}</span>
+                        <span :class="currentFilter === 'active' ? 'bg-primary-700 text-primary-100' : 'bg-primary-100 text-primary-700'" class="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-bold">{{ $counts['active'] }}</span>
                     </button>
-                    <button wire:click="$set('statusFilter', 'inactive')"
-                        class="inline-flex items-center justify-center gap-1.5 h-10 px-2 sm:px-4 rounded-xl text-sm font-bold transition-all {{ $statusFilter === 'inactive' ? 'bg-rose-600 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-rose-300 hover:bg-rose-50 hover:text-rose-700' }}">
-                        <span class="w-1.5 h-1.5 rounded-full {{ $statusFilter === 'inactive' ? 'bg-rose-200' : 'bg-rose-500' }}"></span>
+                    <button @click="currentFilter = 'inactive'"
+                        :class="currentFilter === 'inactive' ? 'bg-rose-600 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-rose-300 hover:bg-rose-50 hover:text-rose-700'"
+                        class="inline-flex items-center justify-center gap-1.5 h-10 px-2 sm:px-4 rounded-xl text-sm font-bold transition-all cursor-pointer">
+                        <span :class="currentFilter === 'inactive' ? 'bg-rose-200' : 'bg-rose-500'" class="w-1.5 h-1.5 rounded-full"></span>
                         Nonaktif
-                        <span class="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-bold {{ $statusFilter === 'inactive' ? 'bg-rose-700 text-rose-100' : 'bg-rose-100 text-rose-700' }}">{{ $counts['total'] - $counts['active'] }}</span>
+                        <span :class="currentFilter === 'inactive' ? 'bg-rose-700 text-rose-100' : 'bg-rose-100 text-rose-700'" class="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-bold">{{ $counts['total'] - $counts['active'] }}</span>
                     </button>
                 </div>
 

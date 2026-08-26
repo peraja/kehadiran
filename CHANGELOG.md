@@ -48,8 +48,9 @@ Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/
   - Menghapus pemanggilan redirect SPA berlebih pada aksi status rapat (*Mulai Rapat*, *Selesaikan Rapat*, *Lanjutkan Rapat*, *Simpan Edit*, dan *TTE Semua*) di header rapat ([`resources/views/livewire/meetings/header.blade.php`](file:///Users/abedzul/Desktop/htdocs/rapat/resources/views/livewire/meetings/header.blade.php)) serta pada fitur sinkronisasi data SIMPEG OPD ([`resources/views/livewire/opd/settings.blade.php`](file:///Users/abedzul/Desktop/htdocs/rapat/resources/views/livewire/opd/settings.blade.php) & [`resources/views/livewire/opd/index.blade.php`](file:///Users/abedzul/Desktop/htdocs/rapat/resources/views/livewire/opd/index.blade.php)) sehingga status dan tampilan diperbarui secara instan dalam 1 siklus AJAX murni tanpa jeda reload halaman.
 - **Optimasi Prefetching & Transisi Tab Detail Rapat**:
   - Menambahkan direktif `wire:navigate.hover` dan transisi opasitas (`transition-opacity`) pada navigasi tab ruang kerja rapat ([`resources/views/components/meeting-layout.blade.php`](file:///Users/abedzul/Desktop/htdocs/rapat/resources/views/components/meeting-layout.blade.php)) untuk tab *Ringkasan*, *Presensi*, *Dokumentasi*, dan *Notulen* agar konten termuat di latar belakang saat disentuh/didekati kursor dan perpindahan tab terasa instan.
-- **Transisi Visual Loading Tabel Data (Feedback Responsif)**:
+- **Transisi Visual Loading Tabel & Responsivitas Filter Pills (0ms Instant Feedback)**:
   - Menambahkan efek halus `wire:loading.class="opacity-50"` pada seluruh tabel data utama (*Daftar Rapat*, *Riwayat Rapat*, *Pengguna*, *OPD*, *Presensi*, dan *Audit Logs*) guna memberikan umpan balik visual yang responsif saat pencarian atau filter status sedang diproses.
+  - Mengintegrasikan Alpine.js `@entangle(...).live` pada seluruh filter pills tabel (*Daftar Rapat*, *Manajemen Pengguna*, *Master OPD*, dan *Audit Logs*) sehingga status visual tombol aktif langsung berganti seketika (0ms) saat diklik tanpa jeda jaringan.
 
 ## [1.4.3] - 2026-08-26
 

@@ -298,35 +298,40 @@ new #[Layout('layouts.app')] class extends Component {
         <!-- Toolbar -->
         <div class="p-5 sm:p-6 border-b border-slate-100 bg-slate-50/50 space-y-4">
             <!-- Filter Pills (Grid) -->
-            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 w-full">
-                <button wire:click="$set('roleFilter','')" 
-                    class="inline-flex items-center justify-center gap-1.5 h-10 px-2.5 sm:px-3 rounded-xl text-sm font-bold transition-all {{ $roleFilter === '' ? 'bg-slate-900 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900' }}">
+            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 w-full" x-data="{ currentFilter: @entangle('roleFilter').live }">
+                <button @click="currentFilter = ''" 
+                    :class="currentFilter === '' ? 'bg-slate-900 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900'"
+                    class="inline-flex items-center justify-center gap-1.5 h-10 px-2.5 sm:px-3 rounded-xl text-sm font-bold transition-all cursor-pointer">
                     Semua
-                    <span class="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-bold {{ $roleFilter === '' ? 'bg-slate-800 text-slate-300' : 'bg-slate-100 text-slate-600' }}">{{ $counts['total'] }}</span>
+                    <span :class="currentFilter === '' ? 'bg-slate-800 text-slate-300' : 'bg-slate-100 text-slate-600'" class="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-bold">{{ $counts['total'] }}</span>
                 </button>
-                <button wire:click="$set('roleFilter','admin')" 
-                    class="inline-flex items-center justify-center gap-1.5 h-10 px-2 sm:px-3 rounded-xl text-sm font-bold transition-all {{ $roleFilter === 'admin' ? 'bg-purple-600 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-purple-300 hover:bg-purple-50 hover:text-purple-700' }}">
-                    <span class="w-1.5 h-1.5 rounded-full {{ $roleFilter === 'admin' ? 'bg-purple-200' : 'bg-purple-500' }}"></span>
+                <button @click="currentFilter = 'admin'" 
+                    :class="currentFilter === 'admin' ? 'bg-purple-600 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-purple-300 hover:bg-purple-50 hover:text-purple-700'"
+                    class="inline-flex items-center justify-center gap-1.5 h-10 px-2.5 sm:px-3 rounded-xl text-sm font-bold transition-all cursor-pointer">
+                    <span :class="currentFilter === 'admin' ? 'bg-purple-200' : 'bg-purple-500'" class="w-1.5 h-1.5 rounded-full"></span>
                     Super Admin
-                    <span class="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-bold {{ $roleFilter === 'admin' ? 'bg-purple-700 text-purple-100' : 'bg-purple-100 text-purple-700' }}">{{ $counts['admin'] }}</span>
+                    <span :class="currentFilter === 'admin' ? 'bg-purple-700 text-purple-100' : 'bg-purple-100 text-purple-700'" class="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-bold">{{ $counts['admin'] }}</span>
                 </button>
-                <button wire:click="$set('roleFilter','pimpinan')" 
-                    class="inline-flex items-center justify-center gap-1.5 h-10 px-2 sm:px-3 rounded-xl text-sm font-bold transition-all {{ $roleFilter === 'pimpinan' ? 'bg-indigo-600 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700' }}">
-                    <span class="w-1.5 h-1.5 rounded-full {{ $roleFilter === 'pimpinan' ? 'bg-indigo-200' : 'bg-indigo-500' }}"></span>
+                <button @click="currentFilter = 'pimpinan'" 
+                    :class="currentFilter === 'pimpinan' ? 'bg-indigo-600 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700'"
+                    class="inline-flex items-center justify-center gap-1.5 h-10 px-2.5 sm:px-3 rounded-xl text-sm font-bold transition-all cursor-pointer">
+                    <span :class="currentFilter === 'pimpinan' ? 'bg-indigo-200' : 'bg-indigo-500'" class="w-1.5 h-1.5 rounded-full"></span>
                     Pimpinan
-                    <span class="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-bold {{ $roleFilter === 'pimpinan' ? 'bg-indigo-700 text-indigo-100' : 'bg-indigo-100 text-indigo-700' }}">{{ $counts['pimpinan'] }}</span>
+                    <span :class="currentFilter === 'pimpinan' ? 'bg-indigo-700 text-indigo-100' : 'bg-indigo-100 text-indigo-700'" class="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-bold">{{ $counts['pimpinan'] }}</span>
                 </button>
-                <button wire:click="$set('roleFilter','admin_opd')" 
-                    class="inline-flex items-center justify-center gap-1.5 h-10 px-2 sm:px-3 rounded-xl text-sm font-bold transition-all {{ $roleFilter === 'admin_opd' ? 'bg-primary-600 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-primary-300 hover:bg-primary-50 hover:text-primary-700' }}">
-                    <span class="w-1.5 h-1.5 rounded-full {{ $roleFilter === 'admin_opd' ? 'bg-primary-200' : 'bg-primary-500' }}"></span>
+                <button @click="currentFilter = 'admin_opd'" 
+                    :class="currentFilter === 'admin_opd' ? 'bg-primary-600 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-primary-300 hover:bg-primary-50 hover:text-primary-700'"
+                    class="inline-flex items-center justify-center gap-1.5 h-10 px-2.5 sm:px-3 rounded-xl text-sm font-bold transition-all cursor-pointer">
+                    <span :class="currentFilter === 'admin_opd' ? 'bg-primary-200' : 'bg-primary-500'" class="w-1.5 h-1.5 rounded-full"></span>
                     Admin OPD
-                    <span class="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-bold {{ $roleFilter === 'admin_opd' ? 'bg-primary-700 text-primary-100' : 'bg-primary-100 text-primary-700' }}">{{ $counts['admin_opd'] }}</span>
+                    <span :class="currentFilter === 'admin_opd' ? 'bg-primary-700 text-primary-100' : 'bg-primary-100 text-primary-700'" class="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-bold">{{ $counts['admin_opd'] }}</span>
                 </button>
-                <button wire:click="$set('roleFilter','pegawai')" 
-                    class="inline-flex items-center justify-center gap-1.5 h-10 px-2 sm:px-3 rounded-xl text-sm font-bold transition-all {{ $roleFilter === 'pegawai' ? 'bg-slate-700 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-700' }}">
-                    <span class="w-1.5 h-1.5 rounded-full {{ $roleFilter === 'pegawai' ? 'bg-slate-300' : 'bg-slate-400' }}"></span>
+                <button @click="currentFilter = 'pegawai'" 
+                    :class="currentFilter === 'pegawai' ? 'bg-slate-700 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-700'"
+                    class="inline-flex items-center justify-center gap-1.5 h-10 px-2.5 sm:px-3 rounded-xl text-sm font-bold transition-all cursor-pointer">
+                    <span :class="currentFilter === 'pegawai' ? 'bg-slate-300' : 'bg-slate-400'" class="w-1.5 h-1.5 rounded-full"></span>
                     Pegawai
-                    <span class="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-bold {{ $roleFilter === 'pegawai' ? 'bg-slate-800 text-slate-100' : 'bg-slate-100 text-slate-700' }}">{{ $counts['pegawai'] }}</span>
+                    <span :class="currentFilter === 'pegawai' ? 'bg-slate-800 text-slate-100' : 'bg-slate-100 text-slate-700'" class="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-bold">{{ $counts['pegawai'] }}</span>
                 </button>
             </div>
 

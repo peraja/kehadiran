@@ -391,29 +391,33 @@ new #[Layout('layouts.app')] class extends Component {
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-3 items-center">
                 <!-- Filter Pills -->
                 @unless(auth()->user()->hasActiveRole('pimpinan'))
-                <div class="lg:col-span-7 xl:col-span-8 grid grid-cols-2 sm:grid-cols-4 gap-2 w-full">
-                    <button wire:click="$set('statusFilter','')"
-                        class="inline-flex items-center justify-center gap-1.5 h-10 px-3 rounded-xl text-sm font-bold transition-all {{ $statusFilter === '' ? 'bg-slate-900 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900' }}">
+                <div class="lg:col-span-7 xl:col-span-8 grid grid-cols-2 sm:grid-cols-4 gap-2 w-full" x-data="{ currentFilter: @entangle('statusFilter').live }">
+                    <button @click="currentFilter = ''"
+                        :class="currentFilter === '' ? 'bg-slate-900 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900'"
+                        class="inline-flex items-center justify-center gap-1.5 h-10 px-3 rounded-xl text-sm font-bold transition-all cursor-pointer">
                         Semua
-                        <span class="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-bold {{ $statusFilter === '' ? 'bg-slate-800 text-slate-300' : 'bg-slate-100 text-slate-600' }}">{{ $counts['total'] }}</span>
+                        <span :class="currentFilter === '' ? 'bg-slate-800 text-slate-300' : 'bg-slate-100 text-slate-600'" class="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-bold">{{ $counts['total'] }}</span>
                     </button>
-                    <button wire:click="$set('statusFilter','scheduled')"
-                        class="inline-flex items-center justify-center gap-1.5 h-10 px-3 rounded-xl text-sm font-bold transition-all {{ $statusFilter === 'scheduled' ? 'bg-slate-600 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-700' }}">
-                        <span class="w-1.5 h-1.5 rounded-full {{ $statusFilter === 'scheduled' ? 'bg-slate-300' : 'bg-slate-400' }}"></span>
+                    <button @click="currentFilter = 'scheduled'"
+                        :class="currentFilter === 'scheduled' ? 'bg-slate-600 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-700'"
+                        class="inline-flex items-center justify-center gap-1.5 h-10 px-3 rounded-xl text-sm font-bold transition-all cursor-pointer">
+                        <span :class="currentFilter === 'scheduled' ? 'bg-slate-300' : 'bg-slate-400'" class="w-1.5 h-1.5 rounded-full"></span>
                         Dijadwalkan
-                        <span class="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-bold {{ $statusFilter === 'scheduled' ? 'bg-slate-700 text-slate-100' : 'bg-slate-100 text-slate-700' }}">{{ $counts['scheduled'] }}</span>
+                        <span :class="currentFilter === 'scheduled' ? 'bg-slate-700 text-slate-100' : 'bg-slate-100 text-slate-700'" class="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-bold">{{ $counts['scheduled'] }}</span>
                     </button>
-                    <button wire:click="$set('statusFilter','ongoing')"
-                        class="inline-flex items-center justify-center gap-1.5 h-10 px-3 rounded-xl text-sm font-bold transition-all {{ $statusFilter === 'ongoing' ? 'bg-rose-600 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-rose-300 hover:bg-rose-50 hover:text-rose-700' }}">
-                        <span class="w-1.5 h-1.5 rounded-full {{ $statusFilter === 'ongoing' ? 'bg-rose-200' : 'bg-rose-500' }}"></span>
+                    <button @click="currentFilter = 'ongoing'"
+                        :class="currentFilter === 'ongoing' ? 'bg-rose-600 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-rose-300 hover:bg-rose-50 hover:text-rose-700'"
+                        class="inline-flex items-center justify-center gap-1.5 h-10 px-3 rounded-xl text-sm font-bold transition-all cursor-pointer">
+                        <span :class="currentFilter === 'ongoing' ? 'bg-rose-200' : 'bg-rose-500'" class="w-1.5 h-1.5 rounded-full"></span>
                         Berlangsung
-                        <span class="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-bold {{ $statusFilter === 'ongoing' ? 'bg-rose-700 text-rose-100' : 'bg-rose-100 text-rose-700' }}">{{ $counts['ongoing'] }}</span>
+                        <span :class="currentFilter === 'ongoing' ? 'bg-rose-700 text-rose-100' : 'bg-rose-100 text-rose-700'" class="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-bold">{{ $counts['ongoing'] }}</span>
                     </button>
-                    <button wire:click="$set('statusFilter','completed')"
-                        class="inline-flex items-center justify-center gap-1.5 h-10 px-3 rounded-xl text-sm font-bold transition-all {{ $statusFilter === 'completed' ? 'bg-primary-600 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-primary-300 hover:bg-primary-50 hover:text-primary-700' }}">
-                        <span class="w-1.5 h-1.5 rounded-full {{ $statusFilter === 'completed' ? 'bg-primary-200' : 'bg-primary-500' }}"></span>
+                    <button @click="currentFilter = 'completed'"
+                        :class="currentFilter === 'completed' ? 'bg-primary-600 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-primary-300 hover:bg-primary-50 hover:text-primary-700'"
+                        class="inline-flex items-center justify-center gap-1.5 h-10 px-3 rounded-xl text-sm font-bold transition-all cursor-pointer">
+                        <span :class="currentFilter === 'completed' ? 'bg-primary-200' : 'bg-primary-500'" class="w-1.5 h-1.5 rounded-full"></span>
                         Selesai
-                        <span class="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-bold {{ $statusFilter === 'completed' ? 'bg-primary-700 text-primary-100' : 'bg-primary-100 text-primary-700' }}">{{ $counts['completed'] }}</span>
+                        <span :class="currentFilter === 'completed' ? 'bg-primary-700 text-primary-100' : 'bg-primary-100 text-primary-700'" class="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-bold">{{ $counts['completed'] }}</span>
                     </button>
                 </div>
                 @endunless

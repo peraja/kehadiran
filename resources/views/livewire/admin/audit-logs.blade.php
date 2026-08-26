@@ -125,29 +125,33 @@ new #[Layout('layouts.app')] class extends Component {
         <!-- Toolbar (Top Pills + Filter Bar) -->
         <div class="p-5 sm:p-6 border-b border-slate-100 bg-slate-50/50 space-y-4">
             <!-- Filter Pills (Grid) -->
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 w-full">
-                <button wire:click="$set('actionFilter', '')"
-                    class="inline-flex items-center justify-center gap-1.5 h-10 px-3 sm:px-4 rounded-xl text-sm font-bold transition-all {{ $actionFilter === '' ? 'bg-slate-900 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900' }}">
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 w-full" x-data="{ currentFilter: @entangle('actionFilter').live }">
+                <button @click="currentFilter = ''"
+                    :class="currentFilter === '' ? 'bg-slate-900 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900'"
+                    class="inline-flex items-center justify-center gap-1.5 h-10 px-3 sm:px-4 rounded-xl text-sm font-bold transition-all cursor-pointer">
                     Semua
-                    <span class="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-bold {{ $actionFilter === '' ? 'bg-slate-800 text-slate-300' : 'bg-slate-100 text-slate-600' }}">{{ $counts['total'] }}</span>
+                    <span :class="currentFilter === '' ? 'bg-slate-800 text-slate-300' : 'bg-slate-100 text-slate-600'" class="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-bold">{{ $counts['total'] }}</span>
                 </button>
-                <button wire:click="$set('actionFilter', 'auth')"
-                    class="inline-flex items-center justify-center gap-1.5 h-10 px-3 sm:px-4 rounded-xl text-sm font-bold transition-all {{ $actionFilter === 'auth' ? 'bg-emerald-600 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700' }}">
-                    <span class="w-1.5 h-1.5 rounded-full {{ $actionFilter === 'auth' ? 'bg-emerald-200' : 'bg-emerald-500' }}"></span>
+                <button @click="currentFilter = 'auth'"
+                    :class="currentFilter === 'auth' ? 'bg-emerald-600 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700'"
+                    class="inline-flex items-center justify-center gap-1.5 h-10 px-3 sm:px-4 rounded-xl text-sm font-bold transition-all cursor-pointer">
+                    <span :class="currentFilter === 'auth' ? 'bg-emerald-200' : 'bg-emerald-500'" class="w-1.5 h-1.5 rounded-full"></span>
                     Otentikasi
-                    <span class="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-bold {{ $actionFilter === 'auth' ? 'bg-emerald-700 text-emerald-100' : 'bg-emerald-100 text-emerald-700' }}">{{ $counts['auth'] }}</span>
+                    <span :class="currentFilter === 'auth' ? 'bg-emerald-700 text-emerald-100' : 'bg-emerald-100 text-emerald-700'" class="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-bold">{{ $counts['auth'] }}</span>
                 </button>
-                <button wire:click="$set('actionFilter', 'meeting')"
-                    class="inline-flex items-center justify-center gap-1.5 h-10 px-3 sm:px-4 rounded-xl text-sm font-bold transition-all {{ $actionFilter === 'meeting' ? 'bg-primary-600 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-primary-300 hover:bg-primary-50 hover:text-primary-700' }}">
-                    <span class="w-1.5 h-1.5 rounded-full {{ $actionFilter === 'meeting' ? 'bg-primary-200' : 'bg-primary-500' }}"></span>
+                <button @click="currentFilter = 'meeting'"
+                    :class="currentFilter === 'meeting' ? 'bg-primary-600 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-primary-300 hover:bg-primary-50 hover:text-primary-700'"
+                    class="inline-flex items-center justify-center gap-1.5 h-10 px-3 sm:px-4 rounded-xl text-sm font-bold transition-all cursor-pointer">
+                    <span :class="currentFilter === 'meeting' ? 'bg-primary-200' : 'bg-primary-500'" class="w-1.5 h-1.5 rounded-full"></span>
                     Rapat
-                    <span class="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-bold {{ $actionFilter === 'meeting' ? 'bg-primary-700 text-primary-100' : 'bg-primary-100 text-primary-700' }}">{{ $counts['meeting'] }}</span>
+                    <span :class="currentFilter === 'meeting' ? 'bg-primary-700 text-primary-100' : 'bg-primary-100 text-primary-700'" class="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-bold">{{ $counts['meeting'] }}</span>
                 </button>
-                <button wire:click="$set('actionFilter', 'tte')"
-                    class="inline-flex items-center justify-center gap-1.5 h-10 px-3 sm:px-4 rounded-xl text-sm font-bold transition-all {{ $actionFilter === 'tte' ? 'bg-indigo-600 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700' }}">
-                    <span class="w-1.5 h-1.5 rounded-full {{ $actionFilter === 'tte' ? 'bg-indigo-200' : 'bg-indigo-500' }}"></span>
+                <button @click="currentFilter = 'tte'"
+                    :class="currentFilter === 'tte' ? 'bg-indigo-600 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700'"
+                    class="inline-flex items-center justify-center gap-1.5 h-10 px-3 sm:px-4 rounded-xl text-sm font-bold transition-all cursor-pointer">
+                    <span :class="currentFilter === 'tte' ? 'bg-indigo-200' : 'bg-indigo-500'" class="w-1.5 h-1.5 rounded-full"></span>
                     TTE
-                    <span class="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-bold {{ $actionFilter === 'tte' ? 'bg-indigo-700 text-indigo-100' : 'bg-indigo-100 text-indigo-700' }}">{{ $counts['tte'] }}</span>
+                    <span :class="currentFilter === 'tte' ? 'bg-indigo-700 text-indigo-100' : 'bg-indigo-100 text-indigo-700'" class="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-bold">{{ $counts['tte'] }}</span>
                 </button>
             </div>
 
