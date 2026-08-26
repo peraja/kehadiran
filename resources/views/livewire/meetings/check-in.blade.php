@@ -78,7 +78,7 @@ new #[Layout('layouts.guest')] class extends Component {
         // If user not yet in local database, fetch from Kepegawaian API
         if (!$user) {
             $baseUrl = config('services.simpeg.url', 'http://apps.sinjaikab.go.id/api/pegawai');
-            $timeout = config('services.simpeg.timeout', 10);
+            $timeout = (int) config('services.simpeg.timeout', 4);
 
             try {
                 $pegawaiResponse = \Illuminate\Support\Facades\Http::timeout($timeout)->get("{$baseUrl}/data_pegawai/", [
@@ -96,7 +96,7 @@ new #[Layout('layouts.guest')] class extends Component {
                     $unit_name = null;
 
                     if ($unit_id) {
-                        $unitResponse = \Illuminate\Support\Facades\Http::timeout(5)->get("{$baseUrl}/get_unit/", [
+                        $unitResponse = \Illuminate\Support\Facades\Http::timeout(2)->get("{$baseUrl}/get_unit/", [
                             'unit_id' => $unit_id
                         ]);
                         $unitData = $unitResponse->json();
@@ -275,7 +275,25 @@ new #[Layout('layouts.guest')] class extends Component {
     </div>
 
     @if($status === 'ready')
-    <div class="space-y-6" x-data="{ tab: @entangle('participant_type'), nipChecked: @entangle('nip_checked') }">
+    <div class="space-y-6" x-data="{
+        tab: @entangle('participant_type'),
+        nipChecked: @entangle('nip_checked'),
+        clientError: '',
+        validateAndCheckNip() {
+            const el = document.getElementById('nip');
+            const val = el ? el.value.trim() : '';
+            if (!val) {
+                this.clientError = 'NIP wajib diisi.';
+                return;
+            }
+            if (val.length !== 18 || !/^\d+$/.test(val)) {
+                this.clientError = 'NIP harus 18 digit.';
+                return;
+            }
+            this.clientError = '';
+            $wire.checkNip();
+        }
+    }">
 
         <!-- Category Segmented Control -->
         <div class="flex p-1.5 bg-slate-100 rounded-2xl shadow-inner border border-slate-200/50">
@@ -293,29 +311,36 @@ new #[Layout('layouts.guest')] class extends Component {
 
             <div class="flex flex-col sm:flex-row sm:items-start gap-3">
                 <div class="flex-1 w-full">
-                    <input wire:model="nip" id="nip" type="text" maxlength="18" inputmode="numeric"
+                    <input wire:model="nip"
+                        @input="$event.target.value = $event.target.value.replace(/\D/g, ''); clientError = '';"
+                        @beforeinput="if ($event.data && !/^\d+$/.test($event.data)) { $event.preventDefault(); }"
+                        id="nip"
+                        type="text"
+                        pattern="[0-9]*"
+                        maxlength="18"
+                        inputmode="numeric"
                         class="block w-full py-2.5 px-3 rounded-xl border border-slate-300 text-base sm:text-sm font-mono focus:ring-primary-500 focus:border-primary-500 transition-colors {{ $nip_checked ? 'bg-slate-50 text-slate-500 opacity-70' : 'bg-white' }}"
                         placeholder="Contoh: 199610072022031013"
                         @readonly($nip_checked)
-                        wire:keydown.enter.prevent="checkNip"
+                        @keydown.enter.prevent="validateAndCheckNip()"
                         required />
-                    @error('nip')
-                        <div class="mt-2 text-xs space-y-1.5">
-                            <span class="text-rose-600 font-bold block">{{ $message }}</span>
-                            @if(str_contains($message, 'tidak ditemukan'))
+                    <div class="mt-2 text-xs space-y-1.5" x-show="clientError || @js($errors->has('nip'))" x-cloak>
+                        <span class="text-rose-600 font-bold block" x-text="clientError ? clientError : @js($errors->first('nip'))"></span>
+                        @if(str_contains($errors->first('nip') ?? '', 'tidak ditemukan'))
+                        <div x-show="!clientError">
                             <button type="button" @click="tab = 'eksternal'" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition cursor-pointer">
                                 <span>Gunakan Tab Eksternal</span>
                                 <svg class="w-3.5 h-3.5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
                                 </svg>
                             </button>
-                            @endif
                         </div>
-                    @enderror
+                        @endif
+                    </div>
                 </div>
 
                 @if(!$nip_checked)
-                <button type="button" wire:click="checkNip" wire:loading.attr="disabled" class="w-full sm:w-auto shrink-0 inline-flex justify-center items-center px-5 py-3 bg-slate-900 hover:bg-slate-800 active:scale-95 text-white rounded-xl font-bold text-sm transition-all shadow-sm gap-2 cursor-pointer disabled:opacity-50">
+                <button type="button" @click="validateAndCheckNip()" wire:loading.attr="disabled" class="w-full sm:w-auto shrink-0 inline-flex justify-center items-center px-5 py-3 bg-slate-900 hover:bg-slate-800 active:scale-95 text-white rounded-xl font-bold text-sm transition-all shadow-sm gap-2 cursor-pointer disabled:opacity-50">
                     <svg wire:loading.remove wire:target="checkNip" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                     </svg>
