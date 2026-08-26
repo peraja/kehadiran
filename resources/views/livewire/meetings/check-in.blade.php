@@ -140,7 +140,9 @@ new #[Layout('layouts.guest')] class extends Component {
         if ($existingAttendance) {
             $this->status = 'success';
             $this->employee_name = $user->name;
-            $this->recorded_time = $existingAttendance->check_in->format('H:i') . ' WITA';
+            $this->employee_unit = $user->unit_name ?: 'Pemkab Sinjai';
+            $this->employee_jabatan = $user->jabatan ?: 'Pegawai';
+            $this->recorded_time = $existingAttendance->check_in ? $existingAttendance->check_in->format('H:i') . ' WITA' : now()->format('H:i') . ' WITA';
             $this->message = 'Presensi sudah tercatat sebelumnya.';
             return;
         }
@@ -203,6 +205,8 @@ new #[Layout('layouts.guest')] class extends Component {
                 if ($existingAttendance) {
                     $this->status = 'success';
                     $this->employee_name = $this->employee_name ?: ($existingAttendance->user?->name ?? 'Pegawai');
+                    $this->employee_unit = $existingAttendance->user?->unit_name ?: 'Pemkab Sinjai';
+                    $this->employee_jabatan = $existingAttendance->user?->jabatan ?: 'Pegawai';
                     $this->recorded_time = $existingAttendance->check_in ? $existingAttendance->check_in->format('H:i') . ' WITA' : $this->recorded_time;
                     $this->message = 'Presensi sudah tercatat sebelumnya.';
                     return;
@@ -228,6 +232,22 @@ new #[Layout('layouts.guest')] class extends Component {
                     'signature.required' => 'Tanda Tangan wajib diisi.',
                 ]);
 
+                $existingGuest = $this->meeting->attendances()
+                    ->whereNull('user_id')
+                    ->where('guest_name', trim($this->guest_name))
+                    ->where('guest_agency', trim($this->guest_agency))
+                    ->first();
+
+                if ($existingGuest) {
+                    $this->status = 'success';
+                    $this->employee_name = $existingGuest->guest_name;
+                    $this->employee_unit = $existingGuest->guest_agency;
+                    $this->employee_jabatan = $existingGuest->guest_position ?: '';
+                    $this->recorded_time = $existingGuest->check_in ? $existingGuest->check_in->format('H:i') . ' WITA' : $this->recorded_time;
+                    $this->message = 'Presensi sudah tercatat sebelumnya.';
+                    return;
+                }
+
                 $this->meeting->attendances()->create([
                     'guest_name' => $this->guest_name,
                     'guest_agency' => $this->guest_agency,
@@ -239,6 +259,8 @@ new #[Layout('layouts.guest')] class extends Component {
                 ]);
 
                 $this->employee_name = $this->guest_name;
+                $this->employee_unit = $this->guest_agency;
+                $this->employee_jabatan = $this->guest_position ?: '';
             }
 
             $this->status = 'success';
@@ -455,12 +477,21 @@ new #[Layout('layouts.guest')] class extends Component {
     @elseif($status === 'success')
     <div class="text-center py-4 space-y-6">
         <div>
+            @if(str_contains($message ?? '', 'sudah tercatat'))
+            <div class="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+            </div>
+            <h3 class="text-xl sm:text-2xl font-extrabold text-slate-900">Presensi Sudah Tercatat</h3>
+            @else
             <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4">
                 <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path>
                 </svg>
             </div>
             <h3 class="text-xl sm:text-2xl font-extrabold text-slate-900">Presensi Berhasil!</h3>
+            @endif
         </div>
 
         @if($employee_name)
