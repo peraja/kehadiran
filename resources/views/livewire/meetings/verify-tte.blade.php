@@ -58,8 +58,8 @@ new #[Layout('layouts.guest')] class extends Component {
 <div class="space-y-6">
     <x-slot:seo>
         <x-seo-meta
-            :title="'Verifikasi ' . $docTitle . ' | ' . $meeting->title"
-            :description="'Verifikasi TTE ' . $docTitle . ' ' . $meeting->title . ' - Pemerintah Kabupaten Sinjai'"
+            :title="'Verifikasi ' . $docTitle . ': ' . $meeting->title . ' | eRapat'"
+            :description="'Verifikasi ' . $docTitle . ' ' . $meeting->title . ' Pemerintah Kabupaten Sinjai'"
             robots="noindex, nofollow"
         />
     </x-slot:seo>

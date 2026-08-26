@@ -35,6 +35,11 @@ Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/
   - Memperbarui label input NIP menjadi `Masukkan NIP`, menambahkan validasi ketat 18 digit angka (`required|digits:18`, `maxlength="18"`, `inputmode="numeric"`), dan menyediakan tombol pintas `[ Gunakan Tab Eksternal → ]` saat NIP tidak ditemukan di database SIMPEG.
   - Memperbarui contoh *placeholder* NIP (`Contoh: 199610072022031013`) dan instansi tamu eksternal (`Contoh: Pengadilan Negeri Sinjai`).
   - Mengintegrasikan state verifikasi NIP (`nipChecked`) secara reaktif dengan `@entangle` dan pemantau `$watch('nipChecked')` pada kanvas tanda tangan presensi.
+- **Standarisasi SEO Meta & Pratinjau Tautan Halaman Publik**:
+  - Menyeragamkan formulasi judul dan meta description dinamis (`Pemerintah Kabupaten Sinjai`) pada landing page ([`welcome.blade.php`](file:///Users/abedzul/Desktop/htdocs/rapat/resources/views/welcome.blade.php)), login ([`login.blade.php`](file:///Users/abedzul/Desktop/htdocs/rapat/resources/views/livewire/pages/auth/login.blade.php)), presensi mandiri ([`check-in.blade.php`](file:///Users/abedzul/Desktop/htdocs/rapat/resources/views/livewire/meetings/check-in.blade.php)), dan verifikasi dokumen TTE ([`verify-tte.blade.php`](file:///Users/abedzul/Desktop/htdocs/rapat/resources/views/livewire/meetings/verify-tte.blade.php)).
+  - Menerapkan direktif `robots="noindex, nofollow"` dan aset gambar lokal `asset('img/meta.png')` pada halaman presensi dan verifikasi dokumen demi keamanan, privasi data, dan keandalan pratinjau medsos.
+- **Penyelarasan Warna Ikon Tombol Login Landing Page**:
+  - Mengubah warna ikon SVG pada tombol Login ([`welcome.blade.php`](file:///Users/abedzul/Desktop/htdocs/rapat/resources/views/welcome.blade.php)) menjadi putih solid (`text-white`) agar seragam dengan teks dan tombol Dashboard.
 
 ## [1.4.3] - 2026-08-26
 

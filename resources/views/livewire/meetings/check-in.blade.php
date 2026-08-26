@@ -255,10 +255,11 @@ new #[Layout('layouts.guest')] class extends Component {
 <div>
     <x-slot:seo>
         <x-seo-meta
-            :title="'Presensi: ' . $meeting->title . ' - eRapat Sinjai'"
-            :description="'Laman presensi kehadiran mandiri rapat ' . $meeting->title . ' Pemerintah Kabupaten Sinjai.'"
+            :title="'Presensi: ' . $meeting->title . ' | eRapat'"
+            :description="'Presensi ' . $meeting->title . ' Pemerintah Kabupaten Sinjai'"
             :url="route('meetings.check-in', $meeting->id)"
-            image="https://sinjaikab.go.id/v4/wp-content/uploads/2022/03/logo-sinjai.png" />
+            :image="asset('img/meta.png')"
+            robots="noindex, nofollow" />
     </x-slot:seo>
 
     <!-- Meeting Info Header -->
