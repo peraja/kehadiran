@@ -214,8 +214,8 @@ new #[Layout('layouts.app')] class extends Component {
         if (!$this->isSyncing || empty($this->syncQueue)) {
             $this->isSyncing = false;
             $this->syncQueue = [];
+            $this->dispatch('close-modal', 'sync-progress-modal');
             session()->flash('message', 'Data OPD berhasil disinkronkan.');
-            $this->redirect(route('opd.index'), navigate: true);
             return;
         }
 
@@ -232,8 +232,8 @@ new #[Layout('layouts.app')] class extends Component {
             $this->dispatch('trigger-next-sync');
         } else {
             $this->isSyncing = false;
+            $this->dispatch('close-modal', 'sync-progress-modal');
             session()->flash('message', 'Data OPD berhasil disinkronkan.');
-            $this->redirect(route('opd.index'), navigate: true);
         }
     }
 
@@ -385,7 +385,7 @@ new #[Layout('layouts.app')] class extends Component {
                         <th class="py-4 px-6 text-right w-24">Aksi</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-slate-100 text-sm bg-white">
+                <tbody wire:loading.class="opacity-50" class="divide-y divide-slate-100 text-sm bg-white transition-opacity duration-200">
                     @forelse($opds as $opd)
                     <tr class="hover:bg-slate-50/80 transition-colors group">
                         <!-- Kode Unit -->

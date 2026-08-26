@@ -96,7 +96,6 @@ new #[Layout('layouts.app')] class extends Component {
         $this->email = $this->opd->email ?? $this->email;
 
         session()->flash('message', 'Data OPD dan Penandatangan berhasil disinkronkan dari SIMPEG.');
-        $this->redirect(route('opd.settings'), navigate: true);
     }
 
     public function saveOpdInfo(): void

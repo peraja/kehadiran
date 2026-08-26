@@ -162,9 +162,10 @@ new class extends Component {
 
             if ($result['success']) {
                 $this->meeting->refresh();
+                $this->loadMeetingData();
                 $this->closeSignModal();
+                $this->dispatch('meeting-updated');
                 session()->flash('message', $result['message']);
-                $this->redirect(request()->header('Referer') ?: route('meetings.overview', $this->meeting->id), navigate: true);
             } else {
                 $this->errorMessage = $result['message'];
                 $this->passphrase = '';
@@ -345,9 +346,9 @@ new class extends Component {
 
         $this->meeting->update(['status' => 'ongoing']);
         $this->meeting->refresh();
+        $this->loadMeetingData();
         $this->dispatch('meeting-updated');
         session()->flash('message', 'Rapat dimulai.');
-        $this->redirect(request()->header('Referer', route('meetings.overview', $this->meeting->id)), navigate: true);
     }
 
     public function finishMeeting()
@@ -358,9 +359,9 @@ new class extends Component {
 
         $this->meeting->update(['status' => 'completed']);
         $this->meeting->refresh();
+        $this->loadMeetingData();
         $this->dispatch('meeting-updated');
         session()->flash('message', 'Rapat diselesaikan.');
-        $this->redirect(request()->header('Referer', route('meetings.overview', $this->meeting->id)), navigate: true);
     }
 
     public function reopenMeeting()
@@ -379,9 +380,9 @@ new class extends Component {
 
         $this->meeting->update(['status' => 'ongoing']);
         $this->meeting->refresh();
+        $this->loadMeetingData();
         $this->dispatch('meeting-updated');
         session()->flash('message', 'Rapat dilanjutkan.');
-        $this->redirect(request()->header('Referer', route('meetings.overview', $this->meeting->id)), navigate: true);
     }
 
     public function openEditModal()
@@ -497,8 +498,6 @@ new class extends Component {
         $this->dispatch('close-modal', 'edit-meeting-modal');
         $this->dispatch('meeting-updated');
         session()->flash('message', 'Rapat berhasil diperbarui.');
-
-        $this->redirect(request()->header('Referer', route('meetings.overview', $this->meeting->id)), navigate: true);
     }
 
     public function deleteMeeting()

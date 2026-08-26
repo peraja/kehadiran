@@ -463,7 +463,7 @@ new #[Layout('layouts.app')] class extends Component {
                         <th class="py-4 px-6 text-right w-24">Aksi</th>
                     </tr>
                 </thead>
-                <tbody class="text-slate-700 text-sm divide-y divide-slate-100">
+                <tbody wire:loading.class="opacity-50" class="text-slate-700 text-sm divide-y divide-slate-100 transition-opacity duration-200">
                     @forelse($meetings as $meeting)
                     <tr class="hover:bg-slate-50/80 transition-colors group">
                         <!-- Agenda & Lokasi -->
