@@ -291,6 +291,7 @@ new #[Layout('layouts.guest')] class extends Component {
                 return;
             }
             this.clientError = '';
+            $wire.set('nip', val);
             $wire.checkNip();
         }
     }">
@@ -324,18 +325,23 @@ new #[Layout('layouts.guest')] class extends Component {
                         @readonly($nip_checked)
                         @keydown.enter.prevent="validateAndCheckNip()"
                         required />
-                    <div class="mt-2 text-xs space-y-1.5" x-show="clientError || @js($errors->has('nip'))" x-cloak>
-                        <span class="text-rose-600 font-bold block" x-text="clientError ? clientError : @js($errors->first('nip'))"></span>
-                        @if(str_contains($errors->first('nip') ?? '', 'tidak ditemukan'))
-                        <div x-show="!clientError">
+                    
+                    @error('nip')
+                        <div class="mt-2 text-xs space-y-1.5" x-show="!clientError">
+                            <span class="text-rose-600 font-bold block">{{ $message }}</span>
+                            @if(str_contains($message, 'tidak ditemukan'))
                             <button type="button" @click="tab = 'eksternal'" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition cursor-pointer">
                                 <span>Gunakan Tab Eksternal</span>
                                 <svg class="w-3.5 h-3.5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
                                 </svg>
                             </button>
+                            @endif
                         </div>
-                        @endif
+                    @enderror
+
+                    <div class="mt-2 text-xs" x-show="clientError" x-cloak>
+                        <span class="text-rose-600 font-bold block" x-text="clientError"></span>
                     </div>
                 </div>
 
