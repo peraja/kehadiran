@@ -82,11 +82,18 @@ new #[Layout('layouts.app')] class extends Component {
 
         $logs = $query->paginate(15);
 
+        $countRow = AuditLog::selectRaw("
+            COUNT(*) as total,
+            SUM(CASE WHEN action IN ('login', 'logout') THEN 1 ELSE 0 END) as auth,
+            SUM(CASE WHEN action IN ('create_meeting', 'delete_meeting') THEN 1 ELSE 0 END) as meeting,
+            SUM(CASE WHEN action = 'sign_tte' THEN 1 ELSE 0 END) as tte
+        ")->first();
+
         $counts = [
-            'total' => AuditLog::count(),
-            'auth' => AuditLog::whereIn('action', ['login', 'logout'])->count(),
-            'meeting' => AuditLog::whereIn('action', ['create_meeting', 'delete_meeting'])->count(),
-            'tte' => AuditLog::where('action', 'sign_tte')->count(),
+            'total' => (int) ($countRow->total ?? 0),
+            'auth' => (int) ($countRow->auth ?? 0),
+            'meeting' => (int) ($countRow->meeting ?? 0),
+            'tte' => (int) ($countRow->tte ?? 0),
         ];
 
         return [

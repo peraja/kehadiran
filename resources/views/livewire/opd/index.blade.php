@@ -259,14 +259,18 @@ new #[Layout('layouts.app')] class extends Component {
 
         $opds = $query->orderBy('name', 'asc')->paginate(15);
 
+        $countRow = Opd::selectRaw("
+            COUNT(*) as total,
+            SUM(CASE WHEN is_active = 1 THEN 1 ELSE 0 END) as active,
+            SUM(CASE WHEN address IS NOT NULL AND address != '' THEN 1 ELSE 0 END) as has_address,
+            SUM(CASE WHEN (phone IS NOT NULL AND phone != '') OR (email IS NOT NULL AND email != '') THEN 1 ELSE 0 END) as has_contact
+        ")->first();
+
         $counts = [
-            'total' => Opd::count(),
-            'active' => Opd::where('is_active', true)->count(),
-            'has_address' => Opd::whereNotNull('address')->where('address', '!=', '')->count(),
-            'has_contact' => Opd::where(function ($q) {
-                $q->whereNotNull('phone')->where('phone', '!=', '')
-                    ->orWhereNotNull('email')->where('email', '!=', '');
-            })->count(),
+            'total' => (int) ($countRow->total ?? 0),
+            'active' => (int) ($countRow->active ?? 0),
+            'has_address' => (int) ($countRow->has_address ?? 0),
+            'has_contact' => (int) ($countRow->has_contact ?? 0),
         ];
 
         return compact('opds', 'counts');

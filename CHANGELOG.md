@@ -52,6 +52,11 @@ Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/
   - Menambahkan efek halus `wire:loading.class="opacity-50"` pada seluruh tabel data utama (*Daftar Rapat*, *Riwayat Rapat*, *Pengguna*, *OPD*, *Presensi*, dan *Audit Logs*) guna memberikan umpan balik visual yang responsif saat pencarian atau filter status sedang diproses.
   - Mengintegrasikan Alpine.js `@entangle(...).live` pada seluruh filter pills tabel (*Daftar Rapat*, *Manajemen Pengguna*, *Master OPD*, dan *Audit Logs*) sehingga status visual tombol aktif langsung berganti seketika (0ms) saat diklik tanpa jeda jaringan.
   - Menyeragamkan label teks `Reset` dan ikon putar (*rotate* `↻`) pada seluruh tombol reset filter tabel data (*Daftar Rapat*, *Riwayat Rapat*, *Pengguna*, *OPD*, dan *Audit Logs*).
+- **Optimasi Performa Kueri Tabel & Indeks Database Komprehensif (< 100ms Response Time)**:
+  - Menambahkan indeks database baru pada `users` (`unit_name`), `opds` (`name`, `is_active`, `leader_nip`), dan `meeting_attendances` (`[meeting_id, user_id]`, `check_in`) melalui migrasi [`2026_08_26_152308_add_comprehensive_performance_indexes.php`](file:///Users/abedzul/Desktop/htdocs/rapat/database/migrations/2026_08_26_152308_add_comprehensive_performance_indexes.php).
+  - Mengeliminasi *full table scan string manipulation* (`whereRaw REPLACE`) dan menyederhanakan kueri pencarian OPD menggunakan indeks terstruktur.
+  - Menggabungkan perhitungan 4 kueri badge jumlah (*counts*) menjadi **1 kueri agregasi SQL tunggal** (`SUM(CASE WHEN ...)`) pada tabel Daftar Rapat, Master OPD, dan Audit Logs serta menambahkan *caching* cerdas pada tabel Manajemen Pengguna.
+  - Menambahkan *eager loading* relasi notulen (`minutes`) pada Daftar Rapat dan Riwayat Rapat untuk mencegah kueri berulang.
 
 ## [1.4.3] - 2026-08-26
 

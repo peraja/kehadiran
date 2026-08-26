@@ -220,7 +220,7 @@ new #[Layout('layouts.app')] class extends Component {
 
     public function with(): array
     {
-        $query = Meeting::query()->with(['opd', 'creator'])->where(function ($q) {
+        $query = Meeting::query()->with(['opd', 'creator', 'minutes'])->where(function ($q) {
             $q->where('title', 'like', '%' . $this->search . '%')
                 ->orWhere('location', 'like', '%' . $this->search . '%');
         });
@@ -273,33 +273,38 @@ new #[Layout('layouts.app')] class extends Component {
             $query->where('created_by', $user->id);
         }
 
-        $allOpds = auth()->user()->hasActiveRole('admin') ? \App\Models\Opd::where('is_active', true)->orderBy('name')->get() : collect();
+        $isAdmin = $user->hasActiveRole('admin');
+        
+        $allOpds = $isAdmin 
+            ? \App\Models\Opd::where('is_active', true)->orderBy('name')->get()
+            : collect();
 
         $targetOpd = null;
-        if (auth()->user()->hasActiveRole('admin')) {
+        if ($isAdmin) {
             if ($this->selected_opd_id) {
                 $targetOpd = \App\Models\Opd::find($this->selected_opd_id);
             }
         } else {
-            $userUnit = auth()->user()->unit_name;
-            $targetOpd = \App\Models\Opd::where('name', $userUnit)->first();
-            if (!$targetOpd && $userUnit) {
-                $cleanUnit = str_replace([',', '.', '-'], '', $userUnit);
-                $targetOpd = \App\Models\Opd::whereRaw("REPLACE(REPLACE(REPLACE(name, ',', ''), '.', ''), '-', '') LIKE ?", ['%' . $cleanUnit . '%'])->first();
+            $userUnit = $user->unit_name;
+            if ($userUnit) {
+                $targetOpd = \App\Models\Opd::where('name', $userUnit)->first();
+                if (!$targetOpd) {
+                    $cleanUnit = str_replace([',', '.', '-'], '', $userUnit);
+                    $targetOpd = \App\Models\Opd::where('name', 'like', '%' . $cleanUnit . '%')->first();
+                }
             }
         }
 
-        $opdSigners = $targetOpd ? $targetOpd->signers()->where('is_active', true)->orderByRaw("CASE eselon WHEN 'II.a' THEN 1 WHEN 'II.b' THEN 2 WHEN 'III.a' THEN 3 WHEN 'III.b' THEN 4 ELSE 5 END, id ASC")->get() : collect();
-
-        // Tambahkan pimpinan manual (user ber-role pimpinan yang NIP-nya belum ada di opd_signers)
-        if ($targetOpd) {
+        $opdSigners = collect();
+        if ($targetOpd instanceof \App\Models\Opd) {
+            $opdSigners = $targetOpd->signers()->where('is_active', true)->orderByRaw("CASE eselon WHEN 'II.a' THEN 1 WHEN 'II.b' THEN 2 WHEN 'III.a' THEN 3 WHEN 'III.b' THEN 4 ELSE 5 END, id ASC")->get();
             $signerNips   = $opdSigners->pluck('nip')->filter()->values();
             $leaderNip    = $targetOpd->leader_nip;
             $manualPimpinan = \App\Models\User::role('pimpinan')
-                ->where(function ($q) use ($targetOpd) {
+                ->where(function ($q) use ($targetOpd, $user) {
                     $q->where('unit_name', $targetOpd->name);
-                    if (auth()->user()->unit_name) {
-                        $q->orWhere('unit_name', auth()->user()->unit_name);
+                    if ($user->unit_name) {
+                        $q->orWhere('unit_name', $user->unit_name);
                     }
                 })
                 ->get()
@@ -322,20 +327,27 @@ new #[Layout('layouts.app')] class extends Component {
         }
 
         $baseCountQuery = Meeting::query();
-        if (!auth()->user()->hasActiveRole('admin')) {
-            $baseCountQuery->where(function ($q) {
-                $q->whereHas('creator', function ($cq) {
-                    $cq->where('unit_name', auth()->user()->unit_name);
-                })->orWhereHas('opd', function ($oq) {
-                    $oq->where('name', auth()->user()->unit_name);
+        if (!$isAdmin) {
+            $baseCountQuery->where(function ($q) use ($user) {
+                $q->whereHas('creator', function ($cq) use ($user) {
+                    $cq->where('unit_name', $user->unit_name);
+                })->orWhereHas('opd', function ($oq) use ($user) {
+                    $oq->where('name', $user->unit_name);
                 });
             });
         }
+        $countRow = (clone $baseCountQuery)->selectRaw("
+            COUNT(*) as total,
+            SUM(CASE WHEN status = 'scheduled' THEN 1 ELSE 0 END) as scheduled,
+            SUM(CASE WHEN status = 'ongoing' THEN 1 ELSE 0 END) as ongoing,
+            SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed
+        ")->first();
+
         $counts = [
-            'total' => (clone $baseCountQuery)->count(),
-            'scheduled' => (clone $baseCountQuery)->where('status', 'scheduled')->count(),
-            'ongoing' => (clone $baseCountQuery)->where('status', 'ongoing')->count(),
-            'completed' => (clone $baseCountQuery)->where('status', 'completed')->count(),
+            'total' => (int) ($countRow->total ?? 0),
+            'scheduled' => (int) ($countRow->scheduled ?? 0),
+            'ongoing' => (int) ($countRow->ongoing ?? 0),
+            'completed' => (int) ($countRow->completed ?? 0),
         ];
 
         $meetings = $query->orderBy('date', 'desc')

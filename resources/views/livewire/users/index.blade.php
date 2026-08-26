@@ -207,6 +207,7 @@ new #[Layout('layouts.app')] class extends Component {
             session()->flash('message', 'Pengguna berhasil ditambahkan.');
         }
 
+        \Illuminate\Support\Facades\Cache::forget('user_role_counts');
         $this->dispatch('close-modal', 'user-form-modal');
         $this->reset(['userId', 'name', 'nip', 'nik', 'roles', 'unit_name', 'jabatan', 'pangkat', 'password', 'apiSynced', 'apiStatusMessage']);
         $this->roles = ['pegawai'];
@@ -221,6 +222,7 @@ new #[Layout('layouts.app')] class extends Component {
 
         $user = User::findOrFail($id);
         $user->delete();
+        \Illuminate\Support\Facades\Cache::forget('user_role_counts');
         session()->flash('message', 'Pengguna berhasil dihapus.');
     }
 
@@ -247,13 +249,15 @@ new #[Layout('layouts.app')] class extends Component {
 
         $users = $query->orderBy('name', 'asc')->paginate(15);
 
-        $counts = [
-            'total' => User::count(),
-            'admin' => User::role('admin')->count(),
-            'admin_opd' => User::role('admin_opd')->count(),
-            'pimpinan' => User::role('pimpinan')->count(),
-            'pegawai' => User::role('pegawai')->count(),
-        ];
+        $counts = \Illuminate\Support\Facades\Cache::remember('user_role_counts', 120, function () {
+            return [
+                'total' => User::count(),
+                'admin' => User::role('admin')->count(),
+                'admin_opd' => User::role('admin_opd')->count(),
+                'pimpinan' => User::role('pimpinan')->count(),
+                'pegawai' => User::role('pegawai')->count(),
+            ];
+        });
 
         return compact('users', 'counts');
     }

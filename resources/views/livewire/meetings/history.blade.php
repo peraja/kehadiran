@@ -56,7 +56,7 @@ new #[Layout('layouts.app')] class extends Component {
         $user = auth()->user();
 
         $query = Meeting::query()
-            ->with(['opd', 'creator', 'attendances', 'photos'])
+            ->with(['opd', 'creator', 'attendances', 'photos', 'minutes'])
             ->where('status', 'completed')
             ->whereNotNull('minutes_signed_at')
             ->whereNotNull('attendance_signed_at')
