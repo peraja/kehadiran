@@ -3,8 +3,8 @@
 <div class="w-full">
     <!-- Breadcrumb & Back Navigation -->
     <div class="mb-4 sm:mb-5">
-        <a href="{{ route('meetings.index') }}" wire:navigate class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-white border border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-slate-900 hover:border-slate-300 text-xs font-bold uppercase tracking-wider shadow-2xs group">
-            <svg class="w-3.5 h-3.5 text-slate-400 group-hover:text-slate-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <a href="{{ route('meetings.index') }}" wire:navigate.hover class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-white border border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-slate-900 hover:border-slate-300 text-xs font-bold uppercase tracking-wider shadow-2xs group transition-all">
+            <svg class="w-3.5 h-3.5 text-slate-400 group-hover:text-slate-700 transition-transform group-hover:-translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
             <span>Kembali ke Daftar Rapat</span>
@@ -51,8 +51,8 @@
             
             @foreach($tabs as $key => $tab)
                 <a href="{{ route('meetings.'.$key, $meeting->id) }}"
-                   wire:navigate
-                   class="flex items-center justify-center gap-2 px-3 sm:px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all shadow-xs w-full {{ $activeTab === $key ? 'bg-slate-900 text-white hover:bg-slate-800' : 'bg-slate-50 text-slate-600 border border-slate-200/80 hover:bg-slate-100 hover:text-slate-900 hover:border-slate-300' }}">
+                   wire:navigate.hover
+                   class="flex items-center justify-center gap-2 px-3 sm:px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all shadow-xs w-full {{ $activeTab === $key ? 'bg-slate-900 text-white' : 'bg-slate-50 text-slate-600 border border-slate-200/80 hover:bg-slate-100 hover:text-slate-900 hover:border-slate-300' }}">
                     {!! $tab['icon'] !!}
                     <span>{{ $tab['label'] }}</span>
                     @if($tab['count'] !== null)
@@ -65,6 +65,8 @@
         </nav>
         @endunless
 
-        {{ $slot }}
+        <div class="transition-opacity duration-150">
+            {{ $slot }}
+        </div>
     </div>
 </div>
