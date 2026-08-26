@@ -51,6 +51,7 @@ Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/
 - **Transisi Visual Loading Tabel & Responsivitas Filter Pills (0ms Instant Feedback)**:
   - Menambahkan efek halus `wire:loading.class="opacity-50"` pada seluruh tabel data utama (*Daftar Rapat*, *Riwayat Rapat*, *Pengguna*, *OPD*, *Presensi*, dan *Audit Logs*) guna memberikan umpan balik visual yang responsif saat pencarian atau filter status sedang diproses.
   - Mengintegrasikan Alpine.js `@entangle(...).live` pada seluruh filter pills tabel (*Daftar Rapat*, *Manajemen Pengguna*, *Master OPD*, dan *Audit Logs*) sehingga status visual tombol aktif langsung berganti seketika (0ms) saat diklik tanpa jeda jaringan.
+  - Menyeragamkan label teks `Reset` dan ikon putar (*rotate* `↻`) pada seluruh tombol reset filter tabel data (*Daftar Rapat*, *Riwayat Rapat*, *Pengguna*, *OPD*, dan *Audit Logs*).
 
 ## [1.4.3] - 2026-08-26
 
