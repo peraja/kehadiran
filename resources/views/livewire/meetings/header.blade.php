@@ -541,6 +541,7 @@ new class extends Component {
         $signableCount = count($signableDocs);
 
         $showPimpinanSignAll = $meeting->status === 'completed' && auth()->user()->hasActiveRole('pimpinan') && $signableCount > 0;
+        $showDownloadBundle = $meeting->status === 'completed' && $meeting->isFullySigned();
         $canManage = $this->canManageMeeting();
         $showStartMeeting = $canManage && $meeting->status == 'scheduled';
         $showFinishMeeting = $canManage && $meeting->status == 'ongoing';
@@ -548,7 +549,7 @@ new class extends Component {
         $showReopenMeeting = $canManage && $meeting->status == 'completed' && !$this->signerLocked && !auth()->user()?->hasActiveRole('pimpinan');
         $showEditMeeting = $canManage && $meeting->status !== 'completed';
 
-        $hasActionButtons = $showPimpinanSignAll || $showStartMeeting || $showFinishMeeting || $showQrCode || $showReopenMeeting || $showEditMeeting;
+        $hasActionButtons = $showPimpinanSignAll || $showStartMeeting || $showFinishMeeting || $showQrCode || $showReopenMeeting || $showEditMeeting || $showDownloadBundle;
     @endphp
 
     <div class="flex flex-col md:flex-row md:items-start justify-between gap-3 sm:gap-4 md:gap-5 relative z-10">
@@ -567,6 +568,15 @@ new class extends Component {
 
         @if($hasActionButtons)
         <div class="grid grid-cols-2 gap-2.5 w-full sm:flex sm:flex-wrap sm:items-center sm:gap-3 sm:w-auto pt-1 md:pt-0 shrink-0">
+            @if($showDownloadBundle)
+                <a href="{{ route('meetings.export.bundle', $meeting->id) }}" class="col-span-2 sm:col-span-1 sm:flex-none inline-flex justify-center items-center px-4 sm:px-5 py-2.5 sm:py-3.5 bg-slate-900 hover:bg-slate-800 active:scale-95 text-white rounded-xl sm:rounded-2xl font-extrabold text-sm sm:text-base transition-all shadow-sm hover:shadow-md gap-2 sm:gap-2.5 whitespace-nowrap cursor-pointer" title="Download ZIP Dokumen Lengkap">
+                    <svg class="w-5 h-5 shrink-0 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                    <span>Download ZIP</span>
+                </a>
+            @endif
+
             @if($showPimpinanSignAll)
                 <button type="button" x-data="" x-on:click.prevent="$dispatch('open-modal', 'sign-all-modal'); $wire.openSignModal()" class="col-span-2 sm:col-span-1 sm:flex-none inline-flex justify-center items-center px-4 sm:px-6 py-2.5 sm:py-3.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl sm:rounded-2xl font-extrabold text-sm sm:text-base transition-all shadow-sm hover:shadow-md gap-2 sm:gap-2.5 whitespace-nowrap cursor-pointer">
                     <svg class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">

@@ -4,6 +4,22 @@ Semua perubahan penting pada proyek ini dicatat dalam berkas ini.
 
 Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/1.0.0/), dan proyek ini mematuhi [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0] - 2026-08-27
+
+### Ditambahkan
+- **Fitur Ekspor Arsip Berkas Rapat Lengkap (.ZIP)**:
+  - Menambahkan endpoint dan *controller method* `exportBundle` pada [`routes/web.php`](file:///Users/abedzul/Desktop/htdocs/rapat/routes/web.php) dan [`app/Http/Controllers/MeetingExportController.php`](file:///Users/abedzul/Desktop/htdocs/rapat/app/Http/Controllers/MeetingExportController.php) untuk mengemas seluruh berkas PDF rapat (*Notulen*, *Presensi*, dan *Dokumentasi*) ke dalam 1 file arsip `.ZIP`.
+  - Menerapkan format penamaan arsip bersih `Dokumen - [Judul Agenda] - [Tanggal].zip` serta nama berkas PDF di dalamnya tanpa penomoran berlebih (`Notulen - ...pdf`, `Presensi - ...pdf`, `Dokumentasi - ...pdf`).
+  - Menerapkan validasi backend dan frontend ketat: tombol dan akses berkas ZIP hanya aktif jika status rapat telah diselesaikan dan ketiga dokumen telah berstatus TTE Lengkap (`isFullySigned()`).
+  - Menambahkan tombol **`Download ZIP`** pada Header Ruang Kerja Rapat ([`resources/views/livewire/meetings/header.blade.php`](file:///Users/abedzul/Desktop/htdocs/rapat/resources/views/livewire/meetings/header.blade.php)) dan tombol **`ZIP`** pada kolom Dokumen TTE di tabel Riwayat Rapat ([`resources/views/livewire/meetings/history.blade.php`](file:///Users/abedzul/Desktop/htdocs/rapat/resources/views/livewire/meetings/history.blade.php)).
+- **Proteksi Rate-Limiting pada Presensi Mandiri Publik (Check-in)**:
+  - Menerapkan pembatasan laju permintaan (*rate limiting*) berbasis IP pengguna pada [`resources/views/livewire/meetings/check-in.blade.php`](file:///Users/abedzul/Desktop/htdocs/rapat/resources/views/livewire/meetings/check-in.blade.php) untuk aksi cek NIP (maksimal 20 percobaan/menit) dan konfirmasi presensi/tanda tangan (maksimal 15 pengiriman/menit) guna mengamankan endpoint dari *brute-force* dan *spam bot*.
+
+### Diubah
+- **Unduh Langsung (*Direct Download*) untuk Berkas PDF TTE**:
+  - Mengubah metode penyajian berkas PDF bertanda tangan elektronik (TTE) pada [`app/Http/Controllers/MeetingExportController.php`](file:///Users/abedzul/Desktop/htdocs/rapat/app/Http/Controllers/MeetingExportController.php) agar otomatis mengunduh berkas fisik asli (*attachment / direct download*) ke perangkat pengguna saat tombol diklik.
+  - Menyeragamkan label tombol aksi di seluruh halaman ([`overview.blade.php`](file:///Users/abedzul/Desktop/htdocs/rapat/resources/views/livewire/meetings/overview.blade.php), [`presensi.blade.php`](file:///Users/abedzul/Desktop/htdocs/rapat/resources/views/livewire/meetings/presensi.blade.php), [`dokumentasi.blade.php`](file:///Users/abedzul/Desktop/htdocs/rapat/resources/views/livewire/meetings/dokumentasi.blade.php), dan [`notulen.blade.php`](file:///Users/abedzul/Desktop/htdocs/rapat/resources/views/livewire/meetings/notulen.blade.php)): berkas TTE berlabel **`Download PDF`**, sedangkan berkas draf pratinjau berlabel **`Lihat PDF`**.
+
 ## [1.4.4] - 2026-08-26
 
 ### Ditambahkan

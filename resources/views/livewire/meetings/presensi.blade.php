@@ -168,14 +168,14 @@ new #[Layout('layouts.app')] class extends Component {
 
                 @if($meeting->status === 'completed')
                     @if($meeting->attendance_signed_at)
-                    <a href="{{ route('meetings.export.attendance', $meeting->id) }}" target="_blank" class="only:col-span-2 w-full sm:w-auto inline-flex justify-center items-center px-4 py-2.5 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 hover:border-emerald-400 active:scale-95 text-emerald-800 rounded-xl font-bold text-xs sm:text-sm transition-all shadow-2xs gap-2">
+                    <a href="{{ route('meetings.export.attendance', $meeting->id) }}" download class="only:col-span-2 w-full sm:w-auto inline-flex justify-center items-center px-4 py-2.5 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 hover:border-emerald-400 active:scale-95 text-emerald-800 rounded-xl font-bold text-xs sm:text-sm transition-all shadow-2xs gap-2" title="Unduh Dokumen Presensi TTE">
                         <svg class="w-4 h-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                         </svg>
-                        <span>Lihat PDF</span>
+                        <span>Download PDF</span>
                     </a>
                     @else
-                    <a href="{{ route('meetings.export.attendance', $meeting->id) }}" target="_blank" class="only:col-span-2 w-full sm:w-auto inline-flex justify-center items-center px-4 py-2.5 bg-white hover:bg-slate-50 border border-slate-300 hover:border-slate-400 active:scale-95 text-slate-700 rounded-xl font-bold text-xs sm:text-sm transition-all shadow-sm gap-2">
+                    <a href="{{ route('meetings.export.attendance', $meeting->id) }}" target="_blank" class="only:col-span-2 w-full sm:w-auto inline-flex justify-center items-center px-4 py-2.5 bg-white hover:bg-slate-50 border border-slate-300 hover:border-slate-400 active:scale-95 text-slate-700 rounded-xl font-bold text-xs sm:text-sm transition-all shadow-sm gap-2" title="Lihat Pratinjau Presensi">
                         <svg class="w-4 h-4 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>

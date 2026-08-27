@@ -27,6 +27,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('meetings/{meeting}/export/minutes', [\App\Http\Controllers\MeetingExportController::class, 'exportMinutes'])->name('meetings.export.minutes');
     Route::get('meetings/{meeting}/export/attendance', [\App\Http\Controllers\MeetingExportController::class, 'exportAttendance'])->name('meetings.export.attendance');
     Route::get('meetings/{meeting}/export/photos', [\App\Http\Controllers\MeetingExportController::class, 'exportPhotos'])->name('meetings.export.photos');
+    Route::get('meetings/{meeting}/export/bundle', [\App\Http\Controllers\MeetingExportController::class, 'exportBundle'])->name('meetings.export.bundle');
 });
 
 // Public Check-in Route

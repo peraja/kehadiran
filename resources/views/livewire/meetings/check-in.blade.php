@@ -3,6 +3,7 @@
 use Livewire\Volt\Component;
 use App\Models\Meeting;
 use App\Models\User;
+use Illuminate\Support\Facades\RateLimiter;
 use Livewire\Attributes\Layout;
 
 new #[Layout('layouts.guest')] class extends Component {
@@ -64,6 +65,16 @@ new #[Layout('layouts.guest')] class extends Component {
     public function checkNip()
     {
         $this->resetValidation();
+
+        $ip = request()->ip() ?: '127.0.0.1';
+        $throttleKey = 'check-nip:' . $ip;
+        if (RateLimiter::tooManyAttempts($throttleKey, 20)) {
+            $seconds = RateLimiter::availableIn($throttleKey);
+            $this->addError('nip', "Terlalu banyak percobaan cek NIP. Silakan tunggu {$seconds} detik.");
+            return;
+        }
+        RateLimiter::hit($throttleKey, 60);
+
         $this->nip = trim((string) $this->nip);
         $this->validate([
             'nip' => 'required|digits:18',
@@ -156,6 +167,15 @@ new #[Layout('layouts.guest')] class extends Component {
 
     public function confirmCheckIn(?string $signatureData = null, ?string $participantType = null)
     {
+        $ip = request()->ip() ?: '127.0.0.1';
+        $throttleKey = 'checkin-submit:' . $ip . ':' . $this->meeting->id;
+        if (RateLimiter::tooManyAttempts($throttleKey, 15)) {
+            $seconds = RateLimiter::availableIn($throttleKey);
+            $this->addError('signature', "Terlalu banyak pengiriman presensi. Silakan tunggu {$seconds} detik.");
+            return;
+        }
+        RateLimiter::hit($throttleKey, 60);
+
         if ($participantType && in_array($participantType, ['internal', 'eksternal'])) {
             $this->participant_type = $participantType;
         }

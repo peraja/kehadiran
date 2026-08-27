@@ -300,6 +300,18 @@ new #[Layout('layouts.app')] class extends Component {
                                     </svg>
                                     <span>Notulen</span>
                                 </a>
+
+                                <!-- 4. Semua Berkas ZIP (Hanya jika semua dokumen sudah TTE) -->
+                                @if($meeting->isFullySigned())
+                                <a href="{{ route('meetings.export.bundle', ['meeting' => $meeting->id]) }}"
+                                    class="inline-flex items-center gap-1 px-2.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-all shadow-sm active:scale-95"
+                                    title="Download Semua Dokumen (.ZIP)">
+                                    <svg class="w-3.5 h-3.5 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                    </svg>
+                                    <span>ZIP</span>
+                                </a>
+                                @endif
                             </div>
                         </td>
                     </tr>

@@ -193,14 +193,14 @@ new #[Layout('layouts.app')] class extends Component {
                         <div class="grid grid-cols-2 sm:flex items-center gap-2.5 sm:gap-3 w-full sm:w-auto shrink-0">
                             @if($meeting->hasDocumentContent('attendance'))
                                 @if($meeting->attendance_signed_at)
-                                <a href="{{ route('meetings.export.attendance', $meeting->id) }}" target="_blank" class="only:col-span-2 w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-50 hover:bg-emerald-100 active:scale-95 text-emerald-800 border border-emerald-300 hover:border-emerald-400 rounded-xl text-sm font-bold transition-all shadow-2xs cursor-pointer">
+                                <a href="{{ route('meetings.export.attendance', $meeting->id) }}" download class="only:col-span-2 w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-50 hover:bg-emerald-100 active:scale-95 text-emerald-800 border border-emerald-300 hover:border-emerald-400 rounded-xl text-sm font-bold transition-all shadow-2xs cursor-pointer" title="Unduh Dokumen Presensi TTE">
                                     <svg class="w-4 h-4 text-emerald-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                                     </svg>
-                                    <span>Lihat PDF</span>
+                                    <span>Download PDF</span>
                                 </a>
                                 @else
-                                <a href="{{ route('meetings.export.attendance', $meeting->id) }}" target="_blank" class="only:col-span-2 w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white hover:bg-slate-50 active:scale-95 text-slate-700 border border-slate-300 hover:border-slate-400 rounded-xl text-sm font-bold transition-all shadow-sm cursor-pointer">
+                                <a href="{{ route('meetings.export.attendance', $meeting->id) }}" target="_blank" class="only:col-span-2 w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white hover:bg-slate-50 active:scale-95 text-slate-700 border border-slate-300 hover:border-slate-400 rounded-xl text-sm font-bold transition-all shadow-sm cursor-pointer" title="Lihat Pratinjau Presensi">
                                     <svg class="w-4 h-4 text-rose-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                     </svg>
@@ -230,14 +230,14 @@ new #[Layout('layouts.app')] class extends Component {
                         <div class="grid grid-cols-2 sm:flex items-center gap-2.5 sm:gap-3 w-full sm:w-auto shrink-0">
                             @if($meeting->hasDocumentContent('photos'))
                                 @if($meeting->photos_signed_at)
-                                <a href="{{ route('meetings.export.photos', $meeting->id) }}" target="_blank" class="only:col-span-2 w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-50 hover:bg-emerald-100 active:scale-95 text-emerald-800 border border-emerald-300 hover:border-emerald-400 rounded-xl text-sm font-bold transition-all shadow-2xs cursor-pointer">
+                                <a href="{{ route('meetings.export.photos', $meeting->id) }}" download class="only:col-span-2 w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-50 hover:bg-emerald-100 active:scale-95 text-emerald-800 border border-emerald-300 hover:border-emerald-400 rounded-xl text-sm font-bold transition-all shadow-2xs cursor-pointer" title="Unduh Dokumen Dokumentasi TTE">
                                     <svg class="w-4 h-4 text-emerald-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                                     </svg>
-                                    <span>Lihat PDF</span>
+                                    <span>Download PDF</span>
                                 </a>
                                 @else
-                                <a href="{{ route('meetings.export.photos', $meeting->id) }}" target="_blank" class="only:col-span-2 w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white hover:bg-slate-50 active:scale-95 text-slate-700 border border-slate-300 hover:border-slate-400 rounded-xl text-sm font-bold transition-all shadow-sm cursor-pointer">
+                                <a href="{{ route('meetings.export.photos', $meeting->id) }}" target="_blank" class="only:col-span-2 w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white hover:bg-slate-50 active:scale-95 text-slate-700 border border-slate-300 hover:border-slate-400 rounded-xl text-sm font-bold transition-all shadow-sm cursor-pointer" title="Lihat Pratinjau Dokumentasi">
                                     <svg class="w-4 h-4 text-rose-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                     </svg>
@@ -267,14 +267,14 @@ new #[Layout('layouts.app')] class extends Component {
                         <div class="grid grid-cols-2 sm:flex items-center gap-2.5 sm:gap-3 w-full sm:w-auto shrink-0">
                             @if($meeting->hasDocumentContent('minutes'))
                                 @if($meeting->minutes_signed_at)
-                                <a href="{{ route('meetings.export.minutes', $meeting->id) }}" target="_blank" class="only:col-span-2 w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-50 hover:bg-emerald-100 active:scale-95 text-emerald-800 border border-emerald-300 hover:border-emerald-400 rounded-xl text-sm font-bold transition-all shadow-2xs cursor-pointer">
+                                <a href="{{ route('meetings.export.minutes', $meeting->id) }}" download class="only:col-span-2 w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-50 hover:bg-emerald-100 active:scale-95 text-emerald-800 border border-emerald-300 hover:border-emerald-400 rounded-xl text-sm font-bold transition-all shadow-2xs cursor-pointer" title="Unduh Dokumen Notulen TTE">
                                     <svg class="w-4 h-4 text-emerald-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                                     </svg>
-                                    <span>Lihat PDF</span>
+                                    <span>Download PDF</span>
                                 </a>
                                 @else
-                                <a href="{{ route('meetings.export.minutes', $meeting->id) }}" target="_blank" class="only:col-span-2 w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white hover:bg-slate-50 active:scale-95 text-slate-700 border border-slate-300 hover:border-slate-400 rounded-xl text-sm font-bold transition-all shadow-sm cursor-pointer">
+                                <a href="{{ route('meetings.export.minutes', $meeting->id) }}" target="_blank" class="only:col-span-2 w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white hover:bg-slate-50 active:scale-95 text-slate-700 border border-slate-300 hover:border-slate-400 rounded-xl text-sm font-bold transition-all shadow-sm cursor-pointer" title="Lihat Pratinjau Notulen">
                                     <svg class="w-4 h-4 text-rose-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                     </svg>

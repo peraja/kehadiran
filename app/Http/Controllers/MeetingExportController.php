@@ -65,14 +65,12 @@ class MeetingExportController extends Controller
         $fileName = $this->generateFileName($meeting, $prefix);
         $isDownload = $forceDownload || request()->query('action') === 'download' || request()->query('download');
 
-        // If document is already electronically signed and stored on disk, serve the real signed file
+        // If document is already electronically signed and stored on disk, directly download the authentic signed PDF
         if ($signedPath && \Illuminate\Support\Facades\Storage::disk('public')->exists($signedPath)) {
             $filePath = \Illuminate\Support\Facades\Storage::disk('public')->path($signedPath);
-            $disposition = $isDownload ? 'attachment' : 'inline';
 
-            return response()->file($filePath, [
+            return response()->download($filePath, $fileName, [
                 'Content-Type' => 'application/pdf',
-                'Content-Disposition' => "{$disposition}; filename=\"{$fileName}\"",
             ]);
         }
 
@@ -120,6 +118,60 @@ class MeetingExportController extends Controller
         }
 
         return $this->serveDocument($meeting, 'Dokumentasi', $meeting->photos_signed_path, 'exports.meeting-documentation');
+    }
+
+    /**
+     * Export all meeting documents bundled into a single ZIP archive.
+     */
+    public function exportBundle(Meeting $meeting)
+    {
+        $this->authorizeExport($meeting);
+
+        // Dokumen ZIP hanya dapat diekspor jika rapat telah diselesaikan dan semua dokumen telah di-TTE
+        if ($meeting->status !== 'completed' || !$meeting->isFullySigned()) {
+            abort(403, 'Berkas ZIP lengkap hanya dapat diunduh jika semua dokumen (Notulen, Presensi, dan Dokumentasi) telah ditandatangani secara elektronik (TTE).');
+        }
+
+        $zipFileName = $this->generateFileName($meeting, 'Dokumen', 'zip');
+        $tempZipPath = tempnam(sys_get_temp_dir(), 'erapat_zip_');
+
+        $zip = new \ZipArchive();
+        if ($zip->open($tempZipPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) !== true) {
+            abort(500, 'Gagal membuat arsip berkas ZIP.');
+        }
+
+        // 1. Notulen PDF
+        $minutesFileName = $this->generateFileName($meeting, 'Notulen');
+        if ($meeting->minutes_signed_path && \Illuminate\Support\Facades\Storage::disk('public')->exists($meeting->minutes_signed_path)) {
+            $zip->addFile(\Illuminate\Support\Facades\Storage::disk('public')->path($meeting->minutes_signed_path), $minutesFileName);
+        } elseif ($meeting->hasDocumentContent('minutes')) {
+            $pdfContent = Pdf::loadView('exports.meeting-minutes', compact('meeting'))->setPaper('a4', 'portrait')->output();
+            $zip->addFromString($minutesFileName, $pdfContent);
+        }
+
+        // 2. Presensi PDF
+        $attendanceFileName = $this->generateFileName($meeting, 'Presensi');
+        if ($meeting->attendance_signed_path && \Illuminate\Support\Facades\Storage::disk('public')->exists($meeting->attendance_signed_path)) {
+            $zip->addFile(\Illuminate\Support\Facades\Storage::disk('public')->path($meeting->attendance_signed_path), $attendanceFileName);
+        } elseif ($meeting->hasDocumentContent('attendance')) {
+            $pdfContent = Pdf::loadView('exports.meeting-attendance', compact('meeting'))->setPaper('a4', 'portrait')->output();
+            $zip->addFromString($attendanceFileName, $pdfContent);
+        }
+
+        // 3. Dokumentasi PDF
+        $photosFileName = $this->generateFileName($meeting, 'Dokumentasi');
+        if ($meeting->photos_signed_path && \Illuminate\Support\Facades\Storage::disk('public')->exists($meeting->photos_signed_path)) {
+            $zip->addFile(\Illuminate\Support\Facades\Storage::disk('public')->path($meeting->photos_signed_path), $photosFileName);
+        } elseif ($meeting->hasDocumentContent('photos')) {
+            $pdfContent = Pdf::loadView('exports.meeting-documentation', compact('meeting'))->setPaper('a4', 'portrait')->output();
+            $zip->addFromString($photosFileName, $pdfContent);
+        }
+
+        $zip->close();
+
+        return response()->download($tempZipPath, $zipFileName, [
+            'Content-Type' => 'application/zip',
+        ])->deleteFileAfterSend(true);
     }
 
     /**
