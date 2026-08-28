@@ -142,8 +142,8 @@ new #[Layout('layouts.guest')] class extends Component {
                         $user->assignRole('pegawai');
                     }
                 }
-            } catch (\Exception $e) {
-                // Ignore API connection issue, proceed to next check
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning("SIMPEG API error for NIP {$nip}: " . $e->getMessage());
             }
         }
 
