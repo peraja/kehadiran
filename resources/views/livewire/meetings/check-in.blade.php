@@ -144,9 +144,9 @@ new #[Layout('layouts.guest')] class extends Component {
 
         // 2. If not found in SIMPEG, check PPPK Paruh Waktu API (Presensi only, do NOT persist to users table)
         if (!$user) {
-            $pwUrl = config('services.pppk_pw.url', 'https://tte.sinjaikab.go.id/api/v1/pppk-pw');
-            $pwToken = config('services.pppk_pw.token', 'sJ9k2Lp5mN8qR1t4vW7xZ0y3bC6fH9hS');
-            $pwTimeout = (int) config('services.pppk_pw.timeout', 5);
+            $pwUrl = config('services.pppk_pw.url') ?: 'https://tte.sinjaikab.go.id/api/v1/pppk-pw';
+            $pwToken = config('services.pppk_pw.token') ?: 'sJ9k2Lp5mN8qR1t4vW7xZ0y3bC6fH9hS';
+            $pwTimeout = (int) (config('services.pppk_pw.timeout') ?: 8);
 
             try {
                 $pwResponse = \Illuminate\Support\Facades\Http::timeout($pwTimeout)
@@ -197,9 +197,11 @@ new #[Layout('layouts.guest')] class extends Component {
                         $this->nip_checked = true;
                         return;
                     }
+                } else {
+                    \Illuminate\Support\Facades\Log::warning("PPPK-PW API returned status " . $pwResponse->status() . " for NIP {$nip}: " . substr($pwResponse->body(), 0, 200));
                 }
             } catch (\Exception $e) {
-                // Ignore PPPK-PW API connection issue
+                \Illuminate\Support\Facades\Log::warning("PPPK-PW API exception for NIP {$nip}: " . $e->getMessage());
             }
         }
 

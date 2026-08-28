@@ -41,9 +41,9 @@ return [
     ],
 
     'pppk_pw' => [
-        'url' => rtrim(env('PPPK_PW_API_URL', 'https://tte.sinjaikab.go.id/api/v1/pppk-pw'), '/'),
-        'token' => env('PPPK_PW_API_TOKEN', 'sJ9k2Lp5mN8qR1t4vW7xZ0y3bC6fH9hS'),
-        'timeout' => (int) env('PPPK_PW_API_TIMEOUT', 5),
+        'url' => rtrim(env('PPPK_PW_API_URL') ?: 'https://tte.sinjaikab.go.id/api/v1/pppk-pw', '/'),
+        'token' => env('PPPK_PW_API_TOKEN') ?: 'sJ9k2Lp5mN8qR1t4vW7xZ0y3bC6fH9hS',
+        'timeout' => (int) (env('PPPK_PW_API_TIMEOUT') ?: 8),
     ],
 
     'bsre' => [
