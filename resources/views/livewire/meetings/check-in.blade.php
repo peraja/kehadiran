@@ -165,16 +165,23 @@ new #[Layout('layouts.guest')] class extends Component {
                         'curl' => [
                             CURLOPT_RESOLVE => [
                                 "{$host}:443:10.91.162.2",
-                                "{$host}:80:10.91.162.2",
-                                "{$host}:443:{$serverIp}",
-                                "{$host}:80:{$serverIp}",
-                                "{$host}:443:127.0.0.1",
-                                "{$host}:80:127.0.0.1",
                             ],
                         ],
                     ],
                 ],
-                // 2. HTTP Port 80 to Server Interface IP 10.91.162.2
+                // 2. Direct HTTPS to Dynamic Server IP (if available)
+                [
+                    'url' => $pwUrl,
+                    'options' => [
+                        'force_ip_resolve' => 'v4',
+                        'curl' => [
+                            CURLOPT_RESOLVE => [
+                                "{$host}:443:{$serverIp}",
+                            ],
+                        ],
+                    ],
+                ],
+                // 3. HTTP Port 80 to Server Interface IP 10.91.162.2
                 [
                     'url' => str_replace('https://', 'http://', $pwUrl),
                     'options' => [
@@ -182,13 +189,11 @@ new #[Layout('layouts.guest')] class extends Component {
                         'curl' => [
                             CURLOPT_RESOLVE => [
                                 "{$host}:80:10.91.162.2",
-                                "{$host}:80:{$serverIp}",
-                                "{$host}:80:127.0.0.1",
                             ],
                         ],
                     ],
                 ],
-                // 3. Standard DNS fallback
+                // 4. Standard DNS fallback
                 [
                     'url' => $pwUrl,
                     'options' => [
