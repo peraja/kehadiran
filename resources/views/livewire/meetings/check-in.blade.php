@@ -64,9 +64,13 @@ new #[Layout('layouts.guest')] class extends Component {
         $this->signature = '';
     }
 
-    public function checkNip()
+    public function checkNip(?string $nipInput = null)
     {
         $this->resetValidation();
+
+        if (!empty($nipInput)) {
+            $this->nip = trim((string) $nipInput);
+        }
 
         $ip = request()->ip() ?: '127.0.0.1';
         $throttleKey = 'check-nip:' . $ip;
@@ -86,6 +90,7 @@ new #[Layout('layouts.guest')] class extends Component {
         ]);
 
         $nip = trim($this->nip);
+        \Illuminate\Support\Facades\Log::info("checkNip started for NIP: {$nip}");
         $user = User::where('nip', $nip)->first();
 
         // 1. If user not yet in local database, check official SIMPEG API
@@ -220,6 +225,12 @@ new #[Layout('layouts.guest')] class extends Component {
                 }
             }
 
+            if ($pwResponse) {
+                \Illuminate\Support\Facades\Log::info("PPPK-PW HTTP status for {$nip}: " . $pwResponse->status() . " - body: " . substr($pwResponse->body(), 0, 100));
+            } else {
+                \Illuminate\Support\Facades\Log::warning("PPPK-PW response was null for {$nip}");
+            }
+
             if ($pwResponse && $pwResponse->successful()) {
                 $pwJson = $pwResponse->json();
                 $pwList = $pwJson['data'] ?? [];
@@ -263,8 +274,6 @@ new #[Layout('layouts.guest')] class extends Component {
                     $this->nip_checked = true;
                     return;
                 }
-            } elseif ($pwResponse) {
-                \Illuminate\Support\Facades\Log::warning("PPPK-PW API returned status " . $pwResponse->status() . " for NIP {$nip}: " . substr($pwResponse->body(), 0, 200));
             }
         }
 
@@ -493,8 +502,7 @@ new #[Layout('layouts.guest')] class extends Component {
                 return;
             }
             this.clientError = '';
-            $wire.set('nip', val);
-            $wire.checkNip();
+            $wire.checkNip(val);
         }
     }">
 
