@@ -10,89 +10,114 @@ Artisan::command('inspire', function () {
 \Illuminate\Support\Facades\Schedule::command('model:prune')->daily();
 
 Artisan::command('erapat:test-pppk {nip=197803292025212036}', function ($nip) {
-    $this->info("=== Diagnosa Pengecekan NIP: {$nip} ===");
+    $this->info("=== Diagnosa Mendalam API PPPK Paruh Waktu: {$nip} ===");
 
     $token = config('services.pppk_pw.token') ?: 'sJ9k2Lp5mN8qR1t4vW7xZ0y3bC6fH9hS';
-    $baseUrl = config('services.pppk_pw.url') ?: 'https://tte.sinjaikab.go.id/api/v1/pppk-pw';
+    $host = 'tte.sinjaikab.go.id';
+    $resolvedIp = gethostbyname($host);
+    $serverIp = gethostbyname(gethostname());
 
-    $this->line("URL: {$baseUrl}");
-    $this->line("Token: " . substr($token, 0, 6) . '...' . substr($token, -4));
+    $this->line("Hostname: " . gethostname());
+    $this->line("Resolved IP tte: {$resolvedIp}");
+    $this->line("Server IP: {$serverIp}");
 
-    $endpoints = [
-        'HTTPS (Standard)' => $baseUrl,
-        'HTTP (Port 80)' => str_replace('https://', 'http://', $baseUrl),
+    $candidates = [
+        '1. HTTPS Standard (Port 443)' => [
+            'url' => "https://{$host}/api/v1/pppk-pw",
+            'options' => ['force_ip_resolve' => 'v4'],
+        ],
+        '2. HTTPS via Public IP 103.170.105.101' => [
+            'url' => "https://{$host}/api/v1/pppk-pw",
+            'options' => [
+                'force_ip_resolve' => 'v4',
+                'curl' => [CURLOPT_RESOLVE => ["{$host}:443:103.170.105.101"]],
+            ],
+        ],
+        '3. HTTP Standard (Port 80)' => [
+            'url' => "http://{$host}/api/v1/pppk-pw",
+            'options' => ['force_ip_resolve' => 'v4'],
+        ],
+        '4. HTTP via Public IP 103.170.105.101' => [
+            'url' => "http://{$host}/api/v1/pppk-pw",
+            'options' => [
+                'force_ip_resolve' => 'v4',
+                'curl' => [CURLOPT_RESOLVE => ["{$host}:80:103.170.105.101"]],
+            ],
+        ],
+        '5. HTTP Backend Apache (Port 8080 via 127.0.0.1)' => [
+            'url' => "http://{$host}:8080/api/v1/pppk-pw",
+            'options' => [
+                'force_ip_resolve' => 'v4',
+                'curl' => [CURLOPT_RESOLVE => ["{$host}:8080:127.0.0.1"]],
+            ],
+        ],
+        '6. HTTPS Backend Apache (Port 8443 via 127.0.0.1)' => [
+            'url' => "https://{$host}:8443/api/v1/pppk-pw",
+            'options' => [
+                'force_ip_resolve' => 'v4',
+                'curl' => [CURLOPT_RESOLVE => ["{$host}:8443:127.0.0.1"]],
+            ],
+        ],
+        '7. HTTP Backend Apache (Port 8080 via Public IP)' => [
+            'url' => "http://{$host}:8080/api/v1/pppk-pw",
+            'options' => [
+                'force_ip_resolve' => 'v4',
+                'curl' => [CURLOPT_RESOLVE => ["{$host}:8080:103.170.105.101"]],
+            ],
+        ],
     ];
 
-    foreach ($endpoints as $label => $url) {
-        $this->newLine();
-        $this->info("1. Mencoba {$label} -> {$url}");
-        try {
-            $start = microtime(true);
-            $res = \Illuminate\Support\Facades\Http::timeout(8)
-                ->connectTimeout(3)
-                ->withoutVerifying()
-                ->withOptions(['force_ip_resolve' => 'v4'])
-                ->withHeaders([
-                    'User-Agent' => 'Mozilla/5.0 (compatible; eRapat/1.5; +https://rapat.sinjaikab.go.id)',
-                    'Accept' => 'application/json',
-                ])
-                ->withToken($token)
-                ->get($url, ['nip' => $nip]);
-            $dur = round((microtime(true) - $start) * 1000);
-            $this->info("   HTTP Status: " . $res->status() . " ({$dur}ms)");
-            $this->line("   Body: " . substr($res->body(), 0, 250));
-            if ($res->successful() && !empty($res->json()['data'] ?? [])) {
-                $data = $res->json()['data'][0];
-                $this->info("   [BERHASIL DITEMUKAN]");
-                $this->info("   Nama: " . ($data['name'] ?? '-'));
-                $this->info("   Jabatan: " . ($data['jabatan'] ?? '-'));
-                $this->info("   Unit ID: " . ($data['api_unit_id'] ?? '-'));
-                return 0;
-            }
-        } catch (\Throwable $e) {
-            $this->error("   Error: " . $e->getMessage());
-        }
+    $workingCandidate = null;
 
-        $this->info("2. Mencoba Loopback 127.0.0.1 ({$label})");
+    foreach ($candidates as $name => $cfg) {
+        $this->newLine();
+        $this->info("Menguji: {$name}");
+        $this->line("URL: " . $cfg['url']);
         try {
-            $host = parse_url($url, PHP_URL_HOST) ?: 'tte.sinjaikab.go.id';
             $start = microtime(true);
-            $res = \Illuminate\Support\Facades\Http::timeout(8)
-                ->connectTimeout(3)
+            $req = \Illuminate\Support\Facades\Http::timeout(5)
+                ->connectTimeout(2)
                 ->withoutVerifying()
-                ->withOptions([
-                    'force_ip_resolve' => 'v4',
-                    'curl' => [
-                        CURLOPT_RESOLVE => [
-                            "{$host}:443:127.0.0.1",
-                            "{$host}:80:127.0.0.1",
-                        ],
-                    ],
-                ])
                 ->withHeaders([
-                    'User-Agent' => 'Mozilla/5.0 (compatible; eRapat/1.5; +https://rapat.sinjaikab.go.id)',
+                    'Host' => $host,
+                    'User-Agent' => 'Mozilla/5.0 (compatible; eRapat/1.5)',
                     'Accept' => 'application/json',
                 ])
-                ->withToken($token)
-                ->get($url, ['nip' => $nip]);
+                ->withToken($token);
+
+            if (!empty($cfg['options'])) {
+                $req->withOptions($cfg['options']);
+            }
+
+            $res = $req->get($cfg['url'], ['nip' => $nip]);
             $dur = round((microtime(true) - $start) * 1000);
-            $this->info("   HTTP Status: " . $res->status() . " ({$dur}ms)");
-            $this->line("   Body: " . substr($res->body(), 0, 250));
-            if ($res->successful() && !empty($res->json()['data'] ?? [])) {
-                $data = $res->json()['data'][0];
-                $this->info("   [BERHASIL DITEMUKAN]");
-                $this->info("   Nama: " . ($data['name'] ?? '-'));
-                $this->info("   Jabatan: " . ($data['jabatan'] ?? '-'));
-                $this->info("   Unit ID: " . ($data['api_unit_id'] ?? '-'));
-                return 0;
+
+            $this->info("Status: " . $res->status() . " ({$dur}ms)");
+            $body = substr(trim($res->body()), 0, 150);
+            $this->line("Body: " . $body);
+
+            if ($res->successful()) {
+                $json = $res->json();
+                if (!empty($json['data'] ?? [])) {
+                    $this->info(">>> [SUKSES BERHASIL] Data ditemukan! <<<");
+                    $this->info("Nama: " . ($json['data'][0]['name'] ?? '-'));
+                    $this->info("Jabatan: " . ($json['data'][0]['jabatan'] ?? '-'));
+                    $workingCandidate = $cfg;
+                    break;
+                }
             }
         } catch (\Throwable $e) {
-            $this->error("   Loopback Error: " . $e->getMessage());
+            $this->error("Gagal: " . $e->getMessage());
         }
     }
 
     $this->newLine();
-    $this->warn("Hasil: Data tidak dapat diambil dari seluruh endpoint di server ini.");
-    return 1;
+    if ($workingCandidate) {
+        $this->info("SOLUSI DITEMUKAN!");
+    } else {
+        $this->warn("Semua jalur gagal diuji.");
+    }
+    return 0;
 })->purpose('Uji koneksi dan diagnostik API PPPK Paruh Waktu');
+
 
