@@ -148,50 +148,65 @@ new #[Layout('layouts.guest')] class extends Component {
             $pwToken = config('services.pppk_pw.token') ?: 'sJ9k2Lp5mN8qR1t4vW7xZ0y3bC6fH9hS';
             $pwTimeout = (int) (config('services.pppk_pw.timeout') ?: 8);
 
+            $endpoints = [
+                $pwUrl,
+                str_replace('https://', 'http://', $pwUrl),
+            ];
+
             $pwResponse = null;
 
-            // Attempt 1: Standard HTTPS request with IPv4 forced
-            try {
-                $pwResponse = \Illuminate\Support\Facades\Http::timeout($pwTimeout)
-                    ->connectTimeout(3)
-                    ->withoutVerifying()
-                    ->withOptions([
-                        'force_ip_resolve' => 'v4',
-                    ])
-                    ->withHeaders([
-                        'User-Agent' => 'Mozilla/5.0 (compatible; eRapat/1.5; +https://rapat.sinjaikab.go.id)',
-                        'Accept' => 'application/json',
-                    ])
-                    ->withToken($pwToken)
-                    ->get($pwUrl, ['nip' => $nip]);
-            } catch (\Throwable $e) {
-                \Illuminate\Support\Facades\Log::warning("PPPK-PW API direct request failed for NIP {$nip}: " . $e->getMessage());
-            }
-
-            // Attempt 2: Internal loopback resolve (if NAT hairpinning is blocked on the server)
-            if (!$pwResponse || !$pwResponse->successful()) {
+            foreach ($endpoints as $targetUrl) {
+                // Attempt 1: Direct request with IPv4 forced
                 try {
-                    $host = parse_url($pwUrl, PHP_URL_HOST) ?: 'tte.sinjaikab.go.id';
                     $pwResponse = \Illuminate\Support\Facades\Http::timeout($pwTimeout)
                         ->connectTimeout(3)
                         ->withoutVerifying()
                         ->withOptions([
                             'force_ip_resolve' => 'v4',
-                            'curl' => [
-                                CURLOPT_RESOLVE => [
-                                    "{$host}:443:127.0.0.1",
-                                    "{$host}:80:127.0.0.1",
-                                ],
-                            ],
                         ])
                         ->withHeaders([
                             'User-Agent' => 'Mozilla/5.0 (compatible; eRapat/1.5; +https://rapat.sinjaikab.go.id)',
                             'Accept' => 'application/json',
                         ])
                         ->withToken($pwToken)
-                        ->get($pwUrl, ['nip' => $nip]);
+                        ->get($targetUrl, ['nip' => $nip]);
+
+                    if ($pwResponse && $pwResponse->successful()) {
+                        break;
+                    }
                 } catch (\Throwable $e) {
-                    \Illuminate\Support\Facades\Log::warning("PPPK-PW API loopback request failed for NIP {$nip}: " . $e->getMessage());
+                    \Illuminate\Support\Facades\Log::warning("PPPK-PW direct ({$targetUrl}) failed for NIP {$nip}: " . $e->getMessage());
+                }
+
+                // Attempt 2: Internal loopback resolve (if NAT hairpinning is blocked on server)
+                if (!$pwResponse || !$pwResponse->successful()) {
+                    try {
+                        $host = parse_url($targetUrl, PHP_URL_HOST) ?: 'tte.sinjaikab.go.id';
+                        $pwResponse = \Illuminate\Support\Facades\Http::timeout($pwTimeout)
+                            ->connectTimeout(3)
+                            ->withoutVerifying()
+                            ->withOptions([
+                                'force_ip_resolve' => 'v4',
+                                'curl' => [
+                                    CURLOPT_RESOLVE => [
+                                        "{$host}:443:127.0.0.1",
+                                        "{$host}:80:127.0.0.1",
+                                    ],
+                                ],
+                            ])
+                            ->withHeaders([
+                                'User-Agent' => 'Mozilla/5.0 (compatible; eRapat/1.5; +https://rapat.sinjaikab.go.id)',
+                                'Accept' => 'application/json',
+                            ])
+                            ->withToken($pwToken)
+                            ->get($targetUrl, ['nip' => $nip]);
+
+                        if ($pwResponse && $pwResponse->successful()) {
+                            break;
+                        }
+                    } catch (\Throwable $e) {
+                        \Illuminate\Support\Facades\Log::warning("PPPK-PW loopback ({$targetUrl}) failed for NIP {$nip}: " . $e->getMessage());
+                    }
                 }
             }
 
