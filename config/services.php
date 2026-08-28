@@ -40,6 +40,12 @@ return [
         'timeout' => (int) env('SIMPEG_API_TIMEOUT', 10),
     ],
 
+    'pppk_pw' => [
+        'url' => rtrim(env('PPPK_PW_API_URL', 'https://tte.sinjaikab.go.id/api/v1/pppk-pw'), '/'),
+        'token' => env('PPPK_PW_API_TOKEN', 'sJ9k2Lp5mN8qR1t4vW7xZ0y3bC6fH9hS'),
+        'timeout' => (int) env('PPPK_PW_API_TIMEOUT', 5),
+    ],
+
     'bsre' => [
         'url' => rtrim(env('BSRE_ESIGN_URL', 'http://localhost:8080/api/v2'), '/'),
         'username' => env('BSRE_AUTH_USERNAME', ''),

@@ -237,9 +237,13 @@ new #[Layout('layouts.app')] class extends Component {
                             @else
                             <div>
                                 <div class="font-extrabold text-slate-900 leading-tight">{{ $attendance->guest_name }}</div>
+                                @if($attendance->guest_nip)
+                                <div class="mt-0.5 text-xs text-slate-500 font-mono font-medium">NIP. {{ $attendance->guest_nip }}</div>
+                                @else
                                 <span class="inline-flex items-center px-2 py-0.5 bg-slate-100 text-slate-600 border border-slate-200 rounded-full text-[10px] font-bold uppercase tracking-wider mt-1">
                                     Eksternal
                                 </span>
+                                @endif
                             </div>
                             @endif
                         </td>

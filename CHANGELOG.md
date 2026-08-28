@@ -4,6 +4,17 @@ Semua perubahan penting pada proyek ini dicatat dalam berkas ini.
 
 Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/1.0.0/), dan proyek ini mematuhi [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.1] - 2026-08-28
+
+### Ditambahkan
+- **Integrasi API Presensi PPPK Paruh Waktu (PPPK-PW)**:
+  - Menghubungkan gateway API PPPK-PW Sinjai (`https://tte.sinjaikab.go.id/api/v1/pppk-pw`) pada form presensi mandiri ([`resources/views/livewire/meetings/check-in.blade.php`](file:///Users/abedzul/Desktop/htdocs/rapat/resources/views/livewire/meetings/check-in.blade.php)) untuk pengenalan otomatis nama, jabatan, dan OPD PPPK Paruh Waktu via NIP 18 digit.
+  - Menerapkan isolasi akun: data PPPK-PW hanya diproses untuk kebutuhan presensi rapat tanpa membuat record akun di tabel pengguna (`users`), sehingga hak akses login tetap tidak tersedia.
+  - Menambahkan kolom `guest_nip` pada tabel `meeting_attendances` melalui migrasi database ([`database/migrations/2026_08_28_175410_add_guest_nip_to_meeting_attendances_table.php`](file:///Users/abedzul/Desktop/htdocs/rapat/database/migrations/2026_08_28_175410_add_guest_nip_to_meeting_attendances_table.php)) untuk mencatat NIP PPPK-PW.
+- **Penyelarasan Tampilan NIP Presensi Admin & Dokumen Ekspor**:
+  - Menampilkan NIP peserta PPPK-PW secara resmi pada tabel presensi ruang kerja admin ([`resources/views/livewire/meetings/presensi.blade.php`](file:///Users/abedzul/Desktop/htdocs/rapat/resources/views/livewire/meetings/presensi.blade.php)) tanpa badge "Eksternal".
+  - Menampilkan NIP peserta PPPK-PW pada dokumen cetak dan ekspor PDF resmi ([`resources/views/exports/meeting-attendance.blade.php`](file:///Users/abedzul/Desktop/htdocs/rapat/resources/views/exports/meeting-attendance.blade.php)).
+
 ## [1.5.0] - 2026-08-27
 
 ### Ditambahkan

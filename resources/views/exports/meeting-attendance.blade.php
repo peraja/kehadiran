@@ -260,6 +260,9 @@
                     @endif
                     @else
                     <div style="font-weight: bold;">{{ $attendance->guest_name }}</div>
+                    @if($attendance->guest_nip)
+                    <div style="font-size: 9pt; color: #555;">NIP. {{ $attendance->guest_nip }}</div>
+                    @endif
                     @endif
                 </td>
                 <td>

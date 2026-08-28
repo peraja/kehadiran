@@ -22,7 +22,7 @@ Aplikasi tata kelola administrasi rapat resmi di lingkungan Pemerintah Kabupaten
 - **Frontend:** Laravel Livewire 3 (Volt), Alpine.js, Tailwind CSS
 - **Basis Data:** MySQL / MariaDB / SQLite
 - **Otorisasi:** Spatie Laravel Permission
-- **Integrasi Eksternal:** API Kepegawaian SIMPEG Sinjai, API BSrE BSSN, Google Gemini API
+- **Integrasi Eksternal:** API Kepegawaian SIMPEG Sinjai, API PPPK Paruh Waktu, API BSrE BSSN, Google Gemini API
 
 ---
 

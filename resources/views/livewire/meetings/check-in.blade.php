@@ -16,6 +16,7 @@ new #[Layout('layouts.guest')] class extends Component {
     // Pemkab Sinjai
     public $nip = '';
     public $nip_checked = false;
+    public bool $is_pppk_pw = false;
     public $employee_name = '';
     public $employee_jabatan = '';
     public $employee_unit = '';
@@ -55,6 +56,7 @@ new #[Layout('layouts.guest')] class extends Component {
     public function resetNip()
     {
         $this->nip_checked = false;
+        $this->is_pppk_pw = false;
         $this->employee_name = '';
         $this->employee_jabatan = '';
         $this->employee_unit = '';
@@ -86,7 +88,7 @@ new #[Layout('layouts.guest')] class extends Component {
         $nip = trim($this->nip);
         $user = User::where('nip', $nip)->first();
 
-        // If user not yet in local database, fetch from Kepegawaian API
+        // 1. If user not yet in local database, check official SIMPEG API
         if (!$user) {
             $baseUrl = config('services.simpeg.url', 'http://apps.sinjaikab.go.id/api/pegawai');
             $timeout = (int) config('services.simpeg.timeout', 4);
@@ -136,7 +138,68 @@ new #[Layout('layouts.guest')] class extends Component {
                     }
                 }
             } catch (\Exception $e) {
-                // Ignore API connection issue, will trigger error below
+                // Ignore API connection issue, proceed to next check
+            }
+        }
+
+        // 2. If not found in SIMPEG, check PPPK Paruh Waktu API (Presensi only, do NOT persist to users table)
+        if (!$user) {
+            $pwUrl = config('services.pppk_pw.url', 'https://tte.sinjaikab.go.id/api/v1/pppk-pw');
+            $pwToken = config('services.pppk_pw.token', 'sJ9k2Lp5mN8qR1t4vW7xZ0y3bC6fH9hS');
+            $pwTimeout = (int) config('services.pppk_pw.timeout', 5);
+
+            try {
+                $pwResponse = \Illuminate\Support\Facades\Http::timeout($pwTimeout)
+                    ->withoutVerifying()
+                    ->withToken($pwToken)
+                    ->get($pwUrl, ['nip' => $nip]);
+
+                if ($pwResponse->successful()) {
+                    $pwJson = $pwResponse->json();
+                    $pwList = $pwJson['data'] ?? [];
+                    if (!empty($pwList) && isset($pwList[0])) {
+                        $pw = $pwList[0];
+                        $name = $pw['name'] ?? $nip;
+                        $jabatan = $pw['jabatan'] ?? 'PPPK Paruh Waktu';
+                        $unit_id = $pw['api_unit_id'] ?? null;
+                        $unit_name = 'Pemerintah Kabupaten Sinjai';
+
+                        if ($unit_id) {
+                            $opd = \App\Models\Opd::where('unit_id', $unit_id)->first();
+                            if ($opd) {
+                                $unit_name = $opd->name;
+                            }
+                        }
+
+                        // Check if PPPK-PW already checked in to this meeting
+                        $existingAttendance = $this->meeting->attendances()
+                            ->whereNull('user_id')
+                            ->where('guest_name', $name)
+                            ->where('guest_agency', $unit_name)
+                            ->first();
+
+                        if ($existingAttendance) {
+                            $this->status = 'success';
+                            $this->employee_name = $name;
+                            $this->employee_unit = $unit_name;
+                            $this->employee_jabatan = $jabatan;
+                            $this->recorded_time = $existingAttendance->check_in ? $existingAttendance->check_in->format('H:i') . ' WITA' : now()->format('H:i') . ' WITA';
+                            $this->message = 'Presensi sudah tercatat sebelumnya.';
+                            return;
+                        }
+
+                        // Set state without creating User record in database (no login access)
+                        $this->is_pppk_pw = true;
+                        $this->employee_id = null;
+                        $this->employee_name = $name;
+                        $this->employee_jabatan = $jabatan;
+                        $this->employee_unit = $unit_name;
+                        $this->nip_checked = true;
+                        return;
+                    }
+                }
+            } catch (\Exception $e) {
+                // Ignore PPPK-PW API connection issue
             }
         }
 
@@ -158,6 +221,7 @@ new #[Layout('layouts.guest')] class extends Component {
             return;
         }
 
+        $this->is_pppk_pw = false;
         $this->employee_id = $user->id;
         $this->employee_name = $user->name;
         $this->employee_jabatan = $user->jabatan ?: 'Pegawai';
@@ -215,30 +279,61 @@ new #[Layout('layouts.guest')] class extends Component {
                     'signature.required' => 'Tanda Tangan wajib diisi.'
                 ]);
 
-                if (!$this->nip_checked || !$this->employee_id) {
+                if (!$this->nip_checked) {
                     $this->addError('nip', 'Silakan cek NIP terlebih dahulu.');
                     return;
                 }
 
-                // Check again if already checked in
-                $existingAttendance = $this->meeting->attendances()->where('user_id', $this->employee_id)->first();
-                if ($existingAttendance) {
-                    $this->status = 'success';
-                    $this->employee_name = $this->employee_name ?: ($existingAttendance->user?->name ?? 'Pegawai');
-                    $this->employee_unit = $existingAttendance->user?->unit_name ?: 'Pemkab Sinjai';
-                    $this->employee_jabatan = $existingAttendance->user?->jabatan ?: 'Pegawai';
-                    $this->recorded_time = $existingAttendance->check_in ? $existingAttendance->check_in->format('H:i') . ' WITA' : $this->recorded_time;
-                    $this->message = 'Presensi sudah tercatat sebelumnya.';
-                    return;
-                }
+                if ($this->employee_id) {
+                    // Regular PNS / ASN with User record
+                    $existingAttendance = $this->meeting->attendances()->where('user_id', $this->employee_id)->first();
+                    if ($existingAttendance) {
+                        $this->status = 'success';
+                        $this->employee_name = $this->employee_name ?: ($existingAttendance->user?->name ?? 'Pegawai');
+                        $this->employee_unit = $existingAttendance->user?->unit_name ?: 'Pemkab Sinjai';
+                        $this->employee_jabatan = $existingAttendance->user?->jabatan ?: 'Pegawai';
+                        $this->recorded_time = $existingAttendance->check_in ? $existingAttendance->check_in->format('H:i') . ' WITA' : $this->recorded_time;
+                        $this->message = 'Presensi sudah tercatat sebelumnya.';
+                        return;
+                    }
 
-                $this->meeting->attendances()->create([
-                    'user_id' => $this->employee_id,
-                    'signature' => $this->signature,
-                    'check_in' => $now,
-                    'method' => 'qr',
-                    'device_info' => request()->userAgent()
-                ]);
+                    $this->meeting->attendances()->create([
+                        'user_id' => $this->employee_id,
+                        'signature' => $this->signature,
+                        'check_in' => $now,
+                        'method' => 'qr',
+                        'device_info' => request()->userAgent()
+                    ]);
+                } else {
+                    // PPPK Paruh Waktu (Presensi only, without User account)
+                    $existingAttendance = $this->meeting->attendances()
+                        ->whereNull('user_id')
+                        ->where('guest_name', $this->employee_name)
+                        ->where('guest_agency', $this->employee_unit)
+                        ->first();
+
+                    if ($existingAttendance) {
+                        $this->status = 'success';
+                        $this->employee_name = $existingAttendance->guest_name;
+                        $this->employee_unit = $existingAttendance->guest_agency;
+                        $this->employee_jabatan = $existingAttendance->guest_position ?: '';
+                        $this->recorded_time = $existingAttendance->check_in ? $existingAttendance->check_in->format('H:i') . ' WITA' : $this->recorded_time;
+                        $this->message = 'Presensi sudah tercatat sebelumnya.';
+                        return;
+                    }
+
+                    $this->meeting->attendances()->create([
+                        'user_id' => null,
+                        'guest_nip' => $this->nip,
+                        'guest_name' => $this->employee_name,
+                        'guest_agency' => $this->employee_unit,
+                        'guest_position' => $this->employee_jabatan,
+                        'signature' => $this->signature,
+                        'check_in' => $now,
+                        'method' => 'qr',
+                        'device_info' => request()->userAgent()
+                    ]);
+                }
             } else {
                 // Guest check-in: Validate name, agency, position, and signature simultaneously
                 $this->validate([
