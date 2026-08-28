@@ -22,48 +22,27 @@ Artisan::command('erapat:test-pppk {nip=197803292025212036}', function ($nip) {
     $this->line("Server IP: {$serverIp}");
 
     $candidates = [
-        '1. HTTPS Standard (Port 443)' => [
-            'url' => "https://{$host}/api/v1/pppk-pw",
-            'options' => ['force_ip_resolve' => 'v4'],
-        ],
-        '2. HTTPS via Public IP 103.170.105.101' => [
+        '1. HTTPS via Server Interface IP (' . $serverIp . ':443)' => [
             'url' => "https://{$host}/api/v1/pppk-pw",
             'options' => [
                 'force_ip_resolve' => 'v4',
-                'curl' => [CURLOPT_RESOLVE => ["{$host}:443:103.170.105.101"]],
+                'curl' => [CURLOPT_RESOLVE => ["{$host}:443:{$serverIp}"]],
             ],
         ],
-        '3. HTTP Standard (Port 80)' => [
+        '2. HTTP via Server Interface IP (' . $serverIp . ':80)' => [
             'url' => "http://{$host}/api/v1/pppk-pw",
+            'options' => [
+                'force_ip_resolve' => 'v4',
+                'curl' => [CURLOPT_RESOLVE => ["{$host}:80:{$serverIp}"]],
+            ],
+        ],
+        '3. HTTPS Standard (Port 443)' => [
+            'url' => "https://{$host}/api/v1/pppk-pw",
             'options' => ['force_ip_resolve' => 'v4'],
         ],
-        '4. HTTP via Public IP 103.170.105.101' => [
+        '4. HTTP Standard (Port 80)' => [
             'url' => "http://{$host}/api/v1/pppk-pw",
-            'options' => [
-                'force_ip_resolve' => 'v4',
-                'curl' => [CURLOPT_RESOLVE => ["{$host}:80:103.170.105.101"]],
-            ],
-        ],
-        '5. HTTP Backend Apache (Port 8080 via 127.0.0.1)' => [
-            'url' => "http://{$host}:8080/api/v1/pppk-pw",
-            'options' => [
-                'force_ip_resolve' => 'v4',
-                'curl' => [CURLOPT_RESOLVE => ["{$host}:8080:127.0.0.1"]],
-            ],
-        ],
-        '6. HTTPS Backend Apache (Port 8443 via 127.0.0.1)' => [
-            'url' => "https://{$host}:8443/api/v1/pppk-pw",
-            'options' => [
-                'force_ip_resolve' => 'v4',
-                'curl' => [CURLOPT_RESOLVE => ["{$host}:8443:127.0.0.1"]],
-            ],
-        ],
-        '7. HTTP Backend Apache (Port 8080 via Public IP)' => [
-            'url' => "http://{$host}:8080/api/v1/pppk-pw",
-            'options' => [
-                'force_ip_resolve' => 'v4',
-                'curl' => [CURLOPT_RESOLVE => ["{$host}:8080:103.170.105.101"]],
-            ],
+            'options' => ['force_ip_resolve' => 'v4'],
         ],
     ];
 
