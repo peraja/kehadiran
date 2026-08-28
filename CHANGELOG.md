@@ -4,7 +4,26 @@ Semua perubahan penting pada proyek ini dicatat dalam berkas ini.
 
 Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/1.0.0/), dan proyek ini mematuhi [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.5.1] - 2026-08-28
+## [1.5.2] - 2026-08-29
+
+### Ditambahkan
+- **Fitur Pagination dan Pencarian Real-Time pada Presensi Admin**:
+  - Menambahkan pagination interaktif (`WithPagination`) dan pemilih jumlah baris per halaman (10, 25, 50, 100) pada tabel presensi ruang kerja admin ([`resources/views/livewire/meetings/presensi.blade.php`](file:///Users/abedzul/Desktop/htdocs/rapat/resources/views/livewire/meetings/presensi.blade.php)).
+  - Menambahkan kolom pencarian instan (*live search*) untuk memfilter peserta berdasarkan nama, NIP, unit kerja, atau jabatan.
+  - Memastikan penomoran baris `#` berjalan berkesinambungan dan akurat di setiap pergantian halaman.
+
+### Diubah
+- **Pengurutan Kronologis Presensi Rapat**:
+  - Menambahkan pengurutan `orderBy('check_in', 'asc')->orderBy('id', 'asc')` pada relasi `attendances()` di model [`app/Models/Meeting.php`](file:///Users/abedzul/Desktop/htdocs/rapat/app/Models/Meeting.php) agar nomor urut dan posisi peserta selalu konsisten kronologis berdasarkan waktu kedatangan.
+- **Standardisasi Tampilan Child Unit Tunggal**:
+  - Menyelaraskan tampilan unit kerja di form presensi ([`check-in.blade.php`](file:///Users/abedzul/Desktop/htdocs/rapat/resources/views/livewire/meetings/check-in.blade.php)), tabel admin ([`presensi.blade.php`](file:///Users/abedzul/Desktop/htdocs/rapat/resources/views/livewire/meetings/presensi.blade.php)), dan ekspor PDF ([`meeting-attendance.blade.php`](file:///Users/abedzul/Desktop/htdocs/rapat/resources/views/exports/meeting-attendance.blade.php)) agar menampilkan nama unit penempatan/child unit secara langsung (contoh: *SD Neg. No. 124 Lura*, *UPTD Puskesmas Balangnipa*, *Kantor Kelurahan Bongki*).
+- **Format Penulisan & Label Kolom Presensi**:
+  - Mengubah label header kolom tabel presensi dari `OPD / Instansi` menjadi `Unit Kerja / Instansi`.
+  - Menerapkan format *Title Case* baku untuk jabatan dan nama unit kerja pada data PPPK-PW dan dokumen PDF cetak.
+- **Optimasi Latensi Lookup API PPPK-PW**:
+  - Mengoptimalkan target request cURL internal ke IP privat `10.91.162.2` dan memangkas connection timeout menjadi 1 detik untuk respon instan di server production.
+
+
 
 ### Ditambahkan
 - **Integrasi API Presensi PPPK Paruh Waktu (PPPK-PW)**:

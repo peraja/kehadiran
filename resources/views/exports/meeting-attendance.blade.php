@@ -243,7 +243,7 @@
             <tr>
                 <th width="6%">No</th>
                 <th width="32%">Nama Peserta</th>
-                <th width="26%">OPD / Instansi</th>
+                <th width="26%">Unit Kerja / Instansi</th>
                 <th width="20%">Jabatan</th>
                 <th width="16%">Tanda Tangan</th>
             </tr>
@@ -266,10 +266,39 @@
                     @endif
                 </td>
                 <td>
-                    {{ $attendance->user ? ($attendance->user->unit_name ?? 'Pemkab Sinjai') : $attendance->guest_agency }}
+                    @php
+                        $agency = $attendance->guest_agency;
+                        if ($agency && str_contains($agency, ' /// ')) {
+                            $agency = explode(' /// ', $agency, 2)[0];
+                        }
+
+                        $formatTitle = function(?string $str) {
+                            if (empty($str)) return '';
+                            $acronyms = ['SD', 'SMP', 'SMA', 'SMK', 'TK', 'PAUD', 'UPTD', 'RSUD', 'PUSTU', 'PNS', 'PPPK', 'PUPR', 'BKAD', 'BPBD', 'BAPPEDA', 'DISHUB', 'DLHK', 'DPRD', 'OPD', 'SPBE', 'TTE', 'BSRE', 'NIK', 'KTP', 'KTU', 'SKM', 'M.SI', 'S.PD', 'S.SOS', 'S.KOM', 'S.STP', 'SE', 'SH', 'ST', 'MM'];
+                            $words = explode(' ', strtolower(trim($str)));
+                            $words = array_map(function($w) use ($acronyms) {
+                                $upper = strtoupper($w);
+                                $cleanUpper = strtoupper(preg_replace('/[^a-zA-Z0-9]/', '', $w));
+                                if (in_array($cleanUpper, $acronyms) || in_array($upper, $acronyms)) {
+                                    return $upper;
+                                }
+                                if (in_array($w, ['dan', 'atau', 'di', 'ke', 'dari', 'pada', 'untuk', 'dengan', 'tentang', 'serta'])) {
+                                    return $w;
+                                }
+                                return ucfirst($w);
+                            }, $words);
+                            return ucfirst(implode(' ', $words));
+                        };
+
+                        $rawUnit = $agency ?: ($attendance->user ? ($attendance->user->unit_name ?? 'Pemkab Sinjai') : '-');
+                        $displayUnit = $formatTitle($rawUnit);
+                        $position = ($attendance->user ? $attendance->user->jabatan : $attendance->guest_position) ?: '-';
+                        $displayPosition = $formatTitle($position);
+                    @endphp
+                    <div style="line-height: 1.25;">{{ $displayUnit }}</div>
                 </td>
                 <td>
-                    {{ $attendance->user ? ($attendance->user->jabatan ?? '-') : ($attendance->guest_position ?: '-') }}
+                    <div style="line-height: 1.25;">{{ $displayPosition }}</div>
                 </td>
                 <td class="center">
                     @if($attendance->signature)

@@ -46,7 +46,7 @@ class Meeting extends Model
 
     public function attendances(): HasMany
     {
-        return $this->hasMany(MeetingAttendance::class);
+        return $this->hasMany(MeetingAttendance::class)->orderBy('check_in', 'asc')->orderBy('id', 'asc');
     }
 
     public function photos(): HasMany

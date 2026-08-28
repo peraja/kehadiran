@@ -17,6 +17,7 @@ new #[Layout('layouts.guest')] class extends Component {
     public $nip = '';
     public $nip_checked = false;
     public bool $is_pppk_pw = false;
+    public $pppk_parent_unit = '';
     public $employee_name = '';
     public $employee_jabatan = '';
     public $employee_unit = '';
@@ -57,11 +58,31 @@ new #[Layout('layouts.guest')] class extends Component {
     {
         $this->nip_checked = false;
         $this->is_pppk_pw = false;
+        $this->pppk_parent_unit = '';
         $this->employee_name = '';
         $this->employee_jabatan = '';
         $this->employee_unit = '';
         $this->employee_id = null;
         $this->signature = '';
+    }
+
+    protected function formatTitleCase(?string $str): string
+    {
+        if (empty($str)) return '';
+        $acronyms = ['SD', 'SMP', 'SMA', 'SMK', 'TK', 'PAUD', 'UPTD', 'RSUD', 'PUSTU', 'PNS', 'PPPK', 'PUPR', 'BKAD', 'BPBD', 'BAPPEDA', 'DISHUB', 'DLHK', 'DPRD', 'OPD', 'SPBE', 'TTE', 'BSRE', 'NIK', 'KTP', 'KTU', 'SKM', 'M.SI', 'S.PD', 'S.SOS', 'S.KOM', 'S.STP', 'SE', 'SH', 'ST', 'MM'];
+        $words = explode(' ', strtolower(trim($str)));
+        $words = array_map(function($w) use ($acronyms) {
+            $upper = strtoupper($w);
+            $cleanUpper = strtoupper(preg_replace('/[^a-zA-Z0-9]/', '', $w));
+            if (in_array($cleanUpper, $acronyms) || in_array($upper, $acronyms)) {
+                return $upper;
+            }
+            if (in_array($w, ['dan', 'atau', 'di', 'ke', 'dari', 'pada', 'untuk', 'dengan', 'tentang', 'serta'])) {
+                return $w;
+            }
+            return ucfirst($w);
+        }, $words);
+        return ucfirst(implode(' ', $words));
     }
 
     public function checkNip(?string $nipInput = null)
@@ -92,59 +113,89 @@ new #[Layout('layouts.guest')] class extends Component {
         $nip = trim($this->nip);
         \Illuminate\Support\Facades\Log::info("checkNip started for NIP: {$nip}");
         $user = User::where('nip', $nip)->first();
+        $displayUnit = null;
 
-        // 1. If user not yet in local database, check official SIMPEG API
-        if (!$user) {
-            $baseUrl = config('services.simpeg.url', 'http://apps.sinjaikab.go.id/api/pegawai');
-            $timeout = (int) config('services.simpeg.timeout', 4);
+        // 1. Check official SIMPEG API (for fresh profile, child unit & registration)
+        $baseUrl = config('services.simpeg.url', 'http://apps.sinjaikab.go.id/api/pegawai');
+        $timeout = (int) config('services.simpeg.timeout', 2);
 
-            try {
-                $pegawaiResponse = \Illuminate\Support\Facades\Http::timeout($timeout)->get("{$baseUrl}/data_pegawai/", [
-                    'nip' => $nip
-                ]);
+        try {
+            $pegawaiResponse = \Illuminate\Support\Facades\Http::timeout($timeout)->get("{$baseUrl}/data_pegawai/", [
+                'nip' => $nip
+            ]);
 
-                $pegawaiData = $pegawaiResponse->json();
-                $pData = isset($pegawaiData['data']) ? $pegawaiData['data'] : (isset($pegawaiData[0]) ? $pegawaiData[0] : $pegawaiData);
+            $pegawaiData = $pegawaiResponse->json();
+            $pData = isset($pegawaiData['data']) ? $pegawaiData['data'] : (isset($pegawaiData[0]) ? $pegawaiData[0] : $pegawaiData);
 
-                if ($pegawaiResponse->successful() && is_array($pData) && !empty($pData['nama'] ?? $pData['nama_pegawai'] ?? null)) {
-                    $name = $pData['nama_pegawai'] ?? $pData['nama'] ?? $nip;
-                    $unit_id = $pData['unit_id'] ?? $pData['id_unit'] ?? null;
-                    $jabatan = $pData['jabatan_nama'] ?? $pData['jabatan'] ?? null;
-                    $pangkat = $pData['pangkat_nama'] ?? $pData['pangkat'] ?? null;
-                    $unit_name = null;
+            if ($pegawaiResponse->successful() && is_array($pData) && !empty($pData['nama'] ?? $pData['nama_pegawai'] ?? null)) {
+                $name = $pData['nama_pegawai'] ?? $pData['nama'] ?? $nip;
+                $unit_id = $pData['unit_id'] ?? $pData['id_unit'] ?? null;
+                $jabatan = $pData['jabatan_nama'] ?? $pData['jabatan'] ?? null;
+                $pangkat = $pData['pangkat_nama'] ?? $pData['pangkat'] ?? null;
+                $childUnit = trim((string)($pData['jabatan_grup'] ?? ''));
+                $parentUnit = null;
 
-                    if ($unit_id) {
-                        $unitResponse = \Illuminate\Support\Facades\Http::timeout(2)->get("{$baseUrl}/get_unit/", [
-                            'unit_id' => $unit_id
-                        ]);
-                        $unitData = $unitResponse->json();
-                        $uData = isset($unitData['data']) ? $unitData['data'] : (isset($unitData[0]) ? $unitData[0] : $unitData);
-                        $unit_name = $uData['unit_nama'] ?? $uData['nama_unit'] ?? $uData['unit_kerja'] ?? null;
+                if ($unit_id) {
+                    $unitResponse = \Illuminate\Support\Facades\Http::timeout(2)->get("{$baseUrl}/get_unit/", [
+                        'unit_id' => $unit_id
+                    ]);
+                    $unitData = $unitResponse->json();
+                    $uData = isset($unitData['data']) ? $unitData['data'] : (isset($unitData[0]) ? $unitData[0] : $unitData);
+                    $parentUnit = $uData['unit_nama'] ?? $uData['nama_unit'] ?? $uData['unit_kerja'] ?? null;
+                }
+
+                $displayUnit = $parentUnit;
+                if ($parentUnit && !empty($childUnit)) {
+                    $parentLower = strtolower($parentUnit);
+                    $childLower = strtolower($childUnit);
+
+                    // 1. Kecamatan (tampilkan nama Kelurahan / Desa saja)
+                    if (str_contains($parentLower, 'kecamatan')) {
+                        if (str_contains($childLower, 'kelurahan') || str_contains($childLower, 'desa')) {
+                            $displayUnit = $childUnit;
+                        }
                     }
-
-                    $userData = [
-                        'name' => $name,
-                        'password' => \Illuminate\Support\Facades\Hash::make(\Illuminate\Support\Str::random(24)),
-                        'jabatan' => $jabatan,
-                        'unit_name' => $unit_name,
-                    ];
-
-                    if (!empty($pangkat)) {
-                        $userData['pangkat'] = trim((string)$pangkat);
+                    // 2. Dinas Pendidikan (tampilkan nama Sekolah / Satuan Pendidikan saja)
+                    elseif (str_contains($parentLower, 'pendidikan')) {
+                        if (!str_contains($childLower, 'bidang') && !str_contains($childLower, 'sekretariat') && !str_contains($childLower, 'sub bagian') && !str_contains($childLower, 'seksi')) {
+                            if (preg_match('/(sd|smp|tk|paud|negeri|sekolah|spf|uptd)/i', $childUnit)) {
+                                $displayUnit = $childUnit;
+                            }
+                        }
                     }
+                    // 3. Dinas Kesehatan (tampilkan nama Puskesmas / RSUD / Faskes saja)
+                    elseif (str_contains($parentLower, 'kesehatan')) {
+                        if (!str_contains($childLower, 'bidang') && !str_contains($childLower, 'sekretariat') && !str_contains($childLower, 'sub bagian') && !str_contains($childLower, 'seksi')) {
+                            if (preg_match('/(puskesmas|rsud|pustu|faskes|uptd|klinik|lab)/i', $childUnit)) {
+                                $displayUnit = $childUnit;
+                            }
+                        }
+                    }
+                    // 4. Seluruh Kantor Dinas / Badan / Bagian lainnya -> Tetap hanya nama Dinas
+                }
 
-                    $user = User::updateOrCreate(
-                        ['nip' => $nip],
-                        $userData
-                    );
+                $userData = [
+                    'name' => $name,
+                    'jabatan' => $jabatan,
+                    'unit_name' => $parentUnit ?: $user?->unit_name,
+                ];
 
+                if (!empty($pangkat)) {
+                    $userData['pangkat'] = trim((string)$pangkat);
+                }
+
+                if (!$user) {
+                    $userData['password'] = \Illuminate\Support\Facades\Hash::make(\Illuminate\Support\Str::random(24));
+                    $user = User::create(array_merge(['nip' => $nip], $userData));
                     if ($user->roles->count() == 0) {
                         $user->assignRole('pegawai');
                     }
+                } else {
+                    $user->update($userData);
                 }
-            } catch (\Throwable $e) {
-                \Illuminate\Support\Facades\Log::warning("SIMPEG API error for NIP {$nip}: " . $e->getMessage());
             }
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning("SIMPEG API error for NIP {$nip}: " . $e->getMessage());
         }
 
         // 2. If not found in SIMPEG, check PPPK Paruh Waktu API (Presensi only, do NOT persist to users table)
@@ -154,10 +205,8 @@ new #[Layout('layouts.guest')] class extends Component {
             $pwTimeout = (int) (config('services.pppk_pw.timeout') ?: 8);
 
             $host = parse_url($pwUrl, PHP_URL_HOST) ?: 'tte.sinjaikab.go.id';
-            $serverIp = gethostbyname(gethostname()) ?: '10.91.162.2';
-
             $targets = [
-                // 1. Direct HTTPS to Server Interface IP 10.91.162.2
+                // 1. Direct HTTPS via internal private IP (Instant ~15ms on Production cPanel)
                 [
                     'url' => $pwUrl,
                     'options' => [
@@ -169,31 +218,7 @@ new #[Layout('layouts.guest')] class extends Component {
                         ],
                     ],
                 ],
-                // 2. Direct HTTPS to Dynamic Server IP (if available)
-                [
-                    'url' => $pwUrl,
-                    'options' => [
-                        'force_ip_resolve' => 'v4',
-                        'curl' => [
-                            CURLOPT_RESOLVE => [
-                                "{$host}:443:{$serverIp}",
-                            ],
-                        ],
-                    ],
-                ],
-                // 3. HTTP Port 80 to Server Interface IP 10.91.162.2
-                [
-                    'url' => str_replace('https://', 'http://', $pwUrl),
-                    'options' => [
-                        'force_ip_resolve' => 'v4',
-                        'curl' => [
-                            CURLOPT_RESOLVE => [
-                                "{$host}:80:10.91.162.2",
-                            ],
-                        ],
-                    ],
-                ],
-                // 4. Standard DNS fallback
+                // 2. Standard DNS fallback (Instant on Local / External)
                 [
                     'url' => $pwUrl,
                     'options' => [
@@ -206,8 +231,8 @@ new #[Layout('layouts.guest')] class extends Component {
 
             foreach ($targets as $target) {
                 try {
-                    $req = \Illuminate\Support\Facades\Http::timeout($pwTimeout)
-                        ->connectTimeout(3)
+                    $req = \Illuminate\Support\Facades\Http::timeout(4)
+                        ->connectTimeout(1)
                         ->withoutVerifying()
                         ->withHeaders([
                             'Host' => $host,
@@ -242,29 +267,44 @@ new #[Layout('layouts.guest')] class extends Component {
                 if (!empty($pwList) && isset($pwList[0])) {
                     $pw = $pwList[0];
                     $name = $pw['name'] ?? $nip;
-                    $jabatan = $pw['jabatan'] ?? 'PPPK Paruh Waktu';
+                    $rawJabatan = trim((string)($pw['jabatan'] ?? ''));
+                    $jabatan = $this->formatTitleCase($rawJabatan ?: 'PPPK Paruh Waktu');
                     $unit_id = $pw['api_unit_id'] ?? null;
-                    $unit_name = 'Pemerintah Kabupaten Sinjai';
+                    $rawUnit = trim((string)($pw['unit_kerja'] ?? ''));
 
+                    // Resolve Parent OPD strictly from master Opd table
+                    $opdName = 'Pemerintah Kabupaten Sinjai';
                     if ($unit_id) {
                         $opd = \App\Models\Opd::where('unit_id', $unit_id)->first();
                         if ($opd) {
-                            $unit_name = $opd->name;
+                            $opdName = $opd->name;
                         }
                     }
+
+                    $childUnit = null;
+                    $parentUnit = $opdName;
+
+                    if (!empty($rawUnit)) {
+                        $normOpd = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $opdName));
+                        $normRaw = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $rawUnit));
+                        if ($normOpd !== $normRaw) {
+                            $childUnit = $this->formatTitleCase($rawUnit);
+                        }
+                    }
+
+                    $displayUnit = $childUnit ?: $parentUnit;
 
                     // Check if PPPK-PW already checked in to this meeting
                     $existingAttendance = $this->meeting->attendances()
                         ->whereNull('user_id')
-                        ->where('guest_name', $name)
-                        ->where('guest_agency', $unit_name)
+                        ->where('guest_nip', $nip)
                         ->first();
 
                     if ($existingAttendance) {
                         $this->status = 'success';
-                        $this->employee_name = $name;
-                        $this->employee_unit = $unit_name;
-                        $this->employee_jabatan = $jabatan;
+                        $this->employee_name = $existingAttendance->guest_name;
+                        $this->employee_unit = $existingAttendance->guest_agency ?: $displayUnit;
+                        $this->employee_jabatan = $existingAttendance->guest_position ?: $jabatan;
                         $this->recorded_time = $existingAttendance->check_in ? $existingAttendance->check_in->format('H:i') . ' WITA' : now()->format('H:i') . ' WITA';
                         $this->message = 'Presensi sudah tercatat sebelumnya.';
                         return;
@@ -275,7 +315,8 @@ new #[Layout('layouts.guest')] class extends Component {
                     $this->employee_id = null;
                     $this->employee_name = $name;
                     $this->employee_jabatan = $jabatan;
-                    $this->employee_unit = $unit_name;
+                    $this->employee_unit = $displayUnit;
+                    $this->pppk_parent_unit = $childUnit ? $parentUnit : '';
                     $this->nip_checked = true;
                     return;
                 }
@@ -293,7 +334,7 @@ new #[Layout('layouts.guest')] class extends Component {
         if ($existingAttendance) {
             $this->status = 'success';
             $this->employee_name = $user->name;
-            $this->employee_unit = $user->unit_name ?: 'Pemkab Sinjai';
+            $this->employee_unit = $displayUnit ?: ($user->unit_name ?: 'Pemkab Sinjai');
             $this->employee_jabatan = $user->jabatan ?: 'Pegawai';
             $this->recorded_time = $existingAttendance->check_in ? $existingAttendance->check_in->format('H:i') . ' WITA' : now()->format('H:i') . ' WITA';
             $this->message = 'Presensi sudah tercatat sebelumnya.';
@@ -304,7 +345,7 @@ new #[Layout('layouts.guest')] class extends Component {
         $this->employee_id = $user->id;
         $this->employee_name = $user->name;
         $this->employee_jabatan = $user->jabatan ?: 'Pegawai';
-        $this->employee_unit = $user->unit_name ?: 'Pemkab Sinjai';
+        $this->employee_unit = $displayUnit ?: ($user->unit_name ?: 'Pemkab Sinjai');
         $this->nip_checked = true;
     }
 
@@ -378,6 +419,7 @@ new #[Layout('layouts.guest')] class extends Component {
 
                     $this->meeting->attendances()->create([
                         'user_id' => $this->employee_id,
+                        'guest_agency' => $this->employee_unit,
                         'signature' => $this->signature,
                         'check_in' => $now,
                         'method' => 'qr',
