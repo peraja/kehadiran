@@ -149,16 +149,18 @@ new #[Layout('layouts.guest')] class extends Component {
             $pwTimeout = (int) (config('services.pppk_pw.timeout') ?: 8);
 
             $host = parse_url($pwUrl, PHP_URL_HOST) ?: 'tte.sinjaikab.go.id';
-            $serverIp = gethostbyname(gethostname()) ?: '127.0.0.1';
+            $serverIp = gethostbyname(gethostname()) ?: '10.91.162.2';
 
             $targets = [
-                // 1. Direct HTTPS to Server Interface IP (bypasses NAT loopback drop)
+                // 1. Direct HTTPS to Server Interface IP 10.91.162.2
                 [
                     'url' => $pwUrl,
                     'options' => [
                         'force_ip_resolve' => 'v4',
                         'curl' => [
                             CURLOPT_RESOLVE => [
+                                "{$host}:443:10.91.162.2",
+                                "{$host}:80:10.91.162.2",
                                 "{$host}:443:{$serverIp}",
                                 "{$host}:80:{$serverIp}",
                                 "{$host}:443:127.0.0.1",
@@ -167,13 +169,14 @@ new #[Layout('layouts.guest')] class extends Component {
                         ],
                     ],
                 ],
-                // 2. HTTP Port 80 to Server Interface IP
+                // 2. HTTP Port 80 to Server Interface IP 10.91.162.2
                 [
                     'url' => str_replace('https://', 'http://', $pwUrl),
                     'options' => [
                         'force_ip_resolve' => 'v4',
                         'curl' => [
                             CURLOPT_RESOLVE => [
+                                "{$host}:80:10.91.162.2",
                                 "{$host}:80:{$serverIp}",
                                 "{$host}:80:127.0.0.1",
                             ],
