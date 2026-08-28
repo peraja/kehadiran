@@ -148,60 +148,98 @@ new #[Layout('layouts.guest')] class extends Component {
             $pwToken = config('services.pppk_pw.token') ?: 'sJ9k2Lp5mN8qR1t4vW7xZ0y3bC6fH9hS';
             $pwTimeout = (int) (config('services.pppk_pw.timeout') ?: 8);
 
+            $pwResponse = null;
+
+            // Attempt 1: Standard HTTPS request with IPv4 forced
             try {
                 $pwResponse = \Illuminate\Support\Facades\Http::timeout($pwTimeout)
+                    ->connectTimeout(3)
                     ->withoutVerifying()
+                    ->withOptions([
+                        'force_ip_resolve' => 'v4',
+                    ])
+                    ->withHeaders([
+                        'User-Agent' => 'Mozilla/5.0 (compatible; eRapat/1.5; +https://rapat.sinjaikab.go.id)',
+                        'Accept' => 'application/json',
+                    ])
                     ->withToken($pwToken)
                     ->get($pwUrl, ['nip' => $nip]);
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning("PPPK-PW API direct request failed for NIP {$nip}: " . $e->getMessage());
+            }
 
-                if ($pwResponse->successful()) {
-                    $pwJson = $pwResponse->json();
-                    $pwList = $pwJson['data'] ?? [];
-                    if (!empty($pwList) && isset($pwList[0])) {
-                        $pw = $pwList[0];
-                        $name = $pw['name'] ?? $nip;
-                        $jabatan = $pw['jabatan'] ?? 'PPPK Paruh Waktu';
-                        $unit_id = $pw['api_unit_id'] ?? null;
-                        $unit_name = 'Pemerintah Kabupaten Sinjai';
+            // Attempt 2: Internal loopback resolve (if NAT hairpinning is blocked on the server)
+            if (!$pwResponse || !$pwResponse->successful()) {
+                try {
+                    $host = parse_url($pwUrl, PHP_URL_HOST) ?: 'tte.sinjaikab.go.id';
+                    $pwResponse = \Illuminate\Support\Facades\Http::timeout($pwTimeout)
+                        ->connectTimeout(3)
+                        ->withoutVerifying()
+                        ->withOptions([
+                            'force_ip_resolve' => 'v4',
+                            'curl' => [
+                                CURLOPT_RESOLVE => [
+                                    "{$host}:443:127.0.0.1",
+                                    "{$host}:80:127.0.0.1",
+                                ],
+                            ],
+                        ])
+                        ->withHeaders([
+                            'User-Agent' => 'Mozilla/5.0 (compatible; eRapat/1.5; +https://rapat.sinjaikab.go.id)',
+                            'Accept' => 'application/json',
+                        ])
+                        ->withToken($pwToken)
+                        ->get($pwUrl, ['nip' => $nip]);
+                } catch (\Throwable $e) {
+                    \Illuminate\Support\Facades\Log::warning("PPPK-PW API loopback request failed for NIP {$nip}: " . $e->getMessage());
+                }
+            }
 
-                        if ($unit_id) {
-                            $opd = \App\Models\Opd::where('unit_id', $unit_id)->first();
-                            if ($opd) {
-                                $unit_name = $opd->name;
-                            }
+            if ($pwResponse && $pwResponse->successful()) {
+                $pwJson = $pwResponse->json();
+                $pwList = $pwJson['data'] ?? [];
+                if (!empty($pwList) && isset($pwList[0])) {
+                    $pw = $pwList[0];
+                    $name = $pw['name'] ?? $nip;
+                    $jabatan = $pw['jabatan'] ?? 'PPPK Paruh Waktu';
+                    $unit_id = $pw['api_unit_id'] ?? null;
+                    $unit_name = 'Pemerintah Kabupaten Sinjai';
+
+                    if ($unit_id) {
+                        $opd = \App\Models\Opd::where('unit_id', $unit_id)->first();
+                        if ($opd) {
+                            $unit_name = $opd->name;
                         }
+                    }
 
-                        // Check if PPPK-PW already checked in to this meeting
-                        $existingAttendance = $this->meeting->attendances()
-                            ->whereNull('user_id')
-                            ->where('guest_name', $name)
-                            ->where('guest_agency', $unit_name)
-                            ->first();
+                    // Check if PPPK-PW already checked in to this meeting
+                    $existingAttendance = $this->meeting->attendances()
+                        ->whereNull('user_id')
+                        ->where('guest_name', $name)
+                        ->where('guest_agency', $unit_name)
+                        ->first();
 
-                        if ($existingAttendance) {
-                            $this->status = 'success';
-                            $this->employee_name = $name;
-                            $this->employee_unit = $unit_name;
-                            $this->employee_jabatan = $jabatan;
-                            $this->recorded_time = $existingAttendance->check_in ? $existingAttendance->check_in->format('H:i') . ' WITA' : now()->format('H:i') . ' WITA';
-                            $this->message = 'Presensi sudah tercatat sebelumnya.';
-                            return;
-                        }
-
-                        // Set state without creating User record in database (no login access)
-                        $this->is_pppk_pw = true;
-                        $this->employee_id = null;
+                    if ($existingAttendance) {
+                        $this->status = 'success';
                         $this->employee_name = $name;
-                        $this->employee_jabatan = $jabatan;
                         $this->employee_unit = $unit_name;
-                        $this->nip_checked = true;
+                        $this->employee_jabatan = $jabatan;
+                        $this->recorded_time = $existingAttendance->check_in ? $existingAttendance->check_in->format('H:i') . ' WITA' : now()->format('H:i') . ' WITA';
+                        $this->message = 'Presensi sudah tercatat sebelumnya.';
                         return;
                     }
-                } else {
-                    \Illuminate\Support\Facades\Log::warning("PPPK-PW API returned status " . $pwResponse->status() . " for NIP {$nip}: " . substr($pwResponse->body(), 0, 200));
+
+                    // Set state without creating User record in database (no login access)
+                    $this->is_pppk_pw = true;
+                    $this->employee_id = null;
+                    $this->employee_name = $name;
+                    $this->employee_jabatan = $jabatan;
+                    $this->employee_unit = $unit_name;
+                    $this->nip_checked = true;
+                    return;
                 }
-            } catch (\Exception $e) {
-                \Illuminate\Support\Facades\Log::warning("PPPK-PW API exception for NIP {$nip}: " . $e->getMessage());
+            } elseif ($pwResponse) {
+                \Illuminate\Support\Facades\Log::warning("PPPK-PW API returned status " . $pwResponse->status() . " for NIP {$nip}: " . substr($pwResponse->body(), 0, 200));
             }
         }
 
