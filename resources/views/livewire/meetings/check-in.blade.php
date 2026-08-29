@@ -987,7 +987,7 @@ new #[Layout('layouts.guest')] class extends Component {
 
             <div class="flex flex-col sm:flex-row sm:items-start gap-3">
                 <div class="flex-1 w-full">
-                    <input wire:model="nip"
+                    <x-text-input wire:model="nip"
                         @input="$event.target.value = $event.target.value.replace(/\D/g, ''); clientError = '';"
                         @beforeinput="if ($event.data && !/^\d+$/.test($event.data)) { $event.preventDefault(); }"
                         id="nip"

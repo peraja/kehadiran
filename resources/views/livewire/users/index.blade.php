@@ -276,7 +276,7 @@ new #[Layout('layouts.app')] class extends Component {
             </p>
         </div>
 
-        <button x-data="" 
+        <x-primary-button x-data="" 
             x-on:click="
                 $wire.userId = null;
                 $wire.name = '';
@@ -292,12 +292,12 @@ new #[Layout('layouts.app')] class extends Component {
                 $wire.apiStatusMessage = '';
                 $dispatch('open-modal', 'user-form-modal');
             "
-            class="relative z-10 inline-flex justify-center items-center px-5 py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl font-bold text-sm transition-all shadow-sm gap-2 w-full sm:w-auto cursor-pointer">
+            class="relative z-10 w-full sm:w-auto cursor-pointer">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
             </svg>
             <span>Tambah Pengguna</span>
-        </button>
+        </x-primary-button>
     </div>
 
     <!-- Alert Notifications -->
@@ -492,7 +492,7 @@ new #[Layout('layouts.app')] class extends Component {
                                     Reset Filter
                                 </button>
                                 @else
-                                <button x-data="" 
+                                <x-primary-button x-data="" 
                                     x-on:click="
                                         $wire.userId = null;
                                         $wire.name = '';
@@ -508,12 +508,12 @@ new #[Layout('layouts.app')] class extends Component {
                                         $wire.apiStatusMessage = '';
                                         $dispatch('open-modal', 'user-form-modal');
                                     "
-                                    class="mt-3 inline-flex items-center px-4 py-2 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white text-xs font-bold rounded-xl transition-all shadow-sm gap-2 cursor-pointer">
+                                    class="mt-3 cursor-pointer">
                                     <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
                                     </svg>
                                     <span>Tambah Pengguna</span>
-                                </button>
+                                </x-primary-button>
                                 @endif
                             </div>
                         </td>
@@ -544,7 +544,7 @@ new #[Layout('layouts.app')] class extends Component {
                 <!-- Nama Lengkap (Paling Atas) -->
                 <div>
                     <label for="name" class="block text-sm font-bold text-slate-700 mb-1">Nama Lengkap</label>
-                    <input wire:model="name" id="name" type="text" class="w-full text-base sm:text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Contoh: Ahmad Yani, S.Kom" required />
+                    <x-text-input wire:model="name" id="name" type="text"  placeholder="Contoh: Ahmad Yani, S.Kom" required />
                     @error('name') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                 </div>
 
@@ -555,7 +555,7 @@ new #[Layout('layouts.app')] class extends Component {
                     <div>
                         <label for="nip" class="block text-sm font-bold text-slate-700 mb-1">NIP</label>
                         <div class="flex items-center gap-2">
-                            <input wire:model="nip" wire:keydown.enter.prevent="checkNipFromApi" id="nip" type="text" class="w-full text-base sm:text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 font-mono focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Contoh: 198501012010011001" />
+                            <x-text-input wire:model="nip" wire:keydown.enter.prevent="checkNipFromApi" id="nip" type="text" class="font-mono" placeholder="Contoh: 198501012010011001" />
 
                             <button type="button" wire:click="checkNipFromApi" wire:loading.attr="disabled" wire:target="checkNipFromApi" class="shrink-0 inline-flex items-center justify-center px-3.5 py-2.5 bg-slate-800 hover:bg-slate-900 active:scale-95 text-white rounded-xl font-bold text-xs transition-all shadow-sm gap-1.5" title="Tarik dari SIMPEG">
                                 <svg wire:loading.remove wire:target="checkNipFromApi" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -574,7 +574,7 @@ new #[Layout('layouts.app')] class extends Component {
                     <!-- NIK -->
                     <div>
                         <label for="nik" class="block text-sm font-bold text-slate-700 mb-1">NIK</label>
-                        <input wire:model="nik" id="nik" type="text" maxlength="16" class="w-full text-base sm:text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 font-mono focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Contoh: 7307010101850001" />
+                        <x-text-input wire:model="nik" id="nik" type="text" maxlength="16" class="font-mono" placeholder="Contoh: 7307010101850001" />
                         @error('nik') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                     </div>
                 </div>
@@ -583,7 +583,7 @@ new #[Layout('layouts.app')] class extends Component {
                 <div>
                     <label for="nip" class="block text-sm font-bold text-slate-700 mb-1">NIP</label>
                     <div class="flex items-center gap-2">
-                        <input wire:model="nip" wire:keydown.enter.prevent="checkNipFromApi" id="nip" type="text" class="w-full text-base sm:text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 font-mono focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Contoh: 198501012010011001" />
+                        <x-text-input wire:model="nip" wire:keydown.enter.prevent="checkNipFromApi" id="nip" type="text" class="font-mono" placeholder="Contoh: 198501012010011001" />
 
                         <button type="button" wire:click="checkNipFromApi" wire:loading.attr="disabled" wire:target="checkNipFromApi" class="shrink-0 inline-flex items-center justify-center px-3.5 py-2.5 bg-slate-800 hover:bg-slate-900 active:scale-95 text-white rounded-xl font-bold text-xs transition-all shadow-sm gap-1.5" title="Tarik dari SIMPEG">
                             <svg wire:loading.remove wire:target="checkNipFromApi" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -664,14 +664,14 @@ new #[Layout('layouts.app')] class extends Component {
                     <!-- Jabatan -->
                     <div>
                         <label for="jabatan" class="block text-sm font-bold text-slate-700 mb-1">Jabatan</label>
-                        <input wire:model="jabatan" id="jabatan" type="text" class="w-full text-base sm:text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Contoh: Pranata Komputer Ahli Muda" />
+                        <x-text-input wire:model="jabatan" id="jabatan" type="text"  placeholder="Contoh: Pranata Komputer Ahli Muda" />
                         @error('jabatan') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                     </div>
 
                     <!-- Pangkat -->
                     <div>
                         <label for="pangkat" class="block text-sm font-bold text-slate-700 mb-1">Pangkat</label>
-                        <input wire:model="pangkat" id="pangkat" type="text" class="w-full text-base sm:text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Contoh: Pembina" />
+                        <x-text-input wire:model="pangkat" id="pangkat" type="text"  placeholder="Contoh: Pembina" />
                         @error('pangkat') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                     </div>
                 </div>
@@ -679,15 +679,15 @@ new #[Layout('layouts.app')] class extends Component {
                 <!-- OPD -->
                 <div>
                     <label for="unit_name" class="block text-sm font-bold text-slate-700 mb-1">OPD</label>
-                    <input wire:model="unit_name" id="unit_name" type="text" class="w-full text-base sm:text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Contoh: Dinas Komunikasi Informatika dan Persandian" />
+                    <x-text-input wire:model="unit_name" id="unit_name" type="text"  placeholder="Contoh: Dinas Komunikasi Informatika dan Persandian" />
                     @error('unit_name') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                 </div>
 
-                <div class="mt-8 pt-6 border-t border-slate-100 flex flex-col-reverse sm:flex-row justify-end gap-3">
-                    <button type="button" x-on:click="$dispatch('close-modal', 'user-form-modal')" class="w-full sm:w-auto px-5 py-2.5 bg-white border border-slate-300 hover:bg-slate-50 active:scale-95 text-slate-700 rounded-xl font-bold text-sm transition-all shadow-sm">
+                <x-modal-footer>
+                    <x-secondary-button x-on:click="$dispatch('close-modal', 'user-form-modal')" class="w-full sm:w-auto">
                         Batal
-                    </button>
-                    <button type="submit" wire:loading.attr="disabled" wire:target="saveUser" class="w-full sm:w-auto inline-flex items-center justify-center px-5 py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl font-bold text-sm transition-all shadow-sm gap-2">
+                    </x-secondary-button>
+                    <x-primary-button wire:loading.attr="disabled" wire:target="saveUser" class="w-full sm:w-auto">
                         <svg wire:loading.remove wire:target="saveUser" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                         </svg>
@@ -696,8 +696,8 @@ new #[Layout('layouts.app')] class extends Component {
                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
                         </svg>
                         <span>{{ $isEdit ? 'Simpan Perubahan' : 'Tambah Pengguna' }}</span>
-                    </button>
-                </div>
+                    </x-primary-button>
+                </x-modal-footer>
             </form>
         </div>
     </x-modal>

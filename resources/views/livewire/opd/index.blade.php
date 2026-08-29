@@ -291,16 +291,17 @@ new #[Layout('layouts.app')] class extends Component {
         </div>
 
         <div class="relative z-10 w-full sm:w-auto">
-            <button wire:click="startSync" wire:loading.attr="disabled" :disabled="$wire.isSyncing" class="w-full sm:w-auto inline-flex justify-center items-center px-5 py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed text-white rounded-xl font-bold text-sm transition-all shadow-sm gap-2 cursor-pointer">
+            <x-primary-button wire:click="startSync" wire:loading.attr="disabled" :disabled="$wire.isSyncing" class="w-full sm:w-auto">
                 <svg wire:loading.remove wire:target="startSync" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
                 </svg>
                 <svg wire:loading wire:target="startSync" class="animate-spin w-4 h-4 text-white" fill="none" viewBox="0 0 24 24">
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
                 </svg>
-                <span>Sinkron SIMPEG</span>
-            </button>
+                <span wire:loading.remove wire:target="startSync">Sinkron OPD dari SIMPEG</span>
+                <span wire:loading wire:target="startSync">Menarik Data...</span>
+            </x-primary-button>
         </div>
     </div>
 
@@ -491,16 +492,17 @@ new #[Layout('layouts.app')] class extends Component {
                                     Reset Filter
                                 </button>
                                 @else
-                                <button wire:click="startSync" wire:loading.attr="disabled" :disabled="$wire.isSyncing" class="mt-3 inline-flex items-center px-4 py-2 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white text-xs font-bold rounded-xl transition-all shadow-sm gap-2">
-                                    <svg wire:loading.remove wire:target="startSync" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <x-primary-button wire:click="startSync" wire:loading.attr="disabled" :disabled="$wire.isSyncing" class="mt-3">
+                                    <svg wire:loading.remove wire:target="startSync" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                                     </svg>
                                     <svg wire:loading wire:target="startSync" class="animate-spin w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24">
                                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
                                     </svg>
-                                    <span>Sinkron SIMPEG</span>
-                                </button>
+                                    <span wire:loading.remove wire:target="startSync">Tarik Data dari SIMPEG</span>
+                                    <span wire:loading wire:target="startSync">Menarik Data...</span>
+                                </x-primary-button>
                                 @endif
                             </div>
                         </td>
@@ -538,12 +540,12 @@ new #[Layout('layouts.app')] class extends Component {
                         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                             <div>
                                 <label for="unit_id" class="block text-xs font-bold text-slate-700 mb-1">Kode Unit</label>
-                                <input wire:model="unit_id" id="unit_id" type="text" class="w-full text-base sm:text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 font-mono focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Contoh: 730701" />
+                                <x-text-input wire:model="unit_id" id="unit_id" type="text" class="font-mono" placeholder="Contoh: 730701" />
                                 @error('unit_id') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                             </div>
                             <div class="sm:col-span-2">
                                 <label for="name" class="block text-xs font-bold text-slate-700 mb-1">Nama OPD</label>
-                                <input wire:model="name" id="name" type="text" class="w-full text-base sm:text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Contoh: Dinas Komunikasi dan Informatika" required />
+                                <x-text-input wire:model="name" id="name" type="text"  placeholder="Contoh: Dinas Komunikasi dan Informatika" required />
                                 @error('name') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                             </div>
                         </div>
@@ -557,12 +559,12 @@ new #[Layout('layouts.app')] class extends Component {
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div>
                                 <label for="phone" class="block text-xs font-bold text-slate-700 mb-1">Telepon</label>
-                                <input wire:model="phone" id="phone" type="text" class="w-full text-base sm:text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Contoh: (0482) 21123" />
+                                <x-text-input wire:model="phone" id="phone" type="text"  placeholder="Contoh: (0482) 21123" />
                                 @error('phone') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                             </div>
                             <div>
                                 <label for="email" class="block text-xs font-bold text-slate-700 mb-1">Email</label>
-                                <input wire:model="email" id="email" type="email" class="w-full text-base sm:text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Contoh: diskominfo@sinjaikab.go.id" />
+                                <x-text-input wire:model="email" id="email" type="email"  placeholder="Contoh: diskominfo@sinjaikab.go.id" />
                                 @error('email') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                             </div>
                         </div>
@@ -583,36 +585,36 @@ new #[Layout('layouts.app')] class extends Component {
 
                         <div>
                             <label for="leader_name" class="block text-xs font-bold text-slate-700 mb-1">Nama Lengkap & Gelar</label>
-                            <input wire:model="leader_name" id="leader_name" type="text" class="w-full text-base sm:text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Contoh: Dr. H. Muh. Saleh, M.Si" />
+                            <x-text-input wire:model="leader_name" id="leader_name" type="text"  placeholder="Contoh: Dr. H. Muh. Saleh, M.Si" />
                             @error('leader_name') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                         </div>
 
                         <div>
                             <label for="leader_title" class="block text-xs font-bold text-slate-700 mb-1">Jabatan</label>
-                            <input wire:model="leader_title" id="leader_title" type="text" class="w-full text-base sm:text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Contoh: Kepala Dinas Kominfo" />
+                            <x-text-input wire:model="leader_title" id="leader_title" type="text"  placeholder="Contoh: Kepala Dinas Kominfo" />
                             @error('leader_title') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                         </div>
 
                         <div>
                             <label for="leader_nip" class="block text-xs font-bold text-slate-700 mb-1">NIP</label>
-                            <input wire:model="leader_nip" id="leader_nip" type="text" class="w-full text-base sm:text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 font-mono focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Contoh: 197501012000031001" />
+                            <x-text-input wire:model="leader_nip" id="leader_nip" type="text" class="font-mono" placeholder="Contoh: 197501012000031001" />
                             @error('leader_nip') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                         </div>
 
                         <div>
                             <label for="leader_rank" class="block text-xs font-bold text-slate-700 mb-1">Pangkat</label>
-                            <input wire:model="leader_rank" id="leader_rank" type="text" class="w-full text-base sm:text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Contoh: Pembina Utama Muda (IV/c)" />
+                            <x-text-input wire:model="leader_rank" id="leader_rank" type="text"  placeholder="Contoh: Pembina Utama Muda (IV/c)" />
                             @error('leader_rank') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                         </div>
                     </div>
                 </div>
 
                 <!-- Modal Actions -->
-                <div class="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-5 border-t border-slate-100">
-                    <button type="button" x-on:click="$dispatch('close')" class="w-full sm:w-auto px-5 py-2.5 bg-white border border-slate-300 hover:bg-slate-50 active:scale-95 text-slate-700 rounded-xl font-bold text-sm transition-all shadow-sm">
+                <x-modal-footer>
+                    <x-secondary-button x-on:click="$dispatch('close')" class="w-full sm:w-auto">
                         Batal
-                    </button>
-                    <button type="submit" wire:loading.attr="disabled" wire:target="saveOpd" class="w-full sm:w-auto inline-flex items-center justify-center px-5 py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl font-bold text-sm transition-all shadow-sm gap-2">
+                    </x-secondary-button>
+                    <x-primary-button wire:loading.attr="disabled" wire:target="saveOpd" class="w-full sm:w-auto">
                         <svg wire:loading.remove wire:target="saveOpd" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                         </svg>
@@ -621,8 +623,8 @@ new #[Layout('layouts.app')] class extends Component {
                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
                         </svg>
                         <span>Simpan Perubahan</span>
-                    </button>
-                </div>
+                    </x-primary-button>
+                </x-modal-footer>
             </form>
         </div>
     </x-modal>

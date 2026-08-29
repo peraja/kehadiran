@@ -436,7 +436,7 @@ new #[Layout('layouts.app')] class extends Component {
                 <div x-data="{ showPassphrase: false }">
                     <label for="passphrase_attendance" class="block text-sm font-bold text-slate-700 mb-1">Passphrase</label>
                     <div class="relative">
-                        <input wire:model="passphrase"
+                        <x-text-input wire:model="passphrase"
                                id="passphrase_attendance"
                                :type="showPassphrase ? 'text' : 'password'"
                                class="w-full text-base sm:text-sm py-2.5 pl-3.5 pr-10 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors"
@@ -460,7 +460,7 @@ new #[Layout('layouts.app')] class extends Component {
                 </div>
 
                 <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
-                    <button type="button" x-on:click="$dispatch('close')" wire:click="closeSignModal" class="px-4 py-2.5 bg-white border border-slate-300 hover:bg-slate-50 active:scale-95 text-slate-700 font-bold text-sm rounded-xl transition-all shadow-sm">
+                    <button type="button" x-on:click="$dispatch('close')" wire:click="closeSignModal" >
                         Batal
                     </button>
                     <button type="submit" wire:loading.attr="disabled" wire:target="executeSign" class="inline-flex items-center justify-center px-5 py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white text-sm font-bold rounded-xl shadow-sm transition-all gap-2">

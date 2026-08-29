@@ -343,8 +343,8 @@ new #[Layout('layouts.app')] class extends Component {
                 {{ $name }}
             </p>
         </div>
-        <button type="button" wire:click="syncFromSimpeg" wire:loading.attr="disabled" class="relative z-10 w-full sm:w-auto inline-flex justify-center items-center px-5 py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl font-bold text-sm transition-all shadow-sm shrink-0 gap-2">
-            <svg wire:loading.remove wire:target="syncFromSimpeg" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <x-primary-button type="button" wire:click="syncFromSimpeg" wire:loading.attr="disabled" class="relative z-10 w-full sm:w-auto shrink-0">
+            <svg wire:loading.remove wire:target="syncFromSimpeg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>
             <svg wire:loading wire:target="syncFromSimpeg" class="animate-spin w-4 h-4 text-white" fill="none" viewBox="0 0 24 24">
@@ -352,7 +352,7 @@ new #[Layout('layouts.app')] class extends Component {
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
             </svg>
             <span>Sinkron SIMPEG</span>
-        </button>
+        </x-primary-button>
     </div>
 
     <!-- Alert Notifications -->
@@ -385,25 +385,25 @@ new #[Layout('layouts.app')] class extends Component {
 
                 <div class="sm:col-span-2">
                     <label for="address" class="block text-sm font-bold text-slate-700 mb-1">Alamat</label>
-                    <textarea wire:model="address" id="address" rows="2" class="w-full text-base sm:text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Alamat kantor"></textarea>
+                    <textarea wire:model="address" id="address" rows="2"  placeholder="Alamat kantor"></textarea>
                     @error('address') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                 </div>
 
                 <div>
                     <label for="phone" class="block text-sm font-bold text-slate-700 mb-1">Telepon</label>
-                    <input wire:model="phone" id="phone" type="text" class="w-full text-base sm:text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Nomor telepon" />
+                    <x-text-input wire:model="phone" id="phone" type="text"  placeholder="Nomor telepon" />
                     @error('phone') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                 </div>
 
                 <div>
                     <label for="email" class="block text-sm font-bold text-slate-700 mb-1">Email</label>
-                    <input wire:model="email" id="email" type="email" class="w-full text-base sm:text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="email@sinjaikab.go.id" />
+                    <x-text-input wire:model="email" id="email" type="email"  placeholder="email@sinjaikab.go.id" />
                     @error('email') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                 </div>
             </div>
 
             <div class="flex justify-end pt-2">
-                <button type="submit" wire:loading.attr="disabled" wire:target="saveOpdInfo" class="w-full sm:w-auto inline-flex items-center justify-center px-5 py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white font-bold text-sm rounded-xl shadow-sm transition-all gap-2">
+                <x-primary-button type="submit" wire:loading.attr="disabled" wire:target="saveOpdInfo" class="w-full sm:w-auto">
                     <svg wire:loading.remove wire:target="saveOpdInfo" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                     </svg>
@@ -411,8 +411,8 @@ new #[Layout('layouts.app')] class extends Component {
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
                     </svg>
-                    <span>Simpan Informasi</span>
-                </button>
+                    <span>Simpan Perubahan</span>
+                </x-primary-button>
             </div>
         </form>
     </div>
@@ -684,7 +684,7 @@ new #[Layout('layouts.app')] class extends Component {
                 <!-- Nama Lengkap (Paling Atas) -->
                 <div>
                     <label for="signer_name" class="block text-sm font-bold text-slate-700 mb-1">Nama Lengkap</label>
-                    <input wire:model="signer_name" id="signer_name" type="text" class="w-full text-base sm:text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Contoh: Dr. H. Ahmad Yani, M.Si" required />
+                    <x-text-input wire:model="signer_name" id="signer_name" type="text"  placeholder="Contoh: Dr. H. Ahmad Yani, M.Si" required />
                     @error('signer_name') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                 </div>
 
@@ -693,7 +693,7 @@ new #[Layout('layouts.app')] class extends Component {
                     <div>
                         <label for="signer_nip" class="block text-sm font-bold text-slate-700 mb-1">NIP</label>
                         <div class="flex items-center gap-2">
-                            <input wire:model="signer_nip" wire:keydown.enter.prevent="checkNipFromApi" id="signer_nip" type="text" class="w-full text-base sm:text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 font-mono focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Contoh: 198501012010011001" />
+                            <x-text-input wire:model="signer_nip" wire:keydown.enter.prevent="checkNipFromApi" id="signer_nip" type="text" class="font-mono" placeholder="Contoh: 198501012010011001" />
 
                             <button type="button" wire:click="checkNipFromApi" wire:loading.attr="disabled" wire:target="checkNipFromApi" class="shrink-0 inline-flex items-center justify-center px-3 py-2.5 bg-slate-800 hover:bg-slate-900 active:scale-95 text-white rounded-xl font-bold text-xs transition-all shadow-sm gap-1.5" title="Tarik dari SIMPEG">
                                 <svg wire:loading.remove wire:target="checkNipFromApi" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -712,7 +712,7 @@ new #[Layout('layouts.app')] class extends Component {
                     <!-- NIK -->
                     <div>
                         <label for="signer_nik" class="block text-sm font-bold text-slate-700 mb-1">NIK</label>
-                        <input wire:model="signer_nik" id="signer_nik" type="text" maxlength="16" class="w-full text-base sm:text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 font-mono focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Contoh: 7307010101850001" />
+                        <x-text-input wire:model="signer_nik" id="signer_nik" type="text" maxlength="16" class="font-mono" placeholder="Contoh: 7307010101850001" />
                         @error('signer_nik') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                     </div>
                 </div>
@@ -741,7 +741,7 @@ new #[Layout('layouts.app')] class extends Component {
                     <!-- Eselon -->
                     <div>
                         <label for="signer_eselon" class="block text-sm font-bold text-slate-700 mb-1">Eselon</label>
-                        <select wire:model="signer_eselon" id="signer_eselon" class="w-full text-base sm:text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors">
+                        <select wire:model="signer_eselon" id="signer_eselon" >
                             <option value="II.a">Eselon II.a</option>
                             <option value="II.b">Eselon II.b</option>
                             <option value="III.a">Eselon III.a</option>
@@ -756,7 +756,7 @@ new #[Layout('layouts.app')] class extends Component {
                     <!-- Pangkat -->
                     <div>
                         <label for="signer_rank" class="block text-sm font-bold text-slate-700 mb-1">Pangkat</label>
-                        <input wire:model="signer_rank" id="signer_rank" type="text" class="w-full text-base sm:text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Contoh: Pembina" />
+                        <x-text-input wire:model="signer_rank" id="signer_rank" type="text"  placeholder="Contoh: Pembina" />
                         @error('signer_rank') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                     </div>
                 </div>
@@ -764,7 +764,7 @@ new #[Layout('layouts.app')] class extends Component {
                 <!-- Jabatan -->
                 <div>
                     <label for="signer_title" class="block text-sm font-bold text-slate-700 mb-1">Jabatan</label>
-                    <input wire:model="signer_title" id="signer_title" type="text" class="w-full text-base sm:text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Contoh: Kepala Bidang Hubungan Masyarakat" required />
+                    <x-text-input wire:model="signer_title" id="signer_title" type="text"  placeholder="Contoh: Kepala Bidang Hubungan Masyarakat" required />
                     @error('signer_title') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                 </div>
 
@@ -772,16 +772,16 @@ new #[Layout('layouts.app')] class extends Component {
                 <!-- Unit Kerja -->
                 <div>
                     <label for="signer_bidang" class="block text-sm font-bold text-slate-700 mb-1">Unit Kerja</label>
-                    <input wire:model="signer_bidang" id="signer_bidang" type="text" class="w-full text-base sm:text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Contoh: Bidang Informasi dan Komunikasi Publik" />
+                    <x-text-input wire:model="signer_bidang" id="signer_bidang" type="text"  placeholder="Contoh: Bidang Informasi dan Komunikasi Publik" />
                     @error('signer_bidang') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                 </div>
                 @endif
 
-                <div class="mt-8 pt-6 border-t border-slate-100 flex flex-col-reverse sm:flex-row justify-end gap-3">
-                    <button type="button" x-on:click="$dispatch('close-modal', 'signer-form-modal')" class="w-full sm:w-auto px-5 py-2.5 bg-white border border-slate-300 hover:bg-slate-50 active:scale-95 text-slate-700 rounded-xl font-bold text-sm transition-all shadow-sm">
+                <x-modal-footer>
+                    <x-secondary-button x-on:click="$dispatch('close')" class="w-full sm:w-auto">
                         Batal
-                    </button>
-                    <button type="submit" wire:loading.attr="disabled" wire:target="saveSigner" class="w-full sm:w-auto inline-flex items-center justify-center px-5 py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl font-bold text-sm transition-all shadow-sm gap-2">
+                    </x-secondary-button>
+                    <x-primary-button wire:loading.attr="disabled" wire:target="saveSigner" class="w-full sm:w-auto">
                         <svg wire:loading.remove wire:target="saveSigner" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                         </svg>
@@ -789,9 +789,9 @@ new #[Layout('layouts.app')] class extends Component {
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
                         </svg>
-                        <span>Simpan</span>
-                    </button>
-                </div>
+                        <span>{{ $isEditSigner ? 'Simpan Perubahan' : 'Tambah Pejabat' }}</span>
+                    </x-primary-button>
+                </x-modal-footer>
             </form>
         </div>
     </x-modal>

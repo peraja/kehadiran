@@ -672,14 +672,14 @@ new class extends Component {
                 @php $locked = $this->signerLocked; $lockedClass = $locked ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'bg-white focus:ring-primary-500 focus:border-primary-500'; @endphp
                 <div>
                     <label for="edit_title" class="block text-sm font-bold text-slate-700 mb-1">Agenda</label>
-                    <input wire:model="title" id="edit_title" type="text" class="w-full text-base sm:text-sm py-2.5 px-3 border border-slate-300 rounded-xl text-slate-900 shadow-sm transition-colors {{ $lockedClass }}" placeholder="Contoh: Rapat Koordinasi SPBE" {{ $locked ? 'disabled' : 'required' }} />
+                    <x-text-input wire:model="title" id="edit_title" type="text" class="w-full text-base sm:text-sm py-2.5 px-3 border border-slate-300 rounded-xl text-slate-900 shadow-sm transition-colors {{ $lockedClass }}" placeholder="Contoh: Rapat Koordinasi SPBE" {{ $locked ? 'disabled' : 'required' }} />
                     @error('title') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-[1fr_auto_auto] gap-4">
                     <div>
                         <label for="edit_date" class="block text-sm font-bold text-slate-700 mb-1">Tanggal</label>
-                        <input wire:model="date" id="edit_date" type="date" class="w-full text-base sm:text-sm py-2.5 px-3 border border-slate-300 rounded-xl text-slate-900 shadow-sm transition-colors cursor-pointer {{ $lockedClass }}" {{ $locked ? 'disabled' : 'required' }} />
+                        <x-text-input wire:model="date" id="edit_date" type="date" class="w-full text-base sm:text-sm py-2.5 px-3 border border-slate-300 rounded-xl text-slate-900 shadow-sm transition-colors cursor-pointer {{ $lockedClass }}" {{ $locked ? 'disabled' : 'required' }} />
                         @error('date') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                     </div>
 
@@ -749,7 +749,7 @@ new class extends Component {
 
                 <div>
                     <label for="edit_location" class="block text-sm font-bold text-slate-700 mb-1">Lokasi</label>
-                    <input wire:model="location" id="edit_location" type="text" class="w-full text-base sm:text-sm py-2.5 px-3 border border-slate-300 rounded-xl text-slate-900 shadow-sm transition-colors {{ $lockedClass }}" placeholder="Contoh: Ruang Pola Kantor Bupati" {{ $locked ? 'disabled' : 'required' }} />
+                    <x-text-input wire:model="location" id="edit_location" type="text" class="w-full text-base sm:text-sm py-2.5 px-3 border border-slate-300 rounded-xl text-slate-900 shadow-sm transition-colors {{ $lockedClass }}" placeholder="Contoh: Ruang Pola Kantor Bupati" {{ $locked ? 'disabled' : 'required' }} />
                     @error('location') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                 </div>
 
@@ -782,7 +782,7 @@ new class extends Component {
                 </div>
 
                 <div class="mt-8 pt-6 border-t border-slate-100 flex flex-col-reverse sm:flex-row justify-end gap-3">
-                    <button type="button" x-on:click="$dispatch('close')" class="w-full sm:w-auto px-5 py-2.5 bg-white border border-slate-300 hover:bg-slate-50 active:scale-95 text-slate-700 rounded-xl font-bold text-sm transition-all shadow-sm">
+                    <button type="button" x-on:click="$dispatch('close')" class="w-full sm:w-auto">
                         {{ $locked ? 'Tutup' : 'Batal' }}
                     </button>
 
@@ -943,7 +943,7 @@ new class extends Component {
                 <div x-data="{ showPassphrase: false }">
                     <label for="passphrase_header" class="block text-sm font-bold text-slate-700 mb-1">Passphrase</label>
                     <div class="relative">
-                        <input wire:model="passphrase"
+                        <x-text-input wire:model="passphrase"
                                id="passphrase_header"
                                :type="showPassphrase ? 'text' : 'password'"
                                class="w-full text-base sm:text-sm py-2.5 pl-3.5 pr-10 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors"
@@ -967,7 +967,7 @@ new class extends Component {
                 </div>
 
                 <div class="flex flex-col-reverse sm:flex-row items-center justify-end gap-3 pt-3 border-t border-slate-100">
-                    <button type="button" x-on:click="$dispatch('close')" wire:click="closeSignModal" class="w-full sm:w-auto px-4 py-2.5 bg-white border border-slate-300 hover:bg-slate-50 active:scale-95 text-slate-700 font-bold text-sm rounded-xl transition-all shadow-sm">
+                    <button type="button" x-on:click="$dispatch('close')" wire:click="closeSignModal" class="w-full sm:w-auto">
                         Batal
                     </button>
                     <button type="submit" wire:loading.attr="disabled" wire:target="executeSign" class="w-full sm:w-auto inline-flex items-center justify-center px-5 py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white text-sm font-bold rounded-xl shadow-sm transition-all gap-2">

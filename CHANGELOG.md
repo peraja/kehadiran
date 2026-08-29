@@ -4,7 +4,17 @@ Semua perubahan penting pada proyek ini dicatat dalam berkas ini.
 
 Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/1.0.0/), dan proyek ini mematuhi [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.9] - 2026-08-29
+
+### Diubah
+- **Refaktor Komponen UI (Peningkatan Konsistensi & DRY)**:
+  - Mengonversi elemen-elemen *input* HTML *hardcoded* (`<input class="...">`) di seluruh modul (Pengguna, OPD, Pengaturan OPD, Rapat) menjadi komponen Blade standar (`<x-text-input>`).
+  - Menyediakan dan menerapkan komponen `<x-secondary-button>`, `<x-danger-button>`, dan `<x-modal-footer>` untuk menstandarisasi tata letak *footer* modal yang sebelumnya memiliki sedikit perbedaan margin dan padding antar halaman.
+  - Memperbarui `<x-primary-button>` agar selaras dengan desain *rounded-xl* dan transisi skala (*scale-95*) milik aplikasi.
+  - Mengompilasi ulang bundel aset CSS produksi Vite (`public/build/`).
+
 ## [1.5.8] - 2026-08-29
+
 
 ### Diperbaiki
 - **Keamanan — Hapus Token Hardcoded di `routes/console.php`**:

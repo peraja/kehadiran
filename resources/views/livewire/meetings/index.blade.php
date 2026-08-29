@@ -379,12 +379,12 @@ new #[Layout('layouts.app')] class extends Component {
         </div>
         @unless(auth()->user()->hasActiveRole('pimpinan'))
         <div class="relative z-10 w-full sm:w-auto">
-            <button x-data="" x-on:click.prevent="$dispatch('open-modal', 'add-meeting-modal')" class="w-full sm:w-auto inline-flex items-center justify-center px-5 py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl font-bold text-sm shadow-sm transition-all gap-2 cursor-pointer">
+            <x-primary-button x-data="" x-on:click.prevent="$dispatch('open-modal', 'add-meeting-modal')" class="w-full sm:w-auto cursor-pointer">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
                 </svg>
                 Buat Rapat
-            </button>
+            </x-primary-button>
         </div>
         @endunless
     </div>
@@ -544,12 +544,12 @@ new #[Layout('layouts.app')] class extends Component {
                                     Reset Filter
                                 </button>
                                 @elseif(!auth()->user()->hasActiveRole('pimpinan'))
-                                <button x-data="" x-on:click.prevent="$dispatch('open-modal', 'add-meeting-modal')" class="mt-3 inline-flex items-center px-4 py-2 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white text-xs font-bold rounded-xl transition-all shadow-sm gap-2">
-                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <x-primary-button x-data="" x-on:click.prevent="$dispatch('open-modal', 'add-meeting-modal')" class="mt-3 cursor-pointer">
+                                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
                                     </svg>
-                                    Buat Rapat
-                                </button>
+                                    Buat Rapat Pertama
+                                </x-primary-button>
                                 @endif
                             </div>
                         </td>
@@ -581,7 +581,7 @@ new #[Layout('layouts.app')] class extends Component {
                 <!-- Agenda / Judul Rapat -->
                 <div>
                     <label for="title" class="block text-sm font-bold text-slate-700 mb-1">Agenda</label>
-                    <input wire:model="title" id="title" type="text" class="w-full text-base sm:text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Contoh: Rapat Koordinasi Evaluasi SPBE Triwulan II" />
+                    <x-text-input wire:model="title" id="title" type="text"  placeholder="Contoh: Rapat Koordinasi Evaluasi SPBE Triwulan II" />
                     @error('title') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                 </div>
 
@@ -589,7 +589,7 @@ new #[Layout('layouts.app')] class extends Component {
                     <!-- Tanggal -->
                     <div>
                         <label for="date" class="block text-sm font-bold text-slate-700 mb-1">Tanggal</label>
-                        <input wire:model="date" id="date" type="date" class="w-full text-base sm:text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors cursor-pointer" />
+                        <x-text-input wire:model="date" id="date" type="date" class="w-full text-base sm:text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors cursor-pointer" />
                         @error('date') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                     </div>
 
@@ -654,7 +654,7 @@ new #[Layout('layouts.app')] class extends Component {
                 <!-- Lokasi -->
                 <div>
                     <label for="location" class="block text-sm font-bold text-slate-700 mb-1">Lokasi</label>
-                    <input wire:model="location" id="location" type="text" class="w-full text-base sm:text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors" placeholder="Contoh: Ruang Pola Kantor Bupati Sinjai" />
+                    <x-text-input wire:model="location" id="location" type="text"  placeholder="Contoh: Ruang Pola Kantor Bupati Sinjai" />
                     @error('location') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                 </div>
 
@@ -662,7 +662,7 @@ new #[Layout('layouts.app')] class extends Component {
                 <!-- OPD Selection (Admin Only) -->
                 <div>
                     <label for="selected_opd_id" class="block text-sm font-bold text-slate-700 mb-1">OPD</label>
-                    <select wire:model.live="selected_opd_id" id="selected_opd_id" class="w-full text-base sm:text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors">
+                    <select wire:model.live="selected_opd_id" id="selected_opd_id" >
                         <option value="">Pilih OPD</option>
                         @foreach($allOpds as $o)
                         <option value="{{ $o->id }}">{{ $o->name }}</option>
@@ -677,7 +677,7 @@ new #[Layout('layouts.app')] class extends Component {
                     <label for="selected_signer_id" class="block text-sm font-bold text-slate-700 mb-1">
                         Penandatangan Dokumen
                     </label>
-                    <select wire:model="selected_signer_id" id="selected_signer_id" class="w-full text-base sm:text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors">
+                    <select wire:model="selected_signer_id" id="selected_signer_id" >
                         @php
                             $leaderTitle = $opd?->leader_title ?: ($opd ? 'Kepala ' . $opd->name : 'Kepala OPD');
                         @endphp
@@ -689,12 +689,11 @@ new #[Layout('layouts.app')] class extends Component {
                     @error('selected_signer_id') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                 </div>
 
-                <div class="mt-8 pt-6 border-t border-slate-100 flex flex-col-reverse sm:flex-row justify-end gap-3">
-                    <button type="button" x-on:click="$dispatch('close')" class="w-full sm:w-auto px-5 py-2.5 bg-white border border-slate-300 hover:bg-slate-50 active:scale-95 text-slate-700 rounded-xl font-bold text-sm transition-all shadow-sm">
+                <x-modal-footer>
+                    <x-secondary-button x-on:click="$dispatch('close')" class="w-full sm:w-auto">
                         Batal
-                    </button>
-
-                    <button type="submit" wire:loading.attr="disabled" wire:target="saveMeeting" class="w-full sm:w-auto inline-flex items-center justify-center px-5 py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl font-bold text-sm transition-all shadow-sm gap-2">
+                    </x-secondary-button>
+                    <x-primary-button wire:loading.attr="disabled" wire:target="saveMeeting" class="w-full sm:w-auto">
                         <svg wire:loading.remove wire:target="saveMeeting" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                         </svg>
@@ -703,8 +702,8 @@ new #[Layout('layouts.app')] class extends Component {
                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
                         </svg>
                         <span>Simpan Rapat</span>
-                    </button>
-                </div>
+                    </x-primary-button>
+                </x-modal-footer>
             </form>
         </div>
     </x-modal>
