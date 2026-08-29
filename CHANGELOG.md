@@ -4,6 +4,11 @@ Semua perubahan penting pada proyek ini dicatat dalam berkas ini.
 
 Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/1.0.0/), dan proyek ini mematuhi [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.16] - 2026-08-29
+
+### Diubah
+- **Daftar Presensi**: Menghilangkan *badge* atau label "Eksternal" yang sebelumnya tampil di bawah nama peserta rapat eksternal pada tabel presensi.
+
 ## [1.5.15] - 2026-08-29
 
 ### Diperbaiki
