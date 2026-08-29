@@ -4,6 +4,11 @@ Semua perubahan penting pada proyek ini dicatat dalam berkas ini.
 
 Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/1.0.0/), dan proyek ini mematuhi [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.14] - 2026-08-29
+
+### Diperbaiki
+- **Halaman Presensi (Check In)**: Memperbaiki *field* masukan NIP yang mengalami galat/kerusakan *styling* akibat inkompatibilitas penggabungan kelas kondisional Tailwind dan *directive* `@readonly` pada komponen Blade `<x-text-input>`. Elemen tersebut telah dikembalikan menggunakan tag `<input>` standar HTML agar fungsionalitas validasi Alpine.js berjalan normal kembali.
+
 ## [1.5.13] - 2026-08-29
 
 ### Diperbaiki

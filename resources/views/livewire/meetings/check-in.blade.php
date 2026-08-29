@@ -987,19 +987,18 @@ new #[Layout('layouts.guest')] class extends Component {
 
             <div class="flex flex-col sm:flex-row sm:items-start gap-3">
                 <div class="flex-1 w-full">
-                    <x-text-input wire:model="nip"
+                    <input type="text" wire:model="nip"
                         @input="$event.target.value = $event.target.value.replace(/\D/g, ''); clientError = '';"
                         @beforeinput="if ($event.data && !/^\d+$/.test($event.data)) { $event.preventDefault(); }"
                         id="nip"
-                        type="text"
                         pattern="[0-9]*"
                         maxlength="18"
                         inputmode="numeric"
                         class="block w-full py-2.5 px-3 rounded-xl border border-slate-300 text-base sm:text-sm font-mono focus:ring-primary-500 focus:border-primary-500 transition-colors {{ $nip_checked ? 'bg-slate-50 text-slate-500 opacity-70' : 'bg-white' }}"
                         placeholder="Contoh: 199610072022031013"
-                        @readonly($nip_checked)
+                        {{ $nip_checked ? 'readonly' : '' }}
                         @keydown.enter.prevent="validateAndCheckNip()"
-                        required />
+                        required>
                     
                     @error('nip')
                         <div class="mt-2 text-xs space-y-1.5" x-show="!clientError">
