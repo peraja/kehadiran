@@ -627,7 +627,7 @@ new class extends Component {
                 @endif
 
                 @if($showEditMeeting)
-                <button x-data="" x-on:click.prevent="$dispatch('open-modal', 'edit-meeting-modal'); $wire.openEditModal()" class="{{ $meeting->status === 'ongoing' ? 'col-span-1' : 'col-span-2' }} sm:col-span-1 sm:flex-none inline-flex justify-center items-center px-4 sm:px-6 py-2.5 sm:py-3.5 bg-white border border-slate-300 hover:bg-slate-50 hover:border-slate-400 active:scale-95 text-slate-700 rounded-xl sm:rounded-2xl font-extrabold text-sm sm:text-base transition-all shadow-sm gap-2 sm:gap-2.5 whitespace-nowrap cursor-pointer">
+                <button x-data="" x-on:click.prevent="$dispatch('open-modal', 'edit-meeting-modal')" class="{{ $meeting->status === 'ongoing' ? 'col-span-1' : 'col-span-2' }} sm:col-span-1 sm:flex-none inline-flex justify-center items-center px-4 sm:px-6 py-2.5 sm:py-3.5 bg-white border border-slate-300 hover:bg-slate-50 hover:border-slate-400 active:scale-95 text-slate-700 rounded-xl sm:rounded-2xl font-extrabold text-sm sm:text-base transition-all shadow-sm gap-2 sm:gap-2.5 whitespace-nowrap cursor-pointer">
                     <svg class="w-5 h-5 text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
                     </svg>

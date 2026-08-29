@@ -4,6 +4,14 @@ Semua perubahan penting pada proyek ini dicatat dalam berkas ini.
 
 Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/1.0.0/), dan proyek ini mematuhi [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.7] - 2026-08-29
+
+### Diubah
+- **Penerapan Penuh Dialog Modal 100% Sisi Klien (*Pure Client-Side Form Hydration*)**:
+  - Mengubah aksi tombol *Tambah & Edit Pengguna* pada [`resources/views/livewire/users/index.blade.php`](file:///Users/abedzul/Desktop/htdocs/rapat/resources/views/livewire/users/index.blade.php) menjadi 100% *client-side* di Alpine.js sehingga pengisian data dan pembukaan modal dialog berjalan instan (0 ms) serta bebas dari *glitch* / kilasan data lama.
+  - Mengonversi tombol *Edit OPD* ([`resources/views/livewire/opd/index.blade.php`](file:///Users/abedzul/Desktop/htdocs/rapat/resources/views/livewire/opd/index.blade.php)) dan tombol *Edit Pejabat Penandatangan* ([`resources/views/livewire/opd/settings.blade.php`](file:///Users/abedzul/Desktop/htdocs/rapat/resources/views/livewire/opd/settings.blade.php)) menjadi *client-side* untuk pengalaman interaksi instan tanpa latensi jaringan.
+  - Mengompilasi ulang bundel aset CSS produksi Vite (`public/build/`).
+
 ## [1.5.6] - 2026-08-29
 
 ### Diubah

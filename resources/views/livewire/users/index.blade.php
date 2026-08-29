@@ -276,11 +276,27 @@ new #[Layout('layouts.app')] class extends Component {
             </p>
         </div>
 
-        <button x-data="" x-on:click.prevent="$dispatch('open-modal', 'user-form-modal'); $wire.openAddModal()" class="relative z-10 inline-flex justify-center items-center px-5 py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl font-bold text-sm transition-all shadow-sm gap-2 w-full sm:w-auto cursor-pointer">
+        <button x-data="" 
+            x-on:click="
+                $wire.userId = null;
+                $wire.name = '';
+                $wire.nip = '';
+                $wire.nik = '';
+                $wire.roles = ['pegawai'];
+                $wire.unit_name = @js(auth()->user()->hasActiveRole('admin_opd') && !auth()->user()->hasActiveRole('admin') ? auth()->user()->unit_name : '');
+                $wire.jabatan = '';
+                $wire.pangkat = '';
+                $wire.password = '';
+                $wire.isEdit = false;
+                $wire.apiSynced = false;
+                $wire.apiStatusMessage = '';
+                $dispatch('open-modal', 'user-form-modal');
+            "
+            class="relative z-10 inline-flex justify-center items-center px-5 py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl font-bold text-sm transition-all shadow-sm gap-2 w-full sm:w-auto cursor-pointer">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
             </svg>
-            Tambah Pengguna
+            <span>Tambah Pengguna</span>
         </button>
     </div>
 
@@ -427,17 +443,30 @@ new #[Layout('layouts.app')] class extends Component {
                         <!-- Aksi -->
                         <td class="py-4 px-6 text-right whitespace-nowrap">
                             <div class="flex items-center justify-end gap-2">
-                                <button wire:click="openEditModal({{ $u->id }})" wire:loading.attr="disabled" class="p-2 text-slate-400 hover:text-primary-700 hover:bg-primary-50 rounded-xl active:scale-95 transition-all cursor-pointer" title="Edit Pengguna">
-                                    <svg wire:loading.remove wire:target="openEditModal({{ $u->id }})" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <button x-data="" 
+                                    x-on:click="
+                                        $wire.userId = {{ $u->id }};
+                                        $wire.name = @js($u->name);
+                                        $wire.nip = @js($u->nip ?? '');
+                                        $wire.nik = @js($u->nik ?? '');
+                                        $wire.roles = @js($u->roles->pluck('name')->toArray() ?: ['pegawai']);
+                                        $wire.unit_name = @js($u->unit_name ?? '');
+                                        $wire.jabatan = @js($u->jabatan ?? '');
+                                        $wire.pangkat = @js($u->pangkat ?? '');
+                                        $wire.password = '';
+                                        $wire.isEdit = true;
+                                        $wire.apiSynced = false;
+                                        $wire.apiStatusMessage = '';
+                                        $dispatch('open-modal', 'user-form-modal');
+                                    "
+                                    class="p-2 text-slate-400 hover:text-primary-700 hover:bg-primary-50 rounded-xl active:scale-95 transition-all cursor-pointer" 
+                                    title="Edit Pengguna">
+                                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
-                                    </svg>
-                                    <svg wire:loading wire:target="openEditModal({{ $u->id }})" class="animate-spin w-5 h-5 text-primary-600" fill="none" viewBox="0 0 24 24">
-                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
                                     </svg>
                                 </button>
                                 @if($u->id !== auth()->id())
-                                <button wire:click="deleteUser({{ $u->id }})" wire:confirm="Hapus pengguna {{ $u->name }}?" class="p-2 text-slate-400 hover:text-rose-700 hover:bg-rose-50 rounded-xl active:scale-95 transition-all" title="Hapus Pengguna">
+                                <button wire:click="deleteUser({{ $u->id }})" wire:confirm="Hapus pengguna {{ $u->name }}?" class="p-2 text-slate-400 hover:text-rose-700 hover:bg-rose-50 rounded-xl active:scale-95 transition-all cursor-pointer" title="Hapus Pengguna">
                                     <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                                     </svg>
@@ -463,11 +492,27 @@ new #[Layout('layouts.app')] class extends Component {
                                     Reset Filter
                                 </button>
                                 @else
-                                <button x-data="" x-on:click.prevent="$dispatch('open-modal', 'user-form-modal'); $wire.openAddModal()" class="mt-3 inline-flex items-center px-4 py-2 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white text-xs font-bold rounded-xl transition-all shadow-sm gap-2">
+                                <button x-data="" 
+                                    x-on:click="
+                                        $wire.userId = null;
+                                        $wire.name = '';
+                                        $wire.nip = '';
+                                        $wire.nik = '';
+                                        $wire.roles = ['pegawai'];
+                                        $wire.unit_name = @js(auth()->user()->hasActiveRole('admin_opd') && !auth()->user()->hasActiveRole('admin') ? auth()->user()->unit_name : '');
+                                        $wire.jabatan = '';
+                                        $wire.pangkat = '';
+                                        $wire.password = '';
+                                        $wire.isEdit = false;
+                                        $wire.apiSynced = false;
+                                        $wire.apiStatusMessage = '';
+                                        $dispatch('open-modal', 'user-form-modal');
+                                    "
+                                    class="mt-3 inline-flex items-center px-4 py-2 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white text-xs font-bold rounded-xl transition-all shadow-sm gap-2 cursor-pointer">
                                     <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
                                     </svg>
-                                    Tambah Pengguna
+                                    <span>Tambah Pengguna</span>
                                 </button>
                                 @endif
                             </div>

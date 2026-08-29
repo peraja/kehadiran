@@ -477,7 +477,24 @@ new #[Layout('layouts.app')] class extends Component {
                             <span class="font-bold text-slate-800 text-xs block">{{ $opd->name }}</span>
                         </td>
                         <td class="py-4 px-6 text-center whitespace-nowrap">
-                            <button type="button" wire:click="openEditLeaderModal" class="inline-flex items-center gap-1 px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-xs font-bold transition-all shadow-xs active:scale-95">
+                            <button type="button" 
+                                x-data="" 
+                                x-on:click="
+                                    $wire.isEditingLeader = true;
+                                    $wire.editingSignerId = null;
+                                    $wire.editingManualPimpinanId = null;
+                                    $wire.signer_name = @js($opd->leader_name ?? '');
+                                    $wire.signer_nip = @js($opd->leader_nip ?? '');
+                                    $wire.signer_nik = @js($opd->leader_nik ?? '');
+                                    $wire.signer_title = @js($opd->leader_title ?? '');
+                                    $wire.signer_rank = @js($opd->leader_rank ?? '');
+                                    $wire.signer_bidang = @js($opd->name);
+                                    $wire.signer_eselon = @js($opd->leader_eselon ?: 'II.a');
+                                    $wire.apiSynced = false;
+                                    $wire.apiStatusMessage = '';
+                                    $dispatch('open-modal', 'signer-form-modal');
+                                "
+                                class="inline-flex items-center gap-1 px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-xs font-bold transition-all shadow-xs active:scale-95 cursor-pointer">
                                 <svg class="w-3.5 h-3.5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                                 </svg>
@@ -524,13 +541,31 @@ new #[Layout('layouts.app')] class extends Component {
                         </td>
                         <td class="py-4 px-6 text-center whitespace-nowrap">
                             <div class="flex items-center justify-center gap-1.5">
-                                <button type="button" wire:click="openEditSignerModal({{ $signer->id }})" class="inline-flex items-center gap-1 px-2.5 py-1.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-xs font-bold transition-all shadow-xs active:scale-95" title="Edit">
+                                <button type="button" 
+                                    x-data="" 
+                                    x-on:click="
+                                        $wire.isEditingLeader = false;
+                                        $wire.editingSignerId = {{ $signer->id }};
+                                        $wire.editingManualPimpinanId = null;
+                                        $wire.signer_name = @js($signer->name);
+                                        $wire.signer_nip = @js($signer->nip ?? '');
+                                        $wire.signer_nik = @js($signer->nik ?? '');
+                                        $wire.signer_title = @js($signer->title ?? '');
+                                        $wire.signer_rank = @js($signer->rank ?? '');
+                                        $wire.signer_bidang = @js($signer->bidang_name ?? '');
+                                        $wire.signer_eselon = @js($signer->eselon ?? 'III.a');
+                                        $wire.apiSynced = false;
+                                        $wire.apiStatusMessage = '';
+                                        $dispatch('open-modal', 'signer-form-modal');
+                                    "
+                                    class="inline-flex items-center gap-1 px-2.5 py-1.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-xs font-bold transition-all shadow-xs active:scale-95 cursor-pointer" 
+                                    title="Edit">
                                     <svg class="w-3.5 h-3.5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                                     </svg>
                                     <span>Edit</span>
                                 </button>
-                                <button type="button" wire:click="deleteSigner({{ $signer->id }})" wire:confirm="Hapus pejabat penandatangan ini?" class="inline-flex items-center justify-center p-1.5 bg-white hover:bg-rose-50 text-slate-400 hover:text-rose-600 border border-slate-200 hover:border-rose-200 rounded-xl text-xs font-bold transition-all shadow-xs active:scale-95" title="Hapus">
+                                <button type="button" wire:click="deleteSigner({{ $signer->id }})" wire:confirm="Hapus pejabat penandatangan ini?" class="inline-flex items-center justify-center p-1.5 bg-white hover:bg-rose-50 text-slate-400 hover:text-rose-600 border border-slate-200 hover:border-rose-200 rounded-xl text-xs font-bold transition-all shadow-xs active:scale-95 cursor-pointer" title="Hapus">
                                     <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                     </svg>
@@ -594,7 +629,25 @@ new #[Layout('layouts.app')] class extends Component {
                         </td>
                         <td class="py-4 px-6 text-center whitespace-nowrap">
                             <div class="flex items-center justify-center gap-1.5">
-                                <button type="button" wire:click="openEditManualPimpinanModal({{ $pu->id }})" class="inline-flex items-center gap-1 px-2.5 py-1.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-xs font-bold transition-all shadow-xs active:scale-95" title="Edit">
+                                <button type="button" 
+                                    x-data="" 
+                                    x-on:click="
+                                        $wire.isEditingLeader = false;
+                                        $wire.editingSignerId = null;
+                                        $wire.editingManualPimpinanId = {{ $pu->id }};
+                                        $wire.signer_name = @js($pu->name);
+                                        $wire.signer_nip = @js($pu->nip ?? '');
+                                        $wire.signer_nik = @js($pu->nik ?? '');
+                                        $wire.signer_title = @js($pu->jabatan ?? '');
+                                        $wire.signer_rank = @js($pu->pangkat ?? '');
+                                        $wire.signer_bidang = @js($pu->unit_name ?? $opd->name);
+                                        $wire.signer_eselon = 'Non-Eselon';
+                                        $wire.apiSynced = false;
+                                        $wire.apiStatusMessage = '';
+                                        $dispatch('open-modal', 'signer-form-modal');
+                                    "
+                                    class="inline-flex items-center gap-1 px-2.5 py-1.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-xs font-bold transition-all shadow-xs active:scale-95 cursor-pointer" 
+                                    title="Edit">
                                     <svg class="w-3.5 h-3.5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                                     </svg>
