@@ -4,6 +4,11 @@ Semua perubahan penting pada proyek ini dicatat dalam berkas ini.
 
 Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/1.0.0/), dan proyek ini mematuhi [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.13] - 2026-08-29
+
+### Diperbaiki
+- **Halaman OPD**: Memperbaiki error `Undefined constant "isSyncing"` pada tombol sinkronisasi. Atribut `:disabled="$wire.isSyncing"` pada komponen Blade diubah menjadi sintaks Alpine.js yang benar (`x-bind:disabled`) agar kompilator PHP tidak lagi keliru mengevaluasinya sebagai konstanta PHP.
+
 ## [1.5.12] - 2026-08-29
 
 ### Diperbaiki
