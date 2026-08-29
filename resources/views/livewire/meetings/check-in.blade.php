@@ -150,7 +150,7 @@ new #[Layout('layouts.guest')] class extends Component {
                     $displayUnit = $parentUnit;
 
                     if (preg_match('/^sekretaris\s+(camat|kecamatan)\b/i', $cleanPos) || str_contains($jLower, 'sekretaris camat') || str_contains($jLower, 'sekretaris kecamatan')) {
-                        $jabatan = $prefix . 'Sekretaris Camat';
+                        $jabatan = $prefix . 'Sekretaris Kecamatan';
                     } elseif (preg_match('/^camat\b/i', $cleanPos) || (str_contains($jLower, 'camat') && !str_contains($jLower, 'seksi') && !str_contains($jLower, 'kasi') && !str_contains($jLower, 'sub bagian') && !str_contains($jLower, 'kasubag'))) {
                         $jabatan = $prefix . 'Camat';
                     } elseif (str_contains($jLower, 'penelaah')) {
@@ -186,12 +186,18 @@ new #[Layout('layouts.guest')] class extends Component {
                     }
                 }
             }
-            // 3. Dinas Kesehatan (tampilkan nama Puskesmas / RSUD / Faskes saja)
+            // 3. Dinas Kesehatan & RSUD (tampilkan nama Puskesmas / RSUD / RS Pratama / Faskes saja)
             elseif (str_contains($parentLower, 'kesehatan')) {
                 if (preg_match('/(puskesmas|rsud|rs\s+pratama|bulupac|bulupan|pustu|faskes|uptd|klinik|lab|psc)/i', $childUnit)) {
                     $displayUnit = $this->formatHealthUnitName($childUnit);
                 }
             }
+        }
+
+        if (str_contains(strtolower($displayUnit), 'rumah sakit umum daerah')) {
+            $displayUnit = 'RSUD Sinjai';
+        } elseif (str_contains(strtolower($displayUnit), 'kesehatan') && preg_match('/(rsud|rs\s+pratama|bulupac|bulupan)/i', (string)$rawJabatan)) {
+            $displayUnit = 'RS Pratama Bulupaccing';
         }
 
         // 4. Normalisasi Global Jabatan Dinas, Badan, Inspektorat, Setda, Setwan
@@ -212,30 +218,39 @@ new #[Layout('layouts.guest')] class extends Component {
             $jabatan = $prefix . 'Kepala Badan';
         } elseif (preg_match('/^sekretaris badan\b/i', $clean)) {
             $jabatan = $prefix . 'Sekretaris Badan';
+        } elseif (preg_match('/^(kepala\s+satuan|kasat)\b/i', $clean)) {
+            $jabatan = $prefix . 'Kepala Satuan';
+        } elseif (preg_match('/^sekretaris\s+satuan\b/i', $clean)) {
+            $jabatan = $prefix . 'Sekretaris Satuan';
         } elseif (preg_match('/^inspektur daerah\b/i', $clean) || (preg_match('/^inspektur\b/i', $clean) && !preg_match('/inspektur pembantu/i', $clean))) {
             $jabatan = $prefix . 'Inspektur Daerah';
         } elseif (preg_match('/^sekretaris dprd\b/i', $clean)) {
             $jabatan = $prefix . 'Sekretaris DPRD';
         } elseif (preg_match('/^sekretaris daerah\b/i', $clean)) {
             $jabatan = $prefix . 'Sekretaris Daerah';
+        } elseif (preg_match('/^sekretaris\s+(camat|kecamatan)\b/i', $clean)) {
+            $jabatan = $prefix . 'Sekretaris Kecamatan';
+        } elseif (preg_match('/^camat\b/i', $clean)) {
+            $jabatan = $prefix . 'Camat';
+        } elseif (preg_match('/^sekretaris\s+(lurah|kelurahan)\b/i', $clean)) {
+            $jabatan = $prefix . 'Sekretaris Lurah';
+        } elseif (preg_match('/^lurah\b/i', $clean) && !preg_match('/^(seksi|kasi)/i', $clean)) {
+            $jabatan = $prefix . 'Lurah';
         } elseif (preg_match('/^ktu\b/i', $clean)) {
             $jabatan = $prefix . 'Kepala Sub Bagian Tata Usaha';
         } elseif (preg_match('/^kepala\s+(uptd\s+)?puskesmas\b/i', $clean)) {
             $jabatan = $prefix . 'Kepala Puskesmas';
         } elseif (preg_match('/^kepala\s+(uptd\s+)?(sd|sdn|smp|smpn|tk|paud|sekolah)\b/i', $clean)) {
             $jabatan = $prefix . 'Kepala Sekolah';
-        } elseif (preg_match('/^direktur\s+(uptd\s+)?(rsud|rs)\b.*(bulupancing|bulupaccing|bulu\s+paccing)/i', $clean)) {
-            $jabatan = $prefix . 'Direktur RS Pratama Bulupaccing';
-        } elseif (preg_match('/^direktur\s+(rsud|rs)\s*(sinjai)?/i', $clean)) {
-            $jabatan = $prefix . 'Direktur RSUD Sinjai';
+        } elseif (preg_match('/^direktur\b/i', $clean)) {
+            $jabatan = $prefix . 'Direktur';
         } else {
-            // B. Bersihkan akhiran wilayah/induk pada jabatan dinas/badan/rsud/puskesmas/sekolah
-            $clean = preg_replace('/\s+dinas\s+pemuda\s+dan\s+olahraga.*$/i', '', $clean);
-            $clean = preg_replace('/\s+satpol\s+pp.*$/i', '', $clean);
+            // B. Bersihkan akhiran wilayah/induk pada jabatan dinas/badan/rsud/puskesmas/sekolah/kecamatan/kelurahan
+            $clean = preg_replace('/\s+(sekretariat\s+)?(dinas|badan|satpol|satuan\s+polisi|inspektorat)\s+.*$/i', '', $clean);
+            $clean = preg_replace('/\s+(kec\.?|kecamatan|kel\.?|kelurahan)\s+.*$/i', '', $clean);
             $clean = preg_replace('/\s+(pada|di)\s+.+$/i', '', $clean);
-            $clean = preg_replace('/\s+(uptd\s+)?(rsud|rs)\b.*$/i', '', $clean);
-            $clean = preg_replace('/\s+(uptd\s+)?puskesmas\b.*$/i', '', $clean);
-            $clean = preg_replace('/\s+(uptd\s+)?(sd|sdn|smp|smpn|tk|paud|sekolah)\b.*$/i', '', $clean);
+            $clean = preg_replace('/\s+(uptd\s+)?(rsud|rs|puskesmas)\b.*$/i', '', $clean);
+            $clean = preg_replace('/\s+(uptd\s+)?(sdn|smpn)\s+\d+.*$/i', '', $clean);
             $clean = preg_replace('/\s+kab\.?\s+sinjai.*$/i', '', $clean);
             $clean = preg_replace('/\s+kabupaten\s+sinjai.*$/i', '', $clean);
             $clean = preg_replace('/\s+sekretariat\s+daerah.*$/i', '', $clean);
@@ -281,9 +296,10 @@ new #[Layout('layouts.guest')] class extends Component {
     protected function formatJabatanTitleCase(string $str): string
     {
         $clean = preg_replace('/\s+/', ' ', trim($str));
+        $clean = preg_replace('/,\s*/', ', ', $clean);
         $words = explode(' ', $clean);
         $lowerWords = ['dan', 'atau', 'di', 'ke', 'dari', 'pada', 'untuk', 'tentang', 'yang', 'serta', 'per'];
-        $upperWords = ['sd', 'smp', 'sma', 'smk', 'tk', 'paud', 'pnf', 'sda', 'sdm', 'asn', 'pns', 'b3', 'tik', 'dprd', 'rsud', 'uptd', 'ppkn', 'ipa', 'ips', 'ktu', 'tu', 'bappeda', 'bkpsdma', 'bkad', 'dpmptsp', 'dinsos', 'dishub', 'disdik', 'dinkes', 'i', 'ii', 'iii', 'iv', 'v', 'vi', 'vii', 'viii', 'ix', 'x'];
+        $upperWords = ['sd', 'smp', 'sma', 'smk', 'tk', 'paud', 'pnf', 'sda', 'sdm', 'asn', 'pns', 'b3', 'tik', 'dprd', 'rsud', 'uptd', 'ppkn', 'ipa', 'ips', 'ktu', 'tu', 'bappeda', 'bkpsdma', 'bkad', 'dpmptsp', 'dinsos', 'dishub', 'disdik', 'dinkes', 'bpbd', 'satpol', 'pp', 'damkar', 'dlhk', 'kesbangpol', 'i', 'ii', 'iii', 'iv', 'v', 'vi', 'vii', 'viii', 'ix', 'x'];
 
         $formatted = [];
         foreach ($words as $i => $w) {
@@ -299,7 +315,19 @@ new #[Layout('layouts.guest')] class extends Component {
             }
 
             $wLower = strtolower($w);
-            if (in_array($wLower, $upperWords)) {
+            if (str_contains($w, '/')) {
+                $subParts = explode('/', $w);
+                $formattedSubParts = [];
+                foreach ($subParts as $subPart) {
+                    $subLower = strtolower($subPart);
+                    if (in_array($subLower, $upperWords)) {
+                        $formattedSubParts[] = strtoupper($subLower);
+                    } else {
+                        $formattedSubParts[] = ucfirst($subLower);
+                    }
+                }
+                $resWord = implode('/', $formattedSubParts);
+            } elseif (in_array($wLower, $upperWords)) {
                 $resWord = strtoupper($wLower);
             } elseif ($i > 0 && in_array($wLower, $lowerWords)) {
                 $resWord = $wLower;

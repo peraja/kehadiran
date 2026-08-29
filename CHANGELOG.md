@@ -4,6 +4,15 @@ Semua perubahan penting pada proyek ini dicatat dalam berkas ini.
 
 Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/1.0.0/), dan proyek ini mematuhi [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.23] - 2026-08-30
+
+### Diperbaiki
+- **Normalisasi Data Jabatan & Unit**:
+  - Menyempurnakan aturan penulisan jabatan pimpinan daerah, eselon II, eselon III, eselon IV, dan staf pelaksana/fungsional pada modul Presensi Check-In (`check-in.blade.php`) dan Autentikasi Login SIMPEG (`LoginForm.php`).
+  - Menstandarkan penulisan pimpinan perangkat daerah berbentuk Satuan (`Kepala Satuan` / `Sekretaris Satuan`), pimpinan kewilayahan (`Camat` / `Sekretaris Kecamatan` / `Lurah` / `Sekretaris Lurah`), dan pimpinan rumah sakit daerah (`Direktur`).
+  - Memperluas pemangkasan sufiks nama dinas/badan/kecamatan/kelurahan yang redundan pada jabatan subbagian dan seksi.
+  - Memperbarui fungsi *smart Title Case* dengan dukungan pemisahan tanda koma, format garis miring (`Barang/Jasa`), serta penambahan singkatan kedinasan huruf kapital penuh (`BPBD`, `SATPOL`, `PP`, `DAMKAR`, `DLHK`, `KESBANGPOL`).
+
 ## [1.5.22] - 2026-08-30
 
 ### Diperbaiki
