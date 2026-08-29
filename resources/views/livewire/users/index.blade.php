@@ -276,7 +276,7 @@ new #[Layout('layouts.app')] class extends Component {
             </p>
         </div>
 
-        <x-primary-button x-data="" 
+        <button type="button" x-data="" 
             x-on:click="
                 $wire.userId = null;
                 $wire.name = '';
@@ -292,12 +292,12 @@ new #[Layout('layouts.app')] class extends Component {
                 $wire.apiStatusMessage = '';
                 $dispatch('open-modal', 'user-form-modal');
             "
-            class="relative z-10 w-full sm:w-auto cursor-pointer">
+            class="relative z-10 w-full sm:w-auto flex items-center justify-center px-4 py-2.5 sm:px-5 sm:py-3 bg-primary-600 text-white font-bold text-sm rounded-xl sm:rounded-2xl hover:bg-primary-700 active:scale-95 transition-all shadow-sm hover:shadow-md gap-2 cursor-pointer">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
             </svg>
             <span>Tambah Pengguna</span>
-        </x-primary-button>
+        </button>
     </div>
 
     <!-- Alert Notifications -->
@@ -492,7 +492,7 @@ new #[Layout('layouts.app')] class extends Component {
                                     Reset Filter
                                 </button>
                                 @else
-                                <x-primary-button x-data="" 
+                                <button type="button" x-data="" 
                                     x-on:click="
                                         $wire.userId = null;
                                         $wire.name = '';
@@ -508,12 +508,12 @@ new #[Layout('layouts.app')] class extends Component {
                                         $wire.apiStatusMessage = '';
                                         $dispatch('open-modal', 'user-form-modal');
                                     "
-                                    class="mt-3 cursor-pointer">
+                                    class="mt-3 flex items-center justify-center px-4 py-2 bg-primary-600 text-white font-bold text-xs rounded-xl hover:bg-primary-700 active:scale-95 transition-all shadow-sm gap-2 cursor-pointer">
                                     <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
                                     </svg>
                                     <span>Tambah Pengguna</span>
-                                </x-primary-button>
+                                </button>
                                 @endif
                             </div>
                         </td>

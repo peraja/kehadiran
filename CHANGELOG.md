@@ -4,6 +4,11 @@ Semua perubahan penting pada proyek ini dicatat dalam berkas ini.
 
 Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/1.0.0/), dan proyek ini mematuhi [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.12] - 2026-08-29
+
+### Diperbaiki
+- **Kompilasi View**: Memperbaiki error `syntax error, unexpected token "endif"` yang terjadi akibat sisa tag Blade (`{{ ... }}` dan `@js(...)`) yang berada di dalam atribut komponen `<x-...>`. Komponen Blade kini menggunakan mekanisme *binding* atribut standar yang tidak menyebabkan gagal kompilasi (*compiler crash*).
+
 ## [1.5.11] - 2026-08-29
 
 ### Diperbaiki

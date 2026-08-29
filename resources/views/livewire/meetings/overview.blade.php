@@ -451,7 +451,7 @@ new #[Layout('layouts.app')] class extends Component {
                     <div class="relative">
                         <x-text-input wire:model="passphrase"
                                id="passphrase_single"
-                               :type="showPassphrase ? 'text' : 'password'"
+                               x-bind:type="showPassphrase ? 'text' : 'password'"
                                class="w-full text-base sm:text-sm py-2.5 pl-3.5 pr-10 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors"
                                placeholder="Masukkan passphrase"
                                required

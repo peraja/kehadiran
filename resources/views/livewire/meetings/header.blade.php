@@ -672,14 +672,14 @@ new class extends Component {
                 @php $locked = $this->signerLocked; $lockedClass = $locked ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'bg-white focus:ring-primary-500 focus:border-primary-500'; @endphp
                 <div>
                     <label for="edit_title" class="block text-sm font-bold text-slate-700 mb-1">Agenda</label>
-                    <x-text-input wire:model="title" id="edit_title" type="text" class="w-full text-base sm:text-sm py-2.5 px-3 border border-slate-300 rounded-xl text-slate-900 shadow-sm transition-colors {{ $lockedClass }}" placeholder="Contoh: Rapat Koordinasi SPBE" {{ $locked ? 'disabled' : 'required' }} />
+                    <x-text-input wire:model="title" id="edit_title" type="text" :class="'w-full text-base sm:text-sm py-2.5 px-3 border border-slate-300 rounded-xl text-slate-900 shadow-sm transition-colors ' . $lockedClass" placeholder="Contoh: Rapat Koordinasi SPBE" :disabled="$locked" :required="!$locked" />
                     @error('title') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-[1fr_auto_auto] gap-4">
                     <div>
                         <label for="edit_date" class="block text-sm font-bold text-slate-700 mb-1">Tanggal</label>
-                        <x-text-input wire:model="date" id="edit_date" type="date" class="w-full text-base sm:text-sm py-2.5 px-3 border border-slate-300 rounded-xl text-slate-900 shadow-sm transition-colors cursor-pointer {{ $lockedClass }}" {{ $locked ? 'disabled' : 'required' }} />
+                        <x-text-input wire:model="date" id="edit_date" type="date" :class="'w-full text-base sm:text-sm py-2.5 px-3 border border-slate-300 rounded-xl text-slate-900 shadow-sm transition-colors cursor-pointer ' . $lockedClass" :disabled="$locked" :required="!$locked" />
                         @error('date') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                     </div>
 
@@ -690,7 +690,7 @@ new class extends Component {
                             <label class="block text-sm font-bold text-slate-700 mb-1">Waktu Mulai</label>
                             <div class="flex items-center gap-1.5">
                                 <div class="flex-1 md:flex-none">
-                                    <x-select wire:model="start_hour" class="w-full md:w-16 text-base sm:text-sm py-2.5 px-2 border border-slate-300 rounded-xl text-slate-900 shadow-sm transition-colors cursor-pointer {{ $lockedClass }}" {{ $locked ? 'disabled' : '' }}>
+                                    <x-select wire:model="start_hour" :class="'w-full md:w-16 text-base sm:text-sm py-2.5 px-2 border border-slate-300 rounded-xl text-slate-900 shadow-sm transition-colors cursor-pointer ' . $lockedClass" :disabled="$locked">
                                         @for($h = 8; $h <= 16; $h++)
                                             @php $hStr = sprintf('%02d', $h); @endphp
                                             <option value="{{ $hStr }}">{{ $hStr }}</option>
@@ -702,7 +702,7 @@ new class extends Component {
                                 </div>
                                 <span class="text-slate-400 font-bold text-sm">:</span>
                                 <div class="flex-1 md:flex-none">
-                                    <x-select wire:model="start_minute" class="w-full md:w-16 text-base sm:text-sm py-2.5 px-2 border border-slate-300 rounded-xl text-slate-900 shadow-sm transition-colors cursor-pointer {{ $lockedClass }}" {{ $locked ? 'disabled' : '' }}>
+                                    <x-select wire:model="start_minute" :class="'w-full md:w-16 text-base sm:text-sm py-2.5 px-2 border border-slate-300 rounded-xl text-slate-900 shadow-sm transition-colors cursor-pointer ' . $lockedClass" :disabled="$locked">
                                         @foreach(['00', '15', '30', '45'] as $mOption)
                                             <option value="{{ $mOption }}">{{ $mOption }}</option>
                                         @endforeach
@@ -720,7 +720,7 @@ new class extends Component {
                             <label class="block text-sm font-bold text-slate-700 mb-1">Waktu Selesai</label>
                             <div class="flex items-center gap-1.5">
                                 <div class="flex-1 md:flex-none">
-                                    <x-select wire:model="end_hour" class="w-full md:w-16 text-base sm:text-sm py-2.5 px-2 border border-slate-300 rounded-xl text-slate-900 shadow-sm transition-colors cursor-pointer {{ $lockedClass }}" {{ $locked ? 'disabled' : '' }}>
+                                    <x-select wire:model="end_hour" :class="'w-full md:w-16 text-base sm:text-sm py-2.5 px-2 border border-slate-300 rounded-xl text-slate-900 shadow-sm transition-colors cursor-pointer ' . $lockedClass" :disabled="$locked">
                                         @for($h = 8; $h <= 16; $h++)
                                             @php $hStr = sprintf('%02d', $h); @endphp
                                             <option value="{{ $hStr }}">{{ $hStr }}</option>
@@ -732,7 +732,7 @@ new class extends Component {
                                 </div>
                                 <span class="text-slate-400 font-bold text-sm">:</span>
                                 <div class="flex-1 md:flex-none">
-                                    <x-select wire:model="end_minute" class="w-full md:w-16 text-base sm:text-sm py-2.5 px-2 border border-slate-300 rounded-xl text-slate-900 shadow-sm transition-colors cursor-pointer {{ $lockedClass }}" {{ $locked ? 'disabled' : '' }}>
+                                    <x-select wire:model="end_minute" :class="'w-full md:w-16 text-base sm:text-sm py-2.5 px-2 border border-slate-300 rounded-xl text-slate-900 shadow-sm transition-colors cursor-pointer ' . $lockedClass" :disabled="$locked">
                                         @foreach(['00', '15', '30', '45'] as $mOption)
                                             <option value="{{ $mOption }}">{{ $mOption }}</option>
                                         @endforeach
@@ -749,14 +749,14 @@ new class extends Component {
 
                 <div>
                     <label for="edit_location" class="block text-sm font-bold text-slate-700 mb-1">Lokasi</label>
-                    <x-text-input wire:model="location" id="edit_location" type="text" class="w-full text-base sm:text-sm py-2.5 px-3 border border-slate-300 rounded-xl text-slate-900 shadow-sm transition-colors {{ $lockedClass }}" placeholder="Contoh: Ruang Pola Kantor Bupati" {{ $locked ? 'disabled' : 'required' }} />
+                    <x-text-input wire:model="location" id="edit_location" type="text" :class="'w-full text-base sm:text-sm py-2.5 px-3 border border-slate-300 rounded-xl text-slate-900 shadow-sm transition-colors ' . $lockedClass" placeholder="Contoh: Ruang Pola Kantor Bupati" :disabled="$locked" :required="!$locked" />
                     @error('location') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                 </div>
 
                 @if($isAdmin)
                 <div>
                     <label for="edit_selected_opd_id" class="block text-sm font-bold text-slate-700 mb-1">OPD</label>
-                    <x-select wire:model.live="selected_opd_id" id="edit_selected_opd_id" class="w-full text-base sm:text-sm py-2.5 px-3 border border-slate-300 rounded-xl text-slate-900 shadow-sm transition-colors {{ $lockedClass }}" {{ $locked ? 'disabled' : 'required' }}>
+                    <x-select wire:model.live="selected_opd_id" id="edit_selected_opd_id" :class="'w-full text-base sm:text-sm py-2.5 px-3 border border-slate-300 rounded-xl text-slate-900 shadow-sm transition-colors ' . $lockedClass" :disabled="$locked" :required="!$locked">
                         <option value="">-- Pilih OPD --</option>
                         @foreach($allOpds as $opdItem)
                         <option value="{{ $opdItem->id }}">{{ $opdItem->name }}</option>
@@ -769,8 +769,8 @@ new class extends Component {
                 <div>
                     <label for="edit_selected_signer_id" class="block text-sm font-bold text-slate-700 mb-1">Penandatangan Dokumen</label>
                     <x-select wire:model.live="selected_signer_id" id="edit_selected_signer_id"
-                        class="w-full text-base sm:text-sm py-2.5 px-3 border border-slate-300 rounded-xl text-slate-900 shadow-sm transition-colors {{ $lockedClass }}"
-                        {{ ($isAdmin && empty($selected_opd_id)) || $locked ? 'disabled' : '' }}>
+                        :class="'w-full text-base sm:text-sm py-2.5 px-3 border border-slate-300 rounded-xl text-slate-900 shadow-sm transition-colors ' . $lockedClass"
+                        :disabled="($isAdmin && empty($selected_opd_id)) || $locked">
                         @php
                             $leaderTitle = $opd?->leader_title ?: ($opd ? 'Kepala ' . $opd->name : 'Kepala OPD');
                         @endphp
@@ -945,7 +945,7 @@ new class extends Component {
                     <div class="relative">
                         <x-text-input wire:model="passphrase"
                                id="passphrase_header"
-                               :type="showPassphrase ? 'text' : 'password'"
+                               ::type="showPassphrase ? 'text' : 'password'"
                                class="w-full text-base sm:text-sm py-2.5 pl-3.5 pr-10 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors"
                                placeholder="Masukkan passphrase"
                                required
