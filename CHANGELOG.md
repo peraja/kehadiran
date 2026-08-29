@@ -4,6 +4,11 @@ Semua perubahan penting pada proyek ini dicatat dalam berkas ini.
 
 Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/1.0.0/), dan proyek ini mematuhi [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.20] - 2026-08-30
+
+### Diperbaiki
+- **Pengaturan OPD**: Memperbaiki error `Undefined variable $isEditSigner` pada modal form penandatangan di halaman Pengaturan OPD (`resources/views/livewire/opd/settings.blade.php`).
+
 ## [1.5.19] - 2026-08-29
 
 ### Diubah
