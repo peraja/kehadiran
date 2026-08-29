@@ -11,7 +11,7 @@ Sistem administrasi rapat terpadu Pemerintah Kabupaten Sinjai untuk penjadwalan 
 - **Presensi Mandiri:** Scan QR Code / input NIP (PNS, PPPK Paruh Waktu, & Tamu Eksternal) + TTD digital canvas.
 - **TTE BSrE - BSSN:** Sertifikasi digital dokumen (Notulen, Presensi, Dokumentasi) & *Batch Sign All*.
 - **Notulen Otomatis AI:** Format notulen standar kedinasan dengan Google Gemini AI.
-- **Ekspor Dokumen:** Cetak PDF resmi berkop dinas dan unduh arsip foto ZIP.
+- **Ekspor Dokumen:** Cetak PDF resmi berkop dinas (Notulen, Presensi, Dokumentasi) & unduh bundel dokumen ZIP.
 - **Audit Trail:** Pemantauan aktivitas keamanan dengan *auto-prune* 90 hari.
 
 ---
