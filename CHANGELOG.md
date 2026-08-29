@@ -4,6 +4,14 @@ Semua perubahan penting pada proyek ini dicatat dalam berkas ini.
 
 Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/1.0.0/), dan proyek ini mematuhi [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.21] - 2026-08-30
+
+### Ditambahkan
+- **Komponen Blade**: Membuat komponen `<x-textarea>` untuk menyeragamkan gaya visual seluruh elemen *textarea* agar selaras dengan input form lainnya.
+
+### Diperbaiki
+- **Form Alamat OPD**: Menyeragamkan tampilan *input* alamat pada halaman Pengaturan OPD (`resources/views/livewire/opd/settings.blade.php`) dan form kelola OPD (`resources/views/livewire/opd/index.blade.php`) menggunakan komponen `<x-textarea>`.
+
 ## [1.5.20] - 2026-08-30
 
 ### Diperbaiki

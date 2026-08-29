@@ -552,7 +552,7 @@ new #[Layout('layouts.app')] class extends Component {
 
                         <div>
                             <label for="address" class="block text-xs font-bold text-slate-700 mb-1">Alamat Kantor</label>
-                            <textarea wire:model="address" id="address" rows="2" class="w-full text-base sm:text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors resize-none" placeholder="Contoh: Jl. Persatuan Raya No. 1, Sinjai"></textarea>
+                            <x-textarea wire:model="address" id="address" rows="2" class="resize-none" placeholder="Contoh: Jl. Persatuan Raya No. 1, Sinjai" />
                             @error('address') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                         </div>
 
