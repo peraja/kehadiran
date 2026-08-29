@@ -307,27 +307,50 @@ class Opd extends Model
                         'leader_eselon' => $eselonRaw ?: ($eselon ?: 'II.a'),
                     ]);
 
-                    // Sync Kepala OPD as User with role: pimpinan
+                    // Sync Kepala OPD as User with role: pimpinan (prioritas jabatan definitif)
                     if (!empty($p['nip'])) {
                         $leaderUser = User::where('nip', $p['nip'])->first();
+                        $isPltJob = str_starts_with(strtolower($jobTitle), 'plt');
+
                         if (!$leaderUser) {
+                            $defJabatan = $jobTitle ?: $this->leader_title;
+                            $defUnit = $this->name;
+
+                            // Cek apakah pegawai memiliki jabatan definitif di OPD lain pada data SIMPEG
+                            $allPnsMap = \Illuminate\Support\Facades\Cache::get('simpeg_all_pns_by_nip', []);
+                            $pnsList = $allPnsMap[$p['nip']] ?? [];
+                            foreach ($pnsList as $rec) {
+                                if (($rec['jabatan_status_id'] ?? '1') == '1' && !str_starts_with(strtolower(trim($rec['jabatan_nama'] ?? '')), 'plt')) {
+                                    $defJabatan = trim($rec['jabatan_nama']);
+                                    $defUnit = trim($rec['parent_unit'] ?? $this->name);
+                                    break;
+                                }
+                            }
+
                             $leaderUser = User::create([
                                 'nip' => $p['nip'],
                                 'nik' => $nik ?: null,
                                 'name' => trim($p['nama'] ?? $p['nip']),
-                                'unit_name' => $this->name,
-                                'jabatan' => $jobTitle ?: $this->leader_title,
+                                'unit_name' => $defUnit,
+                                'jabatan' => $defJabatan,
                                 'pangkat' => $pangkat ?: null,
                                 'password' => null,
                             ]);
                         } else {
-                            $leaderUser->update([
+                            $updateData = [
                                 'name' => trim($p['nama'] ?? $leaderUser->name),
                                 'nik' => $nik ?: $leaderUser->nik,
-                                'unit_name' => $this->name,
-                                'jabatan' => $jobTitle ?: $leaderUser->jabatan,
                                 'pangkat' => $pangkat ?: $leaderUser->pangkat,
-                            ]);
+                            ];
+
+                            // Hanya timpa jabatan & unit_name jika bukan Plt atau jika user belum punya jabatan definitif
+                            $existingIsPlt = str_starts_with(strtolower(trim((string)$leaderUser->jabatan)), 'plt');
+                            if (!$isPltJob || $existingIsPlt || empty($leaderUser->jabatan)) {
+                                $updateData['jabatan'] = $jobTitle ?: $leaderUser->jabatan;
+                                $updateData['unit_name'] = $this->name;
+                            }
+
+                            $leaderUser->update($updateData);
                         }
                         if (!$leaderUser->hasRole('admin')) {
                             $leaderUser->assignRole('pimpinan');
@@ -385,27 +408,48 @@ class Opd extends Model
                     ]
                 );
 
-                // Sync Signer as User with role: pimpinan
+                // Sync Signer as User with role: pimpinan (prioritas jabatan definitif)
                 if (!empty($p['nip'])) {
                     $signerUser = User::where('nip', trim($p['nip']))->first();
+                    $isPltJob = str_starts_with(strtolower($title), 'plt');
+
                     if (!$signerUser) {
+                        $defJabatan = $title;
+                        $defUnit = $this->name;
+
+                        $allPnsMap = \Illuminate\Support\Facades\Cache::get('simpeg_all_pns_by_nip', []);
+                        $pnsList = $allPnsMap[trim($p['nip'])] ?? [];
+                        foreach ($pnsList as $rec) {
+                            if (($rec['jabatan_status_id'] ?? '1') == '1' && !str_starts_with(strtolower(trim($rec['jabatan_nama'] ?? '')), 'plt')) {
+                                $defJabatan = trim($rec['jabatan_nama']);
+                                $defUnit = trim($rec['parent_unit'] ?? $this->name);
+                                break;
+                            }
+                        }
+
                         $signerUser = User::create([
                             'nip' => trim($p['nip']),
                             'nik' => $signerNik ?: null,
                             'name' => trim($p['nama'] ?? $p['nip']),
-                            'unit_name' => $this->name,
-                            'jabatan' => $title,
+                            'unit_name' => $defUnit,
+                            'jabatan' => $defJabatan,
                             'pangkat' => $pangkat ?: null,
                             'password' => null,
                         ]);
                     } else {
-                        $signerUser->update([
+                        $updateData = [
                             'name' => trim($p['nama'] ?? $signerUser->name),
                             'nik' => $signerNik ?: $signerUser->nik,
-                            'unit_name' => $this->name,
-                            'jabatan' => $title,
                             'pangkat' => $pangkat ?: $signerUser->pangkat,
-                        ]);
+                        ];
+
+                        $existingIsPlt = str_starts_with(strtolower(trim((string)$signerUser->jabatan)), 'plt');
+                        if (!$isPltJob || $existingIsPlt || empty($signerUser->jabatan)) {
+                            $updateData['jabatan'] = $title;
+                            $updateData['unit_name'] = $this->name;
+                        }
+
+                        $signerUser->update($updateData);
                     }
                     if (!$signerUser->hasRole('admin')) {
                         $signerUser->assignRole('pimpinan');

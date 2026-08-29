@@ -4,6 +4,17 @@ Semua perubahan penting pada proyek ini dicatat dalam berkas ini.
 
 Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/1.0.0/), dan proyek ini mematuhi [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.4] - 2026-08-29
+
+### Ditambahkan
+- **Tampilan Multi-Jabatan Terintegrasi pada Halaman Profil Pengguna**:
+  - Menambahkan method `getAllPositions()` pada model [`User.php`](file:///Users/abedzul/Desktop/htdocs/rapat/app/Models/User.php) untuk mengumpulkan seluruh peran jabatan dan OPD (Definitif & Plt lintas instansi) secara dinamis.
+  - Memperbarui halaman profil ([`resources/views/profile.blade.php`](file:///Users/abedzul/Desktop/htdocs/rapat/resources/views/profile.blade.php)) untuk menampilkan kartu daftar penugasan multi-peran dengan badge visual status (*Definitif* / *Plt*).
+
+### Diubah
+- **Proteksi Prioritas Jabatan Definitif pada Sinkronisasi Master OPD**:
+  - Memperbarui logika `syncSignersFromApi` pada [`app/Models/Opd.php`](file:///Users/abedzul/Desktop/htdocs/rapat/app/Models/Opd.php) agar tombol **Sinkron OPD** selalu mempertahankan jabatan definitif akun pengguna di tabel `users` dan tidak tertimpa oleh jabatan Plt sementara, sembari tetap mencatat pejabat Plt sebagai pimpinan sah pada tabel `opds` dan `opd_signers`.
+
 ## [1.5.3] - 2026-08-29
 
 ### Ditambahkan
