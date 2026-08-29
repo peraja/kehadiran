@@ -4,6 +4,16 @@ Semua perubahan penting pada proyek ini dicatat dalam berkas ini.
 
 Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/1.0.0/), dan proyek ini mematuhi [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.24] - 2026-08-30
+
+### Diperbaiki
+- **Konsistensi Teks Tombol UI**:
+  - Menyeragamkan teks tombol sinkronisasi OPD menjadi `Sinkron OPD` di halaman Master OPD (`opd/index.blade.php`) dan Pengaturan OPD (`opd/settings.blade.php`); saat *loading* hanya ikon yang berganti (ikon sync → spinner), teks tidak berubah.
+  - Menyeragamkan teks tombol cek NIP menjadi `Cek NIP` secara konsisten di seluruh form: kelola user (`users/index.blade.php`) dan modal penandatangan (`opd/settings.blade.php`).
+
+### Ditambahkan
+- **Normalisasi Jabatan pada Form User**: Mengintegrasikan `Opd::normalizePosition()` ke fungsi `checkNipFromApi()` di halaman kelola user agar jabatan dan unit kerja pegawai langsung dinormalisasi saat data ditarik dari SIMPEG.
+
 ## [1.5.23] - 2026-08-30
 
 ### Diperbaiki

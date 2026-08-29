@@ -205,7 +205,9 @@ new #[Layout('layouts.app')] class extends Component {
 
             if ($pegawaiResponse->successful() && is_array($pData) && !empty($pData['nama'] ?? $pData['nama_pegawai'] ?? null)) {
                 $this->signer_name = $pData['nama_pegawai'] ?? $pData['nama'] ?? $this->signer_name;
-                $this->signer_title = $pData['jabatan_nama'] ?? $pData['jabatan'] ?? $this->signer_title;
+                $rawTitle = $pData['jabatan_nama'] ?? $pData['jabatan'] ?? $this->signer_title;
+                $normTitle = Opd::normalizePosition($this->opd->name ?? '', '', $rawTitle);
+                $this->signer_title = $normTitle['jabatan'] ?: $rawTitle;
                 $this->signer_rank = $pData['pangkat_nama'] ?? $this->signer_rank;
 
                 $nik = trim((string)($pData['nik'] ?? ($pData['no_ktp'] ?? ($pData['ktp'] ?? ($pData['no_identitas'] ?? '')))));
@@ -351,7 +353,7 @@ new #[Layout('layouts.app')] class extends Component {
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
             </svg>
-            <span>Sinkron SIMPEG</span>
+            <span>Sinkron OPD</span>
         </x-primary-button>
     </div>
 
@@ -703,7 +705,7 @@ new #[Layout('layouts.app')] class extends Component {
                                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
                                 </svg>
-                                <span>Cek</span>
+                                <span>Cek NIP</span>
                             </button>
                         </div>
                         @error('signer_nip') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror

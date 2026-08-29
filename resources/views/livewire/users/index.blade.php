@@ -1,6 +1,7 @@
 <?php
 
 use Livewire\Volt\Component;
+use App\Models\Opd;
 use App\Models\User;
 use Spatie\Permission\Models\Role;
 use Livewire\WithPagination;
@@ -117,7 +118,7 @@ new #[Layout('layouts.app')] class extends Component {
 
             if ($pegawaiResponse->successful() && is_array($pData) && !empty($pData['nama'] ?? $pData['nama_pegawai'] ?? null)) {
                 $this->name = $pData['nama_pegawai'] ?? $pData['nama'] ?? $this->name;
-                $this->jabatan = $pData['jabatan_nama'] ?? $pData['jabatan'] ?? $this->jabatan;
+                $rawJabatan = $pData['jabatan_nama'] ?? $pData['jabatan'] ?? $this->jabatan;
                 $this->pangkat = $pData['pangkat_nama'] ?? $this->pangkat;
 
                 $nik = trim((string)($pData['nik'] ?? ($pData['no_ktp'] ?? ($pData['ktp'] ?? ($pData['no_identitas'] ?? '')))));
@@ -126,17 +127,22 @@ new #[Layout('layouts.app')] class extends Component {
                 }
 
                 $unit_id = $pData['unit_id'] ?? $pData['id_unit'] ?? null;
+                $rawUnit = $this->unit_name;
                 if ($unit_id) {
                     $unitResponse = Http::timeout(5)->get("{$baseUrl}/get_unit/", [
                         'unit_id' => $unit_id
                     ]);
                     $unitData = $unitResponse->json();
                     $uData = isset($unitData['data']) ? $unitData['data'] : (isset($unitData[0]) ? $unitData[0] : $unitData);
-                    $this->unit_name = $uData['unit_nama'] ?? $uData['nama_unit'] ?? $uData['unit_kerja'] ?? $this->unit_name;
+                    $rawUnit = $uData['unit_nama'] ?? $uData['nama_unit'] ?? $uData['unit_kerja'] ?? $this->unit_name;
                 }
 
+                $norm = Opd::normalizePosition($rawUnit, '', $rawJabatan);
+                $this->jabatan = $norm['jabatan'] ?: $rawJabatan;
+                $this->unit_name = $norm['unit'] ?: $rawUnit;
+
                 $this->apiSynced = true;
-                $this->apiStatusMessage = 'Data pegawai berhasil disinkronkan dari API Kepegawaian Sinjai.';
+                $this->apiStatusMessage = 'Data pegawai berhasil disinkronkan dari SIMPEG Sinjai.';
             } else {
                 $this->addError('nip', 'NIP tidak ditemukan dalam database API Kepegawaian Sinjai.');
             }
@@ -565,7 +571,7 @@ new #[Layout('layouts.app')] class extends Component {
                                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
                                 </svg>
-                                <span>Cek</span>
+                                <span>Cek NIP</span>
                             </button>
                         </div>
                         @error('nip') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
@@ -593,7 +599,7 @@ new #[Layout('layouts.app')] class extends Component {
                                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
                             </svg>
-                            <span>Cek</span>
+                            <span>Cek NIP</span>
                         </button>
                     </div>
                     @error('nip') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
