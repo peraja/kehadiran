@@ -1352,9 +1352,9 @@ new #[Layout('layouts.guest')] class extends Component {
                     const sig = this.updateSignatureData();
                     if (!sig || !this.hasDrawn) {
                         this.signatureError = 'Tanda Tangan wajib diisi.';
-                        return;
+                    } else {
+                        this.signatureError = '';
                     }
-                    this.signatureError = '';
                     this.$wire.confirmCheckIn(sig, this.tab);
                 }
             }));

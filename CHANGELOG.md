@@ -4,6 +4,11 @@ Semua perubahan penting pada proyek ini dicatat dalam berkas ini.
 
 Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/1.0.0/), dan proyek ini mematuhi [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.15] - 2026-08-29
+
+### Diperbaiki
+- **Halaman Presensi (Eksternal)**: Memperbaiki masalah validasi form presensi eksternal yang sebelumnya hanya menampilkan pesan galat untuk *field* Tanda Tangan ketika disubmit dalam keadaan kosong. Kini, pengecekan validasi akan diteruskan ke *server-side* secara utuh sehingga pesan peringatan untuk kolom "Nama Lengkap" dan "Instansi" yang belum diisi juga akan muncul bersamaan secara tepat.
+
 ## [1.5.14] - 2026-08-29
 
 ### Diperbaiki
