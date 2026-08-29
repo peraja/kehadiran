@@ -600,23 +600,23 @@ new #[Layout('layouts.app')] class extends Component {
                             <label class="block text-sm font-bold text-slate-700 mb-1">Waktu Mulai</label>
                             <div class="flex items-center gap-1.5">
                                 <div class="flex-1 md:flex-none">
-                                    <select wire:model="start_hour" class="w-full md:w-16 text-base sm:text-sm py-2.5 px-2 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors cursor-pointer">
+                                    <x-select wire:model="start_hour" class="w-full md:w-16 text-base sm:text-sm py-2.5 px-2 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors cursor-pointer">
                                         @for($h = 8; $h <= 16; $h++)
                                             @php $hStr = sprintf('%02d', $h); @endphp
                                             <option value="{{ $hStr }}">{{ $hStr }}</option>
                                         @endfor
-                                    </select>
+                                    </x-select>
                                 </div>
                                 <span class="text-slate-400 font-bold text-sm">:</span>
                                 <div class="flex-1 md:flex-none">
-                                    <select wire:model="start_minute" class="w-full md:w-16 text-base sm:text-sm py-2.5 px-2 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors cursor-pointer">
+                                    <x-select wire:model="start_minute" class="w-full md:w-16 text-base sm:text-sm py-2.5 px-2 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors cursor-pointer">
                                         @foreach(['00', '15', '30', '45'] as $mOption)
                                             <option value="{{ $mOption }}">{{ $mOption }}</option>
                                         @endforeach
                                         @if(!in_array($start_minute, ['00', '15', '30', '45']) && $start_minute !== '')
                                             <option value="{{ $start_minute }}">{{ $start_minute }}</option>
                                         @endif
-                                    </select>
+                                    </x-select>
                                 </div>
                             </div>
                             @error('start_time') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
@@ -627,23 +627,23 @@ new #[Layout('layouts.app')] class extends Component {
                             <label class="block text-sm font-bold text-slate-700 mb-1">Waktu Selesai</label>
                             <div class="flex items-center gap-1.5">
                                 <div class="flex-1 md:flex-none">
-                                    <select wire:model="end_hour" class="w-full md:w-16 text-base sm:text-sm py-2.5 px-2 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors cursor-pointer">
+                                    <x-select wire:model="end_hour" class="w-full md:w-16 text-base sm:text-sm py-2.5 px-2 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors cursor-pointer">
                                         @for($h = 8; $h <= 16; $h++)
                                             @php $hStr = sprintf('%02d', $h); @endphp
                                             <option value="{{ $hStr }}">{{ $hStr }}</option>
                                         @endfor
-                                    </select>
+                                    </x-select>
                                 </div>
                                 <span class="text-slate-400 font-bold text-sm">:</span>
                                 <div class="flex-1 md:flex-none">
-                                    <select wire:model="end_minute" class="w-full md:w-16 text-base sm:text-sm py-2.5 px-2 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors cursor-pointer">
+                                    <x-select wire:model="end_minute" class="w-full md:w-16 text-base sm:text-sm py-2.5 px-2 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-sm transition-colors cursor-pointer">
                                         @foreach(['00', '15', '30', '45'] as $mOption)
                                             <option value="{{ $mOption }}">{{ $mOption }}</option>
                                         @endforeach
                                         @if(!in_array($end_minute, ['00', '15', '30', '45']) && $end_minute !== '')
                                             <option value="{{ $end_minute }}">{{ $end_minute }}</option>
                                         @endif
-                                    </select>
+                                    </x-select>
                                 </div>
                             </div>
                             @error('end_time') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
@@ -662,12 +662,12 @@ new #[Layout('layouts.app')] class extends Component {
                 <!-- OPD Selection (Admin Only) -->
                 <div>
                     <label for="selected_opd_id" class="block text-sm font-bold text-slate-700 mb-1">OPD</label>
-                    <select wire:model.live="selected_opd_id" id="selected_opd_id" >
+                    <x-select wire:model.live="selected_opd_id" id="selected_opd_id" >
                         <option value="">Pilih OPD</option>
                         @foreach($allOpds as $o)
                         <option value="{{ $o->id }}">{{ $o->name }}</option>
                         @endforeach
-                    </select>
+                    </x-select>
                     @error('selected_opd_id') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                 </div>
                 @endif
@@ -677,7 +677,7 @@ new #[Layout('layouts.app')] class extends Component {
                     <label for="selected_signer_id" class="block text-sm font-bold text-slate-700 mb-1">
                         Penandatangan Dokumen
                     </label>
-                    <select wire:model="selected_signer_id" id="selected_signer_id" >
+                    <x-select wire:model="selected_signer_id" id="selected_signer_id" >
                         @php
                             $leaderTitle = $opd?->leader_title ?: ($opd ? 'Kepala ' . $opd->name : 'Kepala OPD');
                         @endphp
@@ -685,7 +685,7 @@ new #[Layout('layouts.app')] class extends Component {
                         @foreach($opdSigners as $s)
                         <option value="{{ $s->id }}">{{ $s->title }} — {{ $s->name }}</option>
                         @endforeach
-                    </select>
+                    </x-select>
                     @error('selected_signer_id') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                 </div>
 

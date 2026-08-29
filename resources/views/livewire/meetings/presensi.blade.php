@@ -264,12 +264,12 @@ new #[Layout('layouts.app')] class extends Component {
             <!-- Per Page Selector -->
             <div class="flex items-center gap-2 self-end sm:self-auto text-xs text-slate-500 font-semibold">
                 <span>Tampilkan:</span>
-                <select wire:model.live="perPage" class="py-1.5 pl-3 pr-8 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:border-primary-500 focus:ring-primary-500 shadow-xs cursor-pointer">
+                <x-select wire:model.live="perPage" class="py-1.5 pl-3 pr-8 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:border-primary-500 focus:ring-primary-500 shadow-xs cursor-pointer">
                     <option value="10">10</option>
                     <option value="25">25</option>
                     <option value="50">50</option>
                     <option value="100">100</option>
-                </select>
+                </x-select>
             </div>
         </div>
         @endif
@@ -460,9 +460,9 @@ new #[Layout('layouts.app')] class extends Component {
                 </div>
 
                 <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
-                    <button type="button" x-on:click="$dispatch('close')" wire:click="closeSignModal" >
+                    <x-secondary-button x-on:click="$dispatch('close')" wire:click="closeSignModal" >
                         Batal
-                    </button>
+                    </x-secondary-button>
                     <button type="submit" wire:loading.attr="disabled" wire:target="executeSign" class="inline-flex items-center justify-center px-5 py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white text-sm font-bold rounded-xl shadow-sm transition-all gap-2">
                         <svg wire:loading.remove wire:target="executeSign" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />

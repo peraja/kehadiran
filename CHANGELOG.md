@@ -4,6 +4,14 @@ Semua perubahan penting pada proyek ini dicatat dalam berkas ini.
 
 Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/1.0.0/), dan proyek ini mematuhi [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.11] - 2026-08-29
+
+### Diperbaiki
+- **Komponen Dropdown & Tombol Modal**: 
+  - Membuat komponen `<x-select>` untuk memperbaiki elemen *dropdown* `<select>` yang kehilangan gaya (*styling*) pasca-refaktor.
+  - Memperbaiki tombol "Batal" dan "Tutup" pada modal agar menggunakan gaya `<x-secondary-button>`.
+  - Mengembalikan tombol ikon "X" (tutup modal) ke elemen tombol biasa untuk mencegah tampilan yang rusak.
+
 ## [1.5.10] - 2026-08-29
 
 ### Diperbaiki

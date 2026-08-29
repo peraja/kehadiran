@@ -166,13 +166,13 @@ new #[Layout('layouts.app')] class extends Component {
                 @if($isAdmin)
                 <!-- OPD Dropdown -->
                 <div class="relative sm:col-span-1 {{ $opdCol }} w-full">
-                    <select wire:model.live="selected_opd_id"
+                    <x-select wire:model.live="selected_opd_id"
                         class="w-full h-10 rounded-xl border border-slate-200 bg-white pl-3 pr-8 py-2 text-base sm:text-sm font-semibold text-slate-700 focus:border-primary-500 focus:ring-primary-500 shadow-2xs transition-colors cursor-pointer appearance-none truncate">
                         <option value="">Semua OPD</option>
                         @foreach($allOpds as $opd)
                         <option value="{{ $opd->id }}">{{ $opd->name }}</option>
                         @endforeach
-                    </select>
+                    </x-select>
                     <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2.5 text-slate-400">
                         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />

@@ -473,9 +473,9 @@ new #[Layout('layouts.app')] class extends Component {
                 </div>
 
                 <div class="flex flex-col-reverse sm:flex-row items-center justify-end gap-3 pt-3 border-t border-slate-100">
-                    <button type="button" x-on:click="$dispatch('close')" wire:click="closeSignModal" class="w-full sm:w-auto">
+                    <x-secondary-button x-on:click="$dispatch('close')" wire:click="closeSignModal" class="w-full sm:w-auto">
                         Batal
-                    </button>
+                    </x-secondary-button>
                     <button type="submit" wire:loading.attr="disabled" wire:target="executeSign" class="w-full sm:w-auto inline-flex items-center justify-center px-5 py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white text-sm font-bold rounded-xl shadow-sm transition-all gap-2">
                         <svg wire:loading.remove wire:target="executeSign" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />

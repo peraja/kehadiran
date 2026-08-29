@@ -690,7 +690,7 @@ new class extends Component {
                             <label class="block text-sm font-bold text-slate-700 mb-1">Waktu Mulai</label>
                             <div class="flex items-center gap-1.5">
                                 <div class="flex-1 md:flex-none">
-                                    <select wire:model="start_hour" class="w-full md:w-16 text-base sm:text-sm py-2.5 px-2 border border-slate-300 rounded-xl text-slate-900 shadow-sm transition-colors cursor-pointer {{ $lockedClass }}" {{ $locked ? 'disabled' : '' }}>
+                                    <x-select wire:model="start_hour" class="w-full md:w-16 text-base sm:text-sm py-2.5 px-2 border border-slate-300 rounded-xl text-slate-900 shadow-sm transition-colors cursor-pointer {{ $lockedClass }}" {{ $locked ? 'disabled' : '' }}>
                                         @for($h = 8; $h <= 16; $h++)
                                             @php $hStr = sprintf('%02d', $h); @endphp
                                             <option value="{{ $hStr }}">{{ $hStr }}</option>
@@ -698,18 +698,18 @@ new class extends Component {
                                         @if(!in_array((int)$start_hour, range(8, 16)) && $start_hour !== '')
                                             <option value="{{ $start_hour }}">{{ $start_hour }}</option>
                                         @endif
-                                    </select>
+                                    </x-select>
                                 </div>
                                 <span class="text-slate-400 font-bold text-sm">:</span>
                                 <div class="flex-1 md:flex-none">
-                                    <select wire:model="start_minute" class="w-full md:w-16 text-base sm:text-sm py-2.5 px-2 border border-slate-300 rounded-xl text-slate-900 shadow-sm transition-colors cursor-pointer {{ $lockedClass }}" {{ $locked ? 'disabled' : '' }}>
+                                    <x-select wire:model="start_minute" class="w-full md:w-16 text-base sm:text-sm py-2.5 px-2 border border-slate-300 rounded-xl text-slate-900 shadow-sm transition-colors cursor-pointer {{ $lockedClass }}" {{ $locked ? 'disabled' : '' }}>
                                         @foreach(['00', '15', '30', '45'] as $mOption)
                                             <option value="{{ $mOption }}">{{ $mOption }}</option>
                                         @endforeach
                                         @if(!in_array($start_minute, ['00', '15', '30', '45']) && $start_minute !== '')
                                             <option value="{{ $start_minute }}">{{ $start_minute }}</option>
                                         @endif
-                                    </select>
+                                    </x-select>
                                 </div>
                             </div>
                             @error('start_time') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
@@ -720,7 +720,7 @@ new class extends Component {
                             <label class="block text-sm font-bold text-slate-700 mb-1">Waktu Selesai</label>
                             <div class="flex items-center gap-1.5">
                                 <div class="flex-1 md:flex-none">
-                                    <select wire:model="end_hour" class="w-full md:w-16 text-base sm:text-sm py-2.5 px-2 border border-slate-300 rounded-xl text-slate-900 shadow-sm transition-colors cursor-pointer {{ $lockedClass }}" {{ $locked ? 'disabled' : '' }}>
+                                    <x-select wire:model="end_hour" class="w-full md:w-16 text-base sm:text-sm py-2.5 px-2 border border-slate-300 rounded-xl text-slate-900 shadow-sm transition-colors cursor-pointer {{ $lockedClass }}" {{ $locked ? 'disabled' : '' }}>
                                         @for($h = 8; $h <= 16; $h++)
                                             @php $hStr = sprintf('%02d', $h); @endphp
                                             <option value="{{ $hStr }}">{{ $hStr }}</option>
@@ -728,18 +728,18 @@ new class extends Component {
                                         @if(!in_array((int)$end_hour, range(8, 16)) && $end_hour !== '')
                                             <option value="{{ $end_hour }}">{{ $end_hour }}</option>
                                         @endif
-                                    </select>
+                                    </x-select>
                                 </div>
                                 <span class="text-slate-400 font-bold text-sm">:</span>
                                 <div class="flex-1 md:flex-none">
-                                    <select wire:model="end_minute" class="w-full md:w-16 text-base sm:text-sm py-2.5 px-2 border border-slate-300 rounded-xl text-slate-900 shadow-sm transition-colors cursor-pointer {{ $lockedClass }}" {{ $locked ? 'disabled' : '' }}>
+                                    <x-select wire:model="end_minute" class="w-full md:w-16 text-base sm:text-sm py-2.5 px-2 border border-slate-300 rounded-xl text-slate-900 shadow-sm transition-colors cursor-pointer {{ $lockedClass }}" {{ $locked ? 'disabled' : '' }}>
                                         @foreach(['00', '15', '30', '45'] as $mOption)
                                             <option value="{{ $mOption }}">{{ $mOption }}</option>
                                         @endforeach
                                         @if(!in_array($end_minute, ['00', '15', '30', '45']) && $end_minute !== '')
                                             <option value="{{ $end_minute }}">{{ $end_minute }}</option>
                                         @endif
-                                    </select>
+                                    </x-select>
                                 </div>
                             </div>
                             @error('end_time') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
@@ -756,19 +756,19 @@ new class extends Component {
                 @if($isAdmin)
                 <div>
                     <label for="edit_selected_opd_id" class="block text-sm font-bold text-slate-700 mb-1">OPD</label>
-                    <select wire:model.live="selected_opd_id" id="edit_selected_opd_id" class="w-full text-base sm:text-sm py-2.5 px-3 border border-slate-300 rounded-xl text-slate-900 shadow-sm transition-colors {{ $lockedClass }}" {{ $locked ? 'disabled' : 'required' }}>
+                    <x-select wire:model.live="selected_opd_id" id="edit_selected_opd_id" class="w-full text-base sm:text-sm py-2.5 px-3 border border-slate-300 rounded-xl text-slate-900 shadow-sm transition-colors {{ $lockedClass }}" {{ $locked ? 'disabled' : 'required' }}>
                         <option value="">-- Pilih OPD --</option>
                         @foreach($allOpds as $opdItem)
                         <option value="{{ $opdItem->id }}">{{ $opdItem->name }}</option>
                         @endforeach
-                    </select>
+                    </x-select>
                 </div>
                 @endif
 
                 <!-- Penandatangan Dokumen -->
                 <div>
                     <label for="edit_selected_signer_id" class="block text-sm font-bold text-slate-700 mb-1">Penandatangan Dokumen</label>
-                    <select wire:model.live="selected_signer_id" id="edit_selected_signer_id"
+                    <x-select wire:model.live="selected_signer_id" id="edit_selected_signer_id"
                         class="w-full text-base sm:text-sm py-2.5 px-3 border border-slate-300 rounded-xl text-slate-900 shadow-sm transition-colors {{ $lockedClass }}"
                         {{ ($isAdmin && empty($selected_opd_id)) || $locked ? 'disabled' : '' }}>
                         @php
@@ -778,13 +778,13 @@ new class extends Component {
                         @foreach($opdSigners as $s)
                         <option value="{{ $s->id }}">{{ $s->title }} — {{ $s->name }}</option>
                         @endforeach
-                    </select>
+                    </x-select>
                 </div>
 
                 <div class="mt-8 pt-6 border-t border-slate-100 flex flex-col-reverse sm:flex-row justify-end gap-3">
-                    <button type="button" x-on:click="$dispatch('close')" class="w-full sm:w-auto">
+                    <x-secondary-button x-on:click="$dispatch('close')" class="w-full sm:w-auto">
                         {{ $locked ? 'Tutup' : 'Batal' }}
-                    </button>
+                    </x-secondary-button>
 
                     @if(!$locked)
                     <button type="submit" wire:loading.attr="disabled" wire:target="updateMeeting" class="w-full sm:w-auto inline-flex items-center justify-center px-5 py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl font-bold text-sm transition-all shadow-sm gap-2">
@@ -967,9 +967,9 @@ new class extends Component {
                 </div>
 
                 <div class="flex flex-col-reverse sm:flex-row items-center justify-end gap-3 pt-3 border-t border-slate-100">
-                    <button type="button" x-on:click="$dispatch('close')" wire:click="closeSignModal" class="w-full sm:w-auto">
+                    <x-secondary-button x-on:click="$dispatch('close')" wire:click="closeSignModal" class="w-full sm:w-auto">
                         Batal
-                    </button>
+                    </x-secondary-button>
                     <button type="submit" wire:loading.attr="disabled" wire:target="executeSign" class="w-full sm:w-auto inline-flex items-center justify-center px-5 py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white text-sm font-bold rounded-xl shadow-sm transition-all gap-2">
                         <svg wire:loading.remove wire:target="executeSign" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />

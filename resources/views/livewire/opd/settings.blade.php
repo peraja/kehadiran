@@ -741,7 +741,7 @@ new #[Layout('layouts.app')] class extends Component {
                     <!-- Eselon -->
                     <div>
                         <label for="signer_eselon" class="block text-sm font-bold text-slate-700 mb-1">Eselon</label>
-                        <select wire:model="signer_eselon" id="signer_eselon" >
+                        <x-select wire:model="signer_eselon" id="signer_eselon" >
                             <option value="II.a">Eselon II.a</option>
                             <option value="II.b">Eselon II.b</option>
                             <option value="III.a">Eselon III.a</option>
@@ -749,7 +749,7 @@ new #[Layout('layouts.app')] class extends Component {
                             <option value="IV.a">Eselon IV.a</option>
                             <option value="IV.b">Eselon IV.b</option>
                             <option value="Non-Eselon">Non-Eselon</option>
-                        </select>
+                        </x-select>
                         @error('signer_eselon') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                     </div>
 
