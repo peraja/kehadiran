@@ -4,6 +4,12 @@ Semua perubahan penting pada proyek ini dicatat dalam berkas ini.
 
 Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/1.0.0/), dan proyek ini mematuhi [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.17] - 2026-08-29
+
+### Diubah
+- **Halaman Presensi (Check In)**: Menyeragamkan tampilan visual dan mempersingkat teks status ketersediaan presensi ("Presensi Telah Ditutup", "Presensi Belum Dibuka") menjadi lebih ringkas dan *to-the-point*, selaras dengan hierarki desain layar presensi berhasil.
+- **Dokumentasi**: Memperbarui berkas README.md agar lebih ringkas, padat, dan mencakup seluruh fitur terbaru serta menyesuaikan konfigurasi path *cron job* untuk lingkungan server produksi (`/home/rapat/rapat`).
+
 ## [1.5.16] - 2026-08-29
 
 ### Diubah

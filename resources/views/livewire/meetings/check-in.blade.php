@@ -40,11 +40,11 @@ new #[Layout('layouts.guest')] class extends Component {
         if ($this->meeting->status !== 'ongoing') {
             $this->status = 'not_available';
             if ($this->meeting->status === 'scheduled') {
-                $this->message = 'Presensi belum dibuka, silakan tunggu hingga rapat dimulai.';
+                $this->message = 'Presensi Belum Dibuka';
             } elseif ($this->meeting->status === 'completed') {
-                $this->message = 'Presensi telah ditutup karena rapat telah selesai.';
+                $this->message = 'Presensi Telah Ditutup';
             } else {
-                $this->message = 'Presensi untuk rapat ini tidak tersedia.';
+                $this->message = 'Presensi Tidak Tersedia';
             }
         }
     }
@@ -802,7 +802,7 @@ new #[Layout('layouts.guest')] class extends Component {
 
             if ($this->meeting->status !== 'ongoing') {
                 $this->status = 'not_available';
-                $this->message = 'Presensi hanya dibuka saat rapat berlangsung.';
+                $this->message = $this->meeting->status === 'completed' ? 'Presensi Telah Ditutup' : 'Presensi Belum Dibuka';
                 return;
             }
 
@@ -1219,18 +1219,24 @@ new #[Layout('layouts.guest')] class extends Component {
     </div>
 
     @elseif($status === 'not_available')
-    <div class="text-center py-10 px-4">
-        <div class="w-20 h-20 bg-amber-50 text-amber-500 rounded-full flex items-center justify-center mx-auto border-2 border-amber-200 mb-6">
-            <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-            </svg>
+    <div class="text-center py-4 space-y-6">
+        <div>
+            <div class="w-16 h-16 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+            </div>
+            <h3 class="text-xl sm:text-2xl font-extrabold text-slate-900">{{ $message }}</h3>
         </div>
-        <h3 class="text-xl font-extrabold text-slate-900 mb-3">Presensi Tidak Tersedia</h3>
-        <p class="text-sm font-medium text-slate-600 max-w-sm mx-auto leading-relaxed mb-8">{{ $message }}</p>
 
-        <a href="{{ url('/') }}" class="inline-flex justify-center items-center px-6 py-3 bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-700 rounded-xl font-bold text-xs uppercase tracking-wider transition-all shadow-sm">
-            &larr; Kembali ke Beranda
-        </a>
+        <div>
+            <a href="{{ url('/') }}" class="inline-flex justify-center items-center px-5 py-2.5 bg-white border border-slate-300 hover:bg-slate-50 active:scale-95 text-slate-700 rounded-xl font-bold text-sm transition-all shadow-xs w-full gap-2">
+                <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                Kembali ke Beranda
+            </a>
+        </div>
     </div>
     @endif
 
