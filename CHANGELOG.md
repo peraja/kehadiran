@@ -4,6 +4,13 @@ Semua perubahan penting pada proyek ini dicatat dalam berkas ini.
 
 Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/1.0.0/), dan proyek ini mematuhi [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.6] - 2026-08-29
+
+### Diubah
+- **Optimasi Akselerasi Dialog Modal pada Menu Pengguna & Master OPD**:
+  - Menerapkan pembukaan instan sisi klien (*pure client-side dispatch*) pada tombol *Tambah Pengguna* ([`resources/views/livewire/users/index.blade.php`](file:///Users/abedzul/Desktop/htdocs/rapat/resources/views/livewire/users/index.blade.php)).
+  - Menambahkan *loading state* (animasi *spinner*) pada tombol *Edit Pengguna* dan *Edit OPD* ([`resources/views/livewire/opd/index.blade.php`](file:///Users/abedzul/Desktop/htdocs/rapat/resources/views/livewire/opd/index.blade.php)) untuk umpan balik visual instan saat memuat data.
+
 ## [1.5.5] - 2026-08-29
 
 ### Diubah

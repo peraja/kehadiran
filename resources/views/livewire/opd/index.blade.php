@@ -446,9 +446,13 @@ new #[Layout('layouts.app')] class extends Component {
                         <!-- Actions -->
                         <td class="py-4 px-6 text-right whitespace-nowrap">
                             <div class="flex items-center justify-end gap-1">
-                                <button wire:click="editOpd({{ $opd->id }})" class="p-2 text-slate-400 hover:text-primary-600 hover:bg-primary-50 rounded-xl active:scale-95 transition-all" title="Edit OPD">
-                                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <button wire:click="editOpd({{ $opd->id }})" wire:loading.attr="disabled" class="p-2 text-slate-400 hover:text-primary-600 hover:bg-primary-50 rounded-xl active:scale-95 transition-all cursor-pointer" title="Edit OPD">
+                                    <svg wire:loading.remove wire:target="editOpd({{ $opd->id }})" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                    </svg>
+                                    <svg wire:loading wire:target="editOpd({{ $opd->id }})" class="animate-spin w-5 h-5 text-primary-600" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
                                     </svg>
                                 </button>
 

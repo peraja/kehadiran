@@ -276,7 +276,7 @@ new #[Layout('layouts.app')] class extends Component {
             </p>
         </div>
 
-        <button wire:click="openAddModal" class="relative z-10 inline-flex justify-center items-center px-5 py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl font-bold text-sm transition-all shadow-sm gap-2 w-full sm:w-auto">
+        <button x-data="" x-on:click.prevent="$dispatch('open-modal', 'user-form-modal'); $wire.openAddModal()" class="relative z-10 inline-flex justify-center items-center px-5 py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl font-bold text-sm transition-all shadow-sm gap-2 w-full sm:w-auto cursor-pointer">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
             </svg>
@@ -427,9 +427,13 @@ new #[Layout('layouts.app')] class extends Component {
                         <!-- Aksi -->
                         <td class="py-4 px-6 text-right whitespace-nowrap">
                             <div class="flex items-center justify-end gap-2">
-                                <button wire:click="openEditModal({{ $u->id }})" class="p-2 text-slate-400 hover:text-primary-700 hover:bg-primary-50 rounded-xl active:scale-95 transition-all" title="Edit Pengguna">
-                                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <button wire:click="openEditModal({{ $u->id }})" wire:loading.attr="disabled" class="p-2 text-slate-400 hover:text-primary-700 hover:bg-primary-50 rounded-xl active:scale-95 transition-all cursor-pointer" title="Edit Pengguna">
+                                    <svg wire:loading.remove wire:target="openEditModal({{ $u->id }})" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
+                                    </svg>
+                                    <svg wire:loading wire:target="openEditModal({{ $u->id }})" class="animate-spin w-5 h-5 text-primary-600" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
                                     </svg>
                                 </button>
                                 @if($u->id !== auth()->id())
