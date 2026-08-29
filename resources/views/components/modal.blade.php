@@ -60,16 +60,16 @@ $maxWidth = [
             class="fixed inset-0 z-[150] overflow-hidden overscroll-contain"
             style="display: {{ $show ? 'block' : 'none' }};"
         >
-            <!-- Modal Backdrop -->
+            <!-- Modal Backdrop (Lightweight, GPU-friendly overlay) -->
             <div
                 x-show="show"
-                class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity overscroll-contain"
+                class="fixed inset-0 bg-slate-900/50 transition-opacity overscroll-contain"
                 @if($dismissible) x-on:click="show = false" @endif
                 x-on:touchmove.prevent
-                x-transition:enter="ease-out duration-300"
+                x-transition:enter="ease-out duration-150"
                 x-transition:enter-start="opacity-0"
                 x-transition:enter-end="opacity-100"
-                x-transition:leave="ease-in duration-200"
+                x-transition:leave="ease-in duration-100"
                 x-transition:leave-start="opacity-100"
                 x-transition:leave-end="opacity-0"
             ></div>
@@ -80,12 +80,12 @@ $maxWidth = [
                 <div
                     x-show="show"
                     class="relative w-full {{ $maxWidth }} max-h-[calc(100dvh-2rem)] sm:max-h-[calc(100dvh-3.5rem)] transform overflow-y-auto overflow-x-hidden overscroll-contain rounded-3xl bg-white text-left shadow-2xl border border-slate-200/80 transition-all pointer-events-auto"
-                    x-transition:enter="ease-out duration-300"
-                    x-transition:enter-start="opacity-0 scale-95 translate-y-2"
+                    x-transition:enter="ease-out duration-150"
+                    x-transition:enter-start="opacity-0 scale-95 translate-y-1"
                     x-transition:enter-end="opacity-100 scale-100 translate-y-0"
-                    x-transition:leave="ease-in duration-200"
+                    x-transition:leave="ease-in duration-100"
                     x-transition:leave-start="opacity-100 scale-100 translate-y-0"
-                    x-transition:leave-end="opacity-0 scale-95 translate-y-2"
+                    x-transition:leave-end="opacity-0 scale-95 translate-y-1"
                 >
                     {{ $slot }}
                 </div>

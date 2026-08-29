@@ -4,6 +4,14 @@ Semua perubahan penting pada proyek ini dicatat dalam berkas ini.
 
 Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/1.0.0/), dan proyek ini mematuhi [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.5] - 2026-08-29
+
+### Diubah
+- **Optimasi Performa dan Akselerasi Pembukaan Dialog Modal**:
+  - Mengubah mekanisme pembukaan modal dialog (*Buat Rapat*) pada [`resources/views/livewire/meetings/index.blade.php`](file:///Users/abedzul/Desktop/htdocs/rapat/resources/views/livewire/meetings/index.blade.php) menjadi 100% *client-side* (Alpine.js) tanpa menunggu *network roundtrip* ke server.
+  - Mengoptimalkan komponen dasar modal ([`resources/views/components/modal.blade.php`](file:///Users/abedzul/Desktop/htdocs/rapat/resources/views/components/modal.blade.php)) dengan mengganti filter berat `backdrop-blur` menjadi *overlay* GPU-friendly `bg-slate-900/50` dan mempercepat durasi transisi menjadi 150ms agar animasi modal berjalan instan dan mulus pada 60 FPS di seluruh perangkat.
+  - Mengompilasi ulang seluruh bundel aset CSS produksi Vite (`public/build/`).
+
 ## [1.5.4] - 2026-08-29
 
 ### Ditambahkan
