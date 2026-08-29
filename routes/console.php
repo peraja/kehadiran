@@ -12,7 +12,11 @@ Artisan::command('inspire', function () {
 Artisan::command('erapat:test-pppk {nip=197803292025212036}', function ($nip) {
     $this->info("=== Diagnosa Mendalam API PPPK Paruh Waktu: {$nip} ===");
 
-    $token = config('services.pppk_pw.token') ?: 'sJ9k2Lp5mN8qR1t4vW7xZ0y3bC6fH9hS';
+    $token = config('services.pppk_pw.token');
+    if (empty($token)) {
+        $this->error('Token PPPK PW belum dikonfigurasi. Set PPPK_PW_TOKEN di .env.');
+        return 1;
+    }
     $host = 'tte.sinjaikab.go.id';
     $resolvedIp = gethostbyname($host);
     $serverIp = gethostbyname(gethostname());

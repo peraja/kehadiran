@@ -158,136 +158,148 @@ class User extends Authenticatable
      */
     public function getAllPositions(): array
     {
-        $roles = [];
         $nip = trim((string)$this->nip);
 
-        // 1. Profil Lokal (Jabatan Utama/Definitif)
-        if ($this->jabatan && $this->unit_name) {
-            $isPlt = str_starts_with(strtolower(trim($this->jabatan)), 'plt');
-            $roles[] = [
-                'jabatan' => $this->jabatan,
-                'unit' => $this->unit_name,
-                'is_plt' => $isPlt,
-                'badge' => $isPlt ? 'Plt' : 'Definitif',
-            ];
-        }
+        return \Illuminate\Support\Facades\Cache::remember(
+            "user_positions_{$this->id}_{$nip}",
+            300, // 5 menit — cukup segar untuk profil, tidak terlalu berat
+            function () use ($nip) {
+                $roles = [];
 
-        // 2. Data SIMPEG jika tersimpan di cache
-        if (!empty($nip)) {
-            $allPnsMap = \Illuminate\Support\Facades\Cache::get('simpeg_all_pns_by_nip', []);
-            $pnsRecords = $allPnsMap[$nip] ?? [];
-            foreach ($pnsRecords as $r) {
-                $j = trim($r['jabatan_nama'] ?? '');
-                $u = trim($r['parent_unit'] ?? '');
-                $isPlt = ($r['jabatan_status_id'] ?? '1') != '1' || str_starts_with(strtolower($j), 'plt');
-
-                $clean = preg_replace('/^plt\.?\s*/i', '', $j);
-                if (preg_match('/^kepala\s+dinas\b/i', $clean)) { $clean = 'Kepala Dinas'; }
-                elseif (preg_match('/^sekretaris\s+dinas\b/i', $clean)) { $clean = 'Sekretaris Dinas'; }
-                elseif (preg_match('/^kepala\s+badan\b/i', $clean)) { $clean = 'Kepala Badan'; }
-                elseif (preg_match('/^sekretaris\s+badan\b/i', $clean)) { $clean = 'Sekretaris Badan'; }
-                elseif (preg_match('/^inspektur\s+daerah\b/i', $clean) || $clean === 'Inspektur') { $clean = 'Inspektur Daerah'; }
-                elseif (preg_match('/^sekretaris\s+dprd\b/i', $clean)) { $clean = 'Sekretaris DPRD'; }
-                elseif (preg_match('/^sekretaris\s+daerah\b/i', $clean)) { $clean = 'Sekretaris Daerah'; }
-
-                $formattedJabatan = ($isPlt ? 'Plt. ' : '') . trim($clean);
-
-                $exists = false;
-                foreach ($roles as $existing) {
-                    if ($existing['jabatan'] === $formattedJabatan && $existing['unit'] === $u) {
-                        $exists = true;
-                        break;
-                    }
-                }
-                if (!$exists && $formattedJabatan && $u) {
+                // 1. Profil Lokal (Jabatan Utama/Definitif)
+                if ($this->jabatan && $this->unit_name) {
+                    $isPlt = str_starts_with(strtolower(trim($this->jabatan)), 'plt');
                     $roles[] = [
-                        'jabatan' => $formattedJabatan,
-                        'unit' => $u,
-                        'is_plt' => $isPlt,
-                        'badge' => $isPlt ? 'Plt' : 'Definitif',
+                        'jabatan' => $this->jabatan,
+                        'unit'    => $this->unit_name,
+                        'is_plt'  => $isPlt,
+                        'badge'   => $isPlt ? 'Plt' : 'Definitif',
                     ];
                 }
-            }
 
-            // 3. Kepala OPD di tabel opds
-            $leadOpds = Opd::where('leader_nip', $nip)->get();
-            foreach ($leadOpds as $opd) {
-                $jTitle = $opd->leader_title ?: 'Kepala OPD';
-                $isPlt = str_starts_with(strtolower(trim($jTitle)), 'plt');
-                $exists = false;
+                // 2. Data SIMPEG jika tersimpan di cache lintas OPD
+                if (!empty($nip)) {
+                    $allPnsMap = \Illuminate\Support\Facades\Cache::get('simpeg_all_pns_by_nip', []);
+                    $pnsRecords = $allPnsMap[$nip] ?? [];
+                    foreach ($pnsRecords as $r) {
+                        $j = trim($r['jabatan_nama'] ?? '');
+                        $u = trim($r['parent_unit'] ?? '');
+                        $isPlt = ($r['jabatan_status_id'] ?? '1') != '1' || str_starts_with(strtolower($j), 'plt');
+
+                        $clean = preg_replace('/^plt\.?\s*/i', '', $j);
+                        if (preg_match('/^kepala\s+dinas\b/i', $clean))             { $clean = 'Kepala Dinas'; }
+                        elseif (preg_match('/^sekretaris\s+dinas\b/i', $clean))     { $clean = 'Sekretaris Dinas'; }
+                        elseif (preg_match('/^kepala\s+badan\b/i', $clean))         { $clean = 'Kepala Badan'; }
+                        elseif (preg_match('/^sekretaris\s+badan\b/i', $clean))     { $clean = 'Sekretaris Badan'; }
+                        elseif (preg_match('/^inspektur\s+daerah\b/i', $clean) || $clean === 'Inspektur') { $clean = 'Inspektur Daerah'; }
+                        elseif (preg_match('/^sekretaris\s+dprd\b/i', $clean))      { $clean = 'Sekretaris DPRD'; }
+                        elseif (preg_match('/^sekretaris\s+daerah\b/i', $clean))    { $clean = 'Sekretaris Daerah'; }
+
+                        $formattedJabatan = ($isPlt ? 'Plt. ' : '') . trim($clean);
+
+                        $exists = false;
+                        foreach ($roles as $existing) {
+                            if ($existing['jabatan'] === $formattedJabatan && $existing['unit'] === $u) {
+                                $exists = true;
+                                break;
+                            }
+                        }
+                        if (!$exists && $formattedJabatan && $u) {
+                            $roles[] = [
+                                'jabatan' => $formattedJabatan,
+                                'unit'    => $u,
+                                'is_plt'  => $isPlt,
+                                'badge'   => $isPlt ? 'Plt' : 'Definitif',
+                            ];
+                        }
+                    }
+
+                    // 3. Kepala OPD di tabel opds
+                    $leadOpds = Opd::where('leader_nip', $nip)->get();
+                    foreach ($leadOpds as $opd) {
+                        $jTitle = $opd->leader_title ?: 'Kepala OPD';
+                        $isPlt  = str_starts_with(strtolower(trim($jTitle)), 'plt');
+                        $exists = false;
+                        foreach ($roles as $r) {
+                            if ($r['jabatan'] === $jTitle && $r['unit'] === $opd->name) {
+                                $exists = true;
+                                break;
+                            }
+                        }
+                        if (!$exists) {
+                            $roles[] = [
+                                'jabatan' => $jTitle,
+                                'unit'    => $opd->name,
+                                'is_plt'  => $isPlt,
+                                'badge'   => $isPlt ? 'Plt' : 'Definitif',
+                            ];
+                        }
+                    }
+
+                    // 4. Pejabat Penandatangan di tabel opd_signers
+                    $signers = OpdSigner::where('nip', $nip)->with('opd')->get();
+                    foreach ($signers as $s) {
+                        $jTitle  = $s->title ?: 'Pejabat Penandatangan';
+                        $opdName = $s->opd ? $s->opd->name : 'OPD';
+                        $isPlt   = str_starts_with(strtolower(trim($jTitle)), 'plt');
+                        $exists  = false;
+                        foreach ($roles as $r) {
+                            if ($r['jabatan'] === $jTitle && $r['unit'] === $opdName) {
+                                $exists = true;
+                                break;
+                            }
+                        }
+                        if (!$exists) {
+                            $roles[] = [
+                                'jabatan' => $jTitle,
+                                'unit'    => $opdName,
+                                'is_plt'  => $isPlt,
+                                'badge'   => $isPlt ? 'Plt' : 'Definitif',
+                            ];
+                        }
+                    }
+                }
+
+                // Deduplikasi
+                $uniqueRoles = [];
                 foreach ($roles as $r) {
-                    if ($r['jabatan'] === $jTitle && $r['unit'] === $opd->name) {
-                        $exists = true;
-                        break;
+                    $key = strtolower(trim($r['jabatan'])) . '|' . strtolower(trim($r['unit']));
+                    if (!isset($uniqueRoles[$key])) {
+                        $uniqueRoles[$key] = $r;
                     }
                 }
-                if (!$exists) {
-                    $roles[] = [
-                        'jabatan' => $jTitle,
-                        'unit' => $opd->name,
-                        'is_plt' => $isPlt,
-                        'badge' => $isPlt ? 'Plt' : 'Definitif',
-                    ];
-                }
-            }
+                $roles = array_values($uniqueRoles);
 
-            // 4. Pejabat Penandatangan di tabel opd_signers
-            $signers = OpdSigner::where('nip', $nip)->with('opd')->get();
-            foreach ($signers as $s) {
-                $jTitle = $s->title ?: 'Pejabat Penandatangan';
-                $opdName = $s->opd ? $s->opd->name : 'OPD';
-                $isPlt = str_starts_with(strtolower(trim($jTitle)), 'plt');
-                $exists = false;
+                // Prioritaskan jabatan definitif, hilangkan duplikat nama jabatan
+                $jabatanSeen = [];
+                $finalRoles  = [];
                 foreach ($roles as $r) {
-                    if ($r['jabatan'] === $jTitle && $r['unit'] === $opdName) {
-                        $exists = true;
-                        break;
+                    $jKey = strtolower(trim($r['jabatan']));
+                    if (!$r['is_plt'] && isset($jabatanSeen[$jKey])) {
+                        continue;
                     }
+                    if (!$r['is_plt']) {
+                        $jabatanSeen[$jKey] = true;
+                    }
+                    $finalRoles[] = $r;
                 }
-                if (!$exists) {
-                    $roles[] = [
-                        'jabatan' => $jTitle,
-                        'unit' => $opdName,
-                        'is_plt' => $isPlt,
-                        'badge' => $isPlt ? 'Plt' : 'Definitif',
-                    ];
-                }
-            }
-        }
 
-        // Deduplikasi dan perapian
-        $uniqueRoles = [];
-        foreach ($roles as $r) {
-            $key = strtolower(trim($r['jabatan'])) . '|' . strtolower(trim($r['unit']));
-            if (!isset($uniqueRoles[$key])) {
-                $uniqueRoles[$key] = $r;
-            }
-        }
-        $roles = array_values($uniqueRoles);
+                // Definitif di atas, Plt di bawah
+                usort($finalRoles, fn($a, $b) => $a['is_plt'] <=> $b['is_plt']);
 
-        // Jika ada jabatan definitif yang sama dengan OPD berbeda karena sisa data lama, prioritaskan yang OPD aslinya
-        $jabatanSeen = [];
-        $finalRoles = [];
-        foreach ($roles as $r) {
-            $jKey = strtolower(trim($r['jabatan']));
-            if (!$r['is_plt'] && isset($jabatanSeen[$jKey])) {
-                continue;
+                return $finalRoles;
             }
-            if (!$r['is_plt']) {
-                $jabatanSeen[$jKey] = true;
-            }
-            $finalRoles[] = $r;
-        }
+        );
+    }
 
-        // Urutkan: Definitif di atas, Plt di bawah
-        usort($finalRoles, function ($a, $b) {
-            if ($a['is_plt'] === $b['is_plt']) {
-                return 0;
-            }
-            return $a['is_plt'] ? 1 : -1;
-        });
-
-        return $finalRoles;
+    /**
+     * Hapus cache posisi/jabatan pengguna ini secara eksplisit
+     * (dipanggil setelah update profil atau sinkronisasi OPD).
+     */
+    public function forgetPositionsCache(): void
+    {
+        $nip = trim((string)$this->nip);
+        \Illuminate\Support\Facades\Cache::forget("user_positions_{$this->id}_{$nip}");
     }
 }
 

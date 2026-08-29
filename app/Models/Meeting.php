@@ -13,7 +13,21 @@ class Meeting extends Model
 {
     use HasFactory;
 
-    protected $guarded = [];
+    protected $fillable = [
+        'opd_id',
+        'created_by',
+        'title',
+        'agenda',
+        'date',
+        'start_time',
+        'end_time',
+        'location',
+        'status',
+        'signer_title',
+        'signer_name',
+        'signer_nip',
+        'signer_rank',
+    ];
 
     protected $casts = [
         'date' => 'date',

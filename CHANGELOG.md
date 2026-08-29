@@ -4,7 +4,22 @@ Semua perubahan penting pada proyek ini dicatat dalam berkas ini.
 
 Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/1.0.0/), dan proyek ini mematuhi [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.8] - 2026-08-29
+
+### Diperbaiki
+- **Keamanan — Hapus Token Hardcoded di `routes/console.php`**:
+  - Menghapus nilai *fallback* token API PPPK PW yang ter-*hardcode* secara literal pada perintah Artisan diagnostik `erapat:test-pppk`. Perintah kini membaca konfigurasi dari `config('services.pppk_pw.token')` saja dan memberikan pesan error yang jelas apabila token belum dikonfigurasi melalui variabel lingkungan `PPPK_PW_TOKEN`.
+
+- **Keamanan — Mass Assignment Protection pada Model Meeting**:
+  - Mengganti `protected $guarded = []` dengan `protected $fillable` yang eksplisit pada [`app/Models/Meeting.php`](file:///Users/abedzul/Desktop/htdocs/rapat/app/Models/Meeting.php). Kolom sensitif TTE (`minutes_signed_at/by/path`, `attendance_signed_at/by/path`, `photos_signed_at/by/path`) kini tidak dapat diisi melalui mass assignment.
+
+### Diubah
+- **Kinerja — Cache Jabatan Multi-Posisi pada Halaman Profil**:
+  - Membungkus seluruh kueri DB dalam method `getAllPositions()` ([`app/Models/User.php`](file:///Users/abedzul/Desktop/htdocs/rapat/app/Models/User.php)) dengan `Cache::remember()` selama 5 menit, menghilangkan query berulang ke tabel `opds` dan `opd_signers` setiap kali halaman profil dimuat.
+  - Menambahkan method `forgetPositionsCache()` pada model `User` agar cache dapat di-invalidasi secara tepat setelah pembaruan data jabatan atau sinkronisasi OPD.
+
 ## [1.5.7] - 2026-08-29
+
 
 ### Diubah
 - **Penerapan Penuh Dialog Modal 100% Sisi Klien (*Pure Client-Side Form Hydration*)**:
