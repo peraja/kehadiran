@@ -35,6 +35,8 @@ class LoginForm extends Form
         $baseUrl = config('services.simpeg.url', 'http://apps.sinjaikab.go.id/api/pegawai');
         $timeout = config('services.simpeg.timeout', 10);
 
+        $apiConnectionError = false;
+
         // 1. Try API Kepegawaian Authentication
         try {
             $authResponse = \Illuminate\Support\Facades\Http::timeout(min(6, $timeout))->get("{$baseUrl}/user_auth/", [
@@ -42,136 +44,141 @@ class LoginForm extends Form
                 'password' => $password
             ]);
 
-            $authBody = trim($authResponse->body());
+            if ($authResponse->serverError()) {
+                $apiConnectionError = true;
+            } else {
+                $authBody = trim($authResponse->body());
 
-            if ($authResponse->successful() && !empty($authBody)) {
-                // API Auth Succeeded -> Fetch full employee details
-                $pegawaiResponse = \Illuminate\Support\Facades\Http::timeout(min(5, $timeout))->get("{$baseUrl}/data_pegawai/", [
-                    'nip' => $nip
-                ]);
-
-                $pegawaiData = $pegawaiResponse->json();
-                $pData = isset($pegawaiData['data']) ? $pegawaiData['data'] : (isset($pegawaiData[0]) ? $pegawaiData[0] : $pegawaiData);
-
-                $name = $pData['nama_pegawai'] ?? $pData['nama'] ?? $nip;
-                $unit_id = $pData['unit_id'] ?? $pData['id_unit'] ?? null;
-                $rawJabatan = $pData['jabatan_nama'] ?? $pData['jabatan'] ?? null;
-                $pangkat = $pData['pangkat_nama'] ?? $pData['pangkat'] ?? null;
-                $childUnit = trim((string)($pData['jabatan_grup'] ?? ''));
-                $parentUnit = null;
-
-                if ($unit_id) {
-                    $unitResponse = \Illuminate\Support\Facades\Http::timeout(min(4, $timeout))->get("{$baseUrl}/get_unit/", [
-                        'unit_id' => $unit_id
+                if ($authResponse->successful() && !empty($authBody) && $authBody !== '0' && $authBody !== 'false') {
+                    // API Auth Succeeded -> Fetch full employee details
+                    $pegawaiResponse = \Illuminate\Support\Facades\Http::timeout(min(5, $timeout))->get("{$baseUrl}/data_pegawai/", [
+                        'nip' => $nip
                     ]);
-                    $unitData = $unitResponse->json();
-                    $uData = isset($unitData['data']) ? $unitData['data'] : (isset($unitData[0]) ? $unitData[0] : $unitData);
-                    $parentUnit = $uData['unit_nama'] ?? $uData['nama_unit'] ?? $uData['unit_kerja'] ?? null;
-                }
 
-                // Discover all positions for this employee (cross-OPD aware via cached index)
-                $allPnsMap = \Illuminate\Support\Facades\Cache::get('simpeg_all_pns_by_nip', []);
-                $roles = [];
+                    $pegawaiData = $pegawaiResponse->json();
+                    $pData = isset($pegawaiData['data']) ? $pegawaiData['data'] : (isset($pegawaiData[0]) ? $pegawaiData[0] : $pegawaiData);
 
-                if (!empty($allPnsMap[$nip]) && is_array($allPnsMap[$nip])) {
-                    foreach ($allPnsMap[$nip] as $item) {
-                        $pUnit = $item['parent_unit'] ?? $parentUnit;
-                        $cUnit = trim((string)($item['jabatan_grup'] ?? ''));
-                        $rJabatan = $item['jabatan_nama'] ?? $rawJabatan;
-                        $norm = $this->normalizePosition($pUnit, $cUnit, $rJabatan);
+                    $name = $pData['nama_pegawai'] ?? $pData['nama'] ?? $nip;
+                    $unit_id = $pData['unit_id'] ?? $pData['id_unit'] ?? null;
+                    $rawJabatan = $pData['jabatan_nama'] ?? $pData['jabatan'] ?? null;
+                    $pangkat = $pData['pangkat_nama'] ?? $pData['pangkat'] ?? null;
+                    $childUnit = trim((string)($pData['jabatan_grup'] ?? ''));
+                    $parentUnit = null;
 
-                        $exists = false;
-                        foreach ($roles as $existingRole) {
-                            if ($existingRole['jabatan'] === $norm['jabatan'] && $existingRole['unit'] === $norm['unit']) {
-                                $exists = true;
-                                break;
+                    if ($unit_id) {
+                        $unitResponse = \Illuminate\Support\Facades\Http::timeout(min(4, $timeout))->get("{$baseUrl}/get_unit/", [
+                            'unit_id' => $unit_id
+                        ]);
+                        $unitData = $unitResponse->json();
+                        $uData = isset($unitData['data']) ? $unitData['data'] : (isset($unitData[0]) ? $unitData[0] : $unitData);
+                        $parentUnit = $uData['unit_nama'] ?? $uData['nama_unit'] ?? $uData['unit_kerja'] ?? null;
+                    }
+
+                    // Discover all positions for this employee (cross-OPD aware via cached index)
+                    $allPnsMap = \Illuminate\Support\Facades\Cache::get('simpeg_all_pns_by_nip', []);
+                    $roles = [];
+
+                    if (!empty($allPnsMap[$nip]) && is_array($allPnsMap[$nip])) {
+                        foreach ($allPnsMap[$nip] as $item) {
+                            $pUnit = $item['parent_unit'] ?? $parentUnit;
+                            $cUnit = trim((string)($item['jabatan_grup'] ?? ''));
+                            $rJabatan = $item['jabatan_nama'] ?? $rawJabatan;
+                            $norm = $this->normalizePosition($pUnit, $cUnit, $rJabatan);
+
+                            $exists = false;
+                            foreach ($roles as $existingRole) {
+                                if ($existingRole['jabatan'] === $norm['jabatan'] && $existingRole['unit'] === $norm['unit']) {
+                                    $exists = true;
+                                    break;
+                                }
+                            }
+                            if (!$exists) {
+                                $roles[] = $norm;
                             }
                         }
-                        if (!$exists) {
-                            $roles[] = $norm;
-                        }
                     }
-                }
 
-                // If not in cross-OPD cache, discover positions in the employee's unit
-                if (empty($roles) && $unit_id) {
-                    $listArray = \Illuminate\Support\Facades\Cache::remember("simpeg_unit_pegawai_{$unit_id}", 600, function () use ($baseUrl, $unit_id) {
-                        try {
-                            $listResponse = \Illuminate\Support\Facades\Http::timeout(5)->get("{$baseUrl}/get_pegawai/", [
-                                'unit_id' => $unit_id
-                            ]);
-                            $listData = $listResponse->json();
-                            return isset($listData['data']) ? $listData['data'] : (isset($listData[0]) ? $listData[0] : $listData);
-                        } catch (\Throwable $e) {
-                            return [];
-                        }
-                    });
+                    // If not in cross-OPD cache, discover positions in the employee's unit
+                    if (empty($roles) && $unit_id) {
+                        $listArray = \Illuminate\Support\Facades\Cache::remember("simpeg_unit_pegawai_{$unit_id}", 600, function () use ($baseUrl, $unit_id) {
+                            try {
+                                $listResponse = \Illuminate\Support\Facades\Http::timeout(5)->get("{$baseUrl}/get_pegawai/", [
+                                    'unit_id' => $unit_id
+                                ]);
+                                $listData = $listResponse->json();
+                                return isset($listData['data']) ? $listData['data'] : (isset($listData[0]) ? $listData[0] : $listData);
+                            } catch (\Throwable $e) {
+                                return [];
+                            }
+                        });
 
-                    if (is_array($listArray)) {
-                        foreach ($listArray as $item) {
-                            if (($item['nip'] ?? '') === $nip) {
-                                $cUnit = trim((string)($item['jabatan_grup'] ?? ''));
-                                $rJabatan = $item['jabatan_nama'] ?? $rawJabatan;
-                                $norm = $this->normalizePosition($parentUnit, $cUnit, $rJabatan);
+                        if (is_array($listArray)) {
+                            foreach ($listArray as $item) {
+                                if (($item['nip'] ?? '') === $nip) {
+                                    $cUnit = trim((string)($item['jabatan_grup'] ?? ''));
+                                    $rJabatan = $item['jabatan_nama'] ?? $rawJabatan;
+                                    $norm = $this->normalizePosition($parentUnit, $cUnit, $rJabatan);
 
-                                $exists = false;
-                                foreach ($roles as $existingRole) {
-                                    if ($existingRole['jabatan'] === $norm['jabatan'] && $existingRole['unit'] === $norm['unit']) {
-                                        $exists = true;
-                                        break;
+                                    $exists = false;
+                                    foreach ($roles as $existingRole) {
+                                        if ($existingRole['jabatan'] === $norm['jabatan'] && $existingRole['unit'] === $norm['unit']) {
+                                            $exists = true;
+                                            break;
+                                        }
+                                    }
+                                    if (!$exists) {
+                                        $roles[] = $norm;
                                     }
                                 }
-                                if (!$exists) {
-                                    $roles[] = $norm;
-                                }
                             }
                         }
                     }
-                }
 
-                if (empty($roles)) {
-                    $roles[] = $this->normalizePosition($parentUnit, $childUnit, $rawJabatan);
-                }
-
-                // Prioritaskan jabatan definitif di posisi pertama
-                usort($roles, function ($a, $b) {
-                    if ($a['is_plt'] === $b['is_plt']) {
-                        return 0;
+                    if (empty($roles)) {
+                        $roles[] = $this->normalizePosition($parentUnit, $childUnit, $rawJabatan);
                     }
-                    return $a['is_plt'] ? 1 : -1;
-                });
 
-                $jabatan = $roles[0]['jabatan'];
-                $unit_name = $parentUnit ?: ($roles[0]['unit'] ?? 'Pemerintah Kabupaten Sinjai');
+                    // Prioritaskan jabatan definitif di posisi pertama
+                    usort($roles, function ($a, $b) {
+                        if ($a['is_plt'] === $b['is_plt']) {
+                            return 0;
+                        }
+                        return $a['is_plt'] ? 1 : -1;
+                    });
 
-                $userData = [
-                    'name' => $name,
-                    'jabatan' => $jabatan,
-                    'unit_name' => $unit_name,
-                ];
+                    $jabatan = $roles[0]['jabatan'];
+                    $unit_name = $parentUnit ?: ($roles[0]['unit'] ?? 'Pemerintah Kabupaten Sinjai');
 
-                if (!empty($pangkat)) {
-                    $userData['pangkat'] = trim((string)$pangkat);
+                    $userData = [
+                        'name' => $name,
+                        'jabatan' => $jabatan,
+                        'unit_name' => $unit_name,
+                    ];
+
+                    if (!empty($pangkat)) {
+                        $userData['pangkat'] = trim((string)$pangkat);
+                    }
+
+                    $user = \App\Models\User::updateOrCreate(
+                        ['nip' => $nip],
+                        $userData
+                    );
+
+                    \Spatie\Permission\Models\Role::firstOrCreate(['name' => 'pegawai']);
+
+                    if ($user->wasRecentlyCreated || $user->roles()->count() === 0) {
+                        $user->assignRole('pegawai');
+                    }
+
+                    \Illuminate\Support\Facades\Auth::login($user, $this->remember);
+                    $user->currentRole(); // Inisialisasi session active_role berdasarkan prioritas tertinggi
+                    \Illuminate\Support\Facades\RateLimiter::clear($this->throttleKey());
+                    \App\Services\AuditLogger::log('login', 'Login SIMPEG', $user);
+                    return;
                 }
-
-                $user = \App\Models\User::updateOrCreate(
-                    ['nip' => $nip],
-                    $userData
-                );
-
-                \Spatie\Permission\Models\Role::firstOrCreate(['name' => 'pegawai']);
-
-                if ($user->wasRecentlyCreated || $user->roles()->count() === 0) {
-                    $user->assignRole('pegawai');
-                }
-
-                \Illuminate\Support\Facades\Auth::login($user, $this->remember);
-                $user->currentRole(); // Inisialisasi session active_role berdasarkan prioritas tertinggi
-                \Illuminate\Support\Facades\RateLimiter::clear($this->throttleKey());
-                \App\Services\AuditLogger::log('login', 'Login SIMPEG', $user);
-                return;
             }
         } catch (\Exception $e) {
+            $apiConnectionError = true;
             \Illuminate\Support\Facades\Log::warning("SIMPEG Auth Error for NIP {$nip}: " . $e->getMessage());
             // If external API fails, continue to fallback to local DB check
         }
@@ -191,7 +198,7 @@ class LoginForm extends Form
         $userExistsLocally = \App\Models\User::where('nip', $nip)->exists();
         $userExistsInApi = false;
 
-        if (!$userExistsLocally) {
+        if (!$userExistsLocally && !$apiConnectionError) {
             try {
                 $checkPegawai = \Illuminate\Support\Facades\Http::timeout(3)->get("{$baseUrl}/data_pegawai/", [
                     'nip' => $nip
@@ -208,9 +215,15 @@ class LoginForm extends Form
             }
         }
 
-        if (!$userExistsLocally && !$userExistsInApi) {
+        if (!$userExistsLocally && !$userExistsInApi && !$apiConnectionError) {
             throw ValidationException::withMessages([
                 'form.nip' => 'NIP tidak terdaftar.',
+            ]);
+        }
+
+        if ($apiConnectionError && !$userExistsLocally) {
+            throw ValidationException::withMessages([
+                'form.password' => 'Koneksi SIMPEG gagal.',
             ]);
         }
 

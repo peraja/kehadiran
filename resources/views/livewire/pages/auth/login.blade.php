@@ -27,13 +27,14 @@ new #[Layout('layouts.guest', [
 
             $this->redirectIntended(default: route('dashboard', absolute: false), navigate: false);
         } catch (\Throwable $e) {
+            $this->form->password = '';
             $this->dispatch('login-failed');
             throw $e;
         }
     }
 }; ?>
 
-<div x-data="{ isLoggingIn: false }" x-on:login-failed.window="isLoggingIn = false">
+<div x-data="{ isLoggingIn: false }" x-on:login-failed.window="isLoggingIn = false; $nextTick(() => document.getElementById('password')?.focus())">
     <div class="mb-6 text-center">
         <h2 class="text-lg font-bold text-slate-900">Login NIP dan Password ENIKDA</h2>
     </div>
