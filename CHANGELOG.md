@@ -4,6 +4,25 @@ Semua perubahan penting pada proyek ini dicatat dalam berkas ini.
 
 Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/1.0.0/), dan proyek ini mematuhi [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.3] - 2026-08-29
+
+### Ditambahkan
+- **Deteksi Peran Ganda Lintas OPD (*Cross-OPD Multi-Role Discovery*)**:
+  - Mengimplementasikan pengindeksan cerdas seluruh peran ganda (Definitif dan Plt) ASN se-Kabupaten Sinjai yang terdistribusi lintas OPD pada form presensi mandiri ([`check-in.blade.php`](file:///Users/abedzul/Desktop/htdocs/rapat/resources/views/livewire/meetings/check-in.blade.php)) dan formulir login ([`LoginForm.php`](file:///Users/abedzul/Desktop/htdocs/rapat/app/Livewire/Forms/LoginForm.php)).
+  - Mengintegrasikan mekanisme caching data pegawai unit SIMPEG (`simpeg_all_pns_by_nip`) untuk perlindungan penuh dari batas laju (*rate limit*) API SIMPEG Sinjai.
+  - Memprioritaskan penempatan posisi Jabatan Definitif di urutan paling atas (*default*) pada pemilih kapasitas jabatan presensi dan profil akun pengguna saat login.
+
+### Diubah
+- **Standardisasi & Normalisasi Menyeluruh Nomenklatur Jabatan & Unit Kerja Pemkab Sinjai**:
+  - **Fasilitas Kesehatan**: Menyeragamkan penulisan 16 UPTD Puskesmas se-Kabupaten Sinjai (`UPTD Puskesmas [Nama]`), UPTD Laboratorium Kesehatan Daerah, dan standardisasi penulisan resmi **`RS Pratama Bulupaccing`** (*Direktur RS Pratama Bulupaccing*) sesuai toponimi dan regulasi Perbup Sinjai.
+  - **Satuan Pendidikan**: Membakukan nama sekolah sesuai Perbup Sinjai No. 5/2019 (`UPTD SMP Negeri [Nomor] Sinjai`, `SD Negeri [Nomor] [Nama]`, `SDN No. [Nomor] [Nama]`, dan `TK Negeri Pembina / TK Negeri`).
+  - **Kewilayahan (Kecamatan & Kelurahan)**: Memperketat regex boundary normalisasi untuk memetakan jabatan Lurah, Sekretaris Lurah, Kasi Kelurahan (13 Kelurahan) serta Camat, Sekcam, Kasi, dan Kasubag (9 Kecamatan).
+  - **Jabatan Fungsional (Keahlian & Keterampilan)**: Menata ulang struktur jabatan fungsional terbalik BKN/SIMPEG (Ahli Pertama/Muda/Madya/Utama dan Pemula/Terampil/Mahir/Penyelia) serta merapikan kapitalisasi *Title Case*, kata sambung, dan angka Romawi.
+- **Pembersihan Antarmuka Pemilih Jabatan Presensi**:
+  - Menghilangkan badge teks visual `[Definitif]` dan `[Plt]` pada daftar opsi radio di kartu check-in agar tampil lebih bersih dan elegan.
+- **Penyelarasan Data Profil Pengguna saat Login**:
+  - Memastikan profil `users.jabatan` dinormalisasi ke jabatan definitif dan `users.unit_name` diarahkan ke nama OPD Induk yang 100% konsisten dengan tabel master 43 Perangkat Daerah.
+
 ## [1.5.2] - 2026-08-29
 
 ### Ditambahkan

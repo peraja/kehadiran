@@ -271,34 +271,12 @@
                         if ($agency && str_contains($agency, ' /// ')) {
                             $agency = explode(' /// ', $agency, 2)[0];
                         }
-
-                        $formatTitle = function(?string $str) {
-                            if (empty($str)) return '';
-                            $acronyms = ['SD', 'SMP', 'SMA', 'SMK', 'TK', 'PAUD', 'UPTD', 'RSUD', 'PUSTU', 'PNS', 'PPPK', 'PUPR', 'BKAD', 'BPBD', 'BAPPEDA', 'DISHUB', 'DLHK', 'DPRD', 'OPD', 'SPBE', 'TTE', 'BSRE', 'NIK', 'KTP', 'KTU', 'SKM', 'M.SI', 'S.PD', 'S.SOS', 'S.KOM', 'S.STP', 'SE', 'SH', 'ST', 'MM'];
-                            $words = explode(' ', strtolower(trim($str)));
-                            $words = array_map(function($w) use ($acronyms) {
-                                $upper = strtoupper($w);
-                                $cleanUpper = strtoupper(preg_replace('/[^a-zA-Z0-9]/', '', $w));
-                                if (in_array($cleanUpper, $acronyms) || in_array($upper, $acronyms)) {
-                                    return $upper;
-                                }
-                                if (in_array($w, ['dan', 'atau', 'di', 'ke', 'dari', 'pada', 'untuk', 'dengan', 'tentang', 'serta'])) {
-                                    return $w;
-                                }
-                                return ucfirst($w);
-                            }, $words);
-                            return ucfirst(implode(' ', $words));
-                        };
-
-                        $rawUnit = $agency ?: ($attendance->user ? ($attendance->user->unit_name ?? 'Pemkab Sinjai') : '-');
-                        $displayUnit = $formatTitle($rawUnit);
-                        $position = ($attendance->user ? $attendance->user->jabatan : $attendance->guest_position) ?: '-';
-                        $displayPosition = $formatTitle($position);
+                        $displayUnit = $agency ?: ($attendance->user ? ($attendance->user->unit_name ?? 'Pemkab Sinjai') : '-');
                     @endphp
                     <div style="line-height: 1.25;">{{ $displayUnit }}</div>
                 </td>
                 <td>
-                    <div style="line-height: 1.25;">{{ $displayPosition }}</div>
+                    <div style="line-height: 1.25;">{{ ($attendance->guest_position ?: ($attendance->user ? $attendance->user->jabatan : null)) ?: '-' }}</div>
                 </td>
                 <td class="center">
                     @if($attendance->signature)

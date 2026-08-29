@@ -30,6 +30,8 @@ new #[Layout('layouts.guest')] class extends Component {
 
     public $signature = '';
     public $recorded_time = '';
+    public array $available_roles = [];
+    public int $selected_role_index = 0;
 
     public function mount(Meeting $meeting)
     {
@@ -59,6 +61,8 @@ new #[Layout('layouts.guest')] class extends Component {
         $this->nip_checked = false;
         $this->is_pppk_pw = false;
         $this->pppk_parent_unit = '';
+        $this->available_roles = [];
+        $this->selected_role_index = 0;
         $this->employee_name = '';
         $this->employee_jabatan = '';
         $this->employee_unit = '';
@@ -66,23 +70,389 @@ new #[Layout('layouts.guest')] class extends Component {
         $this->signature = '';
     }
 
-    protected function formatTitleCase(?string $str): string
+    public function selectRole(int $index): void
     {
-        if (empty($str)) return '';
-        $acronyms = ['SD', 'SMP', 'SMA', 'SMK', 'TK', 'PAUD', 'UPTD', 'RSUD', 'PUSTU', 'PNS', 'PPPK', 'PUPR', 'BKAD', 'BPBD', 'BAPPEDA', 'DISHUB', 'DLHK', 'DPRD', 'OPD', 'SPBE', 'TTE', 'BSRE', 'NIK', 'KTP', 'KTU', 'SKM', 'M.SI', 'S.PD', 'S.SOS', 'S.KOM', 'S.STP', 'SE', 'SH', 'ST', 'MM'];
-        $words = explode(' ', strtolower(trim($str)));
-        $words = array_map(function($w) use ($acronyms) {
-            $upper = strtoupper($w);
-            $cleanUpper = strtoupper(preg_replace('/[^a-zA-Z0-9]/', '', $w));
-            if (in_array($cleanUpper, $acronyms) || in_array($upper, $acronyms)) {
-                return $upper;
+        if (isset($this->available_roles[$index])) {
+            $this->selected_role_index = $index;
+            $this->employee_jabatan = $this->available_roles[$index]['jabatan'];
+            $this->employee_unit = $this->available_roles[$index]['unit'];
+        }
+    }
+
+    protected function normalizePosition(?string $parentUnit, ?string $childUnit, ?string $rawJabatan): array
+    {
+        $displayUnit = $parentUnit ?: 'Pemerintah Kabupaten Sinjai';
+        $jabatan = $rawJabatan ?: '-';
+
+        // 1. Multiple spaces cleanup
+        $jabatan = preg_replace('/\s+/', ' ', trim($jabatan));
+
+        if ($parentUnit && !empty($childUnit)) {
+            $parentLower = strtolower($parentUnit);
+            $childLower = strtolower($childUnit);
+
+            // 1. Kecamatan (tampilkan nama Kelurahan secara bersih jika ada, atau Kantor Kecamatan)
+            if (str_contains($parentLower, 'kecamatan')) {
+                $kelurahanMap = [
+                    'bongki' => 'Kantor Kelurahan Bongki',
+                    'biringere' => 'Kantor Kelurahan Biringere',
+                    'lappa' => 'Kantor Kelurahan Lappa',
+                    'balangnipa' => 'Kantor Kelurahan Balangnipa',
+                    'alehanuae' => 'Kantor Kelurahan Alehanuae',
+                    'lamatti' => 'Kantor Kelurahan Lamatti Rilau',
+                    'samataring' => 'Kantor Kelurahan Samataring',
+                    'samaenre' => 'Kantor Kelurahan Samaenre',
+                    'sangiasseri' => 'Kantor Kelurahan Sangiasseri',
+                    'sangiaserri' => 'Kantor Kelurahan Sangiasseri',
+                    'balakia' => 'Kantor Kelurahan Balakia',
+                    'tassililu' => 'Kantor Kelurahan Tassililu',
+                    'pasir putih' => 'Kantor Kelurahan Pasir Putih',
+                    'pair putih' => 'Kantor Kelurahan Pasir Putih',
+                    'mannanti' => 'Kantor Kelurahan Mannanti',
+                ];
+
+                $matchedKelurahan = null;
+                foreach ($kelurahanMap as $key => $officialKelurahan) {
+                    if (str_contains($childLower, $key)) {
+                        $matchedKelurahan = $officialKelurahan;
+                        break;
+                    }
+                }
+
+                $jLower = strtolower(trim((string)$jabatan));
+                $isPlt = str_starts_with($jLower, 'plt.') || str_starts_with($jLower, 'plt ') || str_starts_with($jLower, 'plt.kepala') || str_starts_with($jLower, 'plt.sekretaris');
+                $prefix = $isPlt ? 'Plt. ' : '';
+                $cleanPos = preg_replace('/^plt\.?\s*/i', '', (string)$jabatan);
+
+                if ($matchedKelurahan) {
+                    $displayUnit = $matchedKelurahan;
+
+                    if (preg_match('/^sekretaris\s+(kelurahan|lurah)\b/i', $cleanPos) || str_contains($jLower, 'sekretaris kelurahan') || str_contains($jLower, 'sekretaris lurah')) {
+                        $jabatan = $prefix . 'Sekretaris Lurah';
+                    } elseif (preg_match('/^lurah\b/i', $cleanPos) || (str_contains($jLower, 'lurah') && !str_contains($jLower, 'seksi') && !str_contains($jLower, 'kasi'))) {
+                        $jabatan = $prefix . 'Lurah';
+                    } elseif (str_contains($jLower, 'penelaah')) {
+                        $jabatan = 'Penelaah Teknis Kebijakan';
+                    } elseif (str_contains($jLower, 'pengolah data') || str_contains($jLower, 'pengolah  data')) {
+                        $jabatan = 'Pengolah Data dan Informasi';
+                    } elseif (str_contains($jLower, 'pengadministrasi')) {
+                        $jabatan = 'Pengadministrasi Perkantoran';
+                    } elseif (str_contains($jLower, 'seksi') || str_contains($jLower, 'kasi')) {
+                        if (str_contains($jLower, 'pelayanan')) {
+                            $jabatan = $prefix . 'Kepala Seksi Pelayanan Umum';
+                        } elseif (str_contains($jLower, 'pemberdayaan') || str_contains($jLower, 'pembangunan')) {
+                            $jabatan = $prefix . 'Kepala Seksi Pembangunan dan Pemberdayaan Masyarakat';
+                        } elseif (str_contains($jLower, 'pemerintahan')) {
+                            $jabatan = $prefix . 'Kepala Seksi Pemerintahan';
+                        }
+                    }
+                } else {
+                    $displayUnit = $parentUnit;
+
+                    if (preg_match('/^sekretaris\s+(camat|kecamatan)\b/i', $cleanPos) || str_contains($jLower, 'sekretaris camat') || str_contains($jLower, 'sekretaris kecamatan')) {
+                        $jabatan = $prefix . 'Sekretaris Camat';
+                    } elseif (preg_match('/^camat\b/i', $cleanPos) || (str_contains($jLower, 'camat') && !str_contains($jLower, 'seksi') && !str_contains($jLower, 'kasi') && !str_contains($jLower, 'sub bagian') && !str_contains($jLower, 'kasubag'))) {
+                        $jabatan = $prefix . 'Camat';
+                    } elseif (str_contains($jLower, 'penelaah')) {
+                        $jabatan = 'Penelaah Teknis Kebijakan';
+                    } elseif (str_contains($jLower, 'pengolah data') || str_contains($jLower, 'pengolah  data')) {
+                        $jabatan = 'Pengolah Data dan Informasi';
+                    } elseif (str_contains($jLower, 'pengadministrasi')) {
+                        $jabatan = 'Pengadministrasi Perkantoran';
+                    } elseif (str_contains($jLower, 'umum dan kepegawaian')) {
+                        $jabatan = $prefix . 'Kepala Sub Bagian Umum dan Kepegawaian';
+                    } elseif (str_contains($jLower, 'program dan keuangan') || str_contains($jLower, 'perencanaan dan keuangan')) {
+                        $jabatan = $prefix . 'Kepala Sub Bagian Program dan Keuangan';
+                    } elseif (str_contains($jLower, 'seksi') || str_contains($jLower, 'kasi')) {
+                        if (str_contains($jLower, 'pelayanan')) {
+                            $jabatan = $prefix . 'Kepala Seksi Pelayanan Umum';
+                        } elseif (str_contains($jLower, 'ketentraman') || str_contains($jLower, 'trantib') || str_contains($jLower, 'keamanan')) {
+                            $jabatan = $prefix . 'Kepala Seksi Ketentraman dan Ketertiban Umum';
+                        } elseif (str_contains($jLower, 'ekonomi') || str_contains($jLower, 'kesejahteraan')) {
+                            $jabatan = $prefix . 'Kepala Seksi Ekonomi dan Kesejahteraan Rakyat';
+                        } elseif (str_contains($jLower, 'pembangunan') || str_contains($jLower, 'pemberdayaan')) {
+                            $jabatan = $prefix . 'Kepala Seksi Pembangunan dan Pemberdayaan Masyarakat';
+                        } elseif (str_contains($jLower, 'pemerintahan')) {
+                            $jabatan = $prefix . 'Kepala Seksi Pemerintahan';
+                        }
+                    }
+                }
             }
-            if (in_array($w, ['dan', 'atau', 'di', 'ke', 'dari', 'pada', 'untuk', 'dengan', 'tentang', 'serta'])) {
-                return $w;
+            // 2. Dinas Pendidikan (tampilkan nama Sekolah / Satuan Pendidikan saja)
+            elseif (str_contains($parentLower, 'pendidikan')) {
+                if (!str_contains($childLower, 'bidang') && !str_contains($childLower, 'sekretariat') && !str_contains($childLower, 'sub bagian') && !str_contains($childLower, 'seksi')) {
+                    if (preg_match('/(sd|smp|tk|paud|negeri|sekolah|spf|uptd)/i', $childUnit)) {
+                        $displayUnit = $this->formatSchoolUnitName($childUnit);
+                    }
+                }
             }
-            return ucfirst($w);
-        }, $words);
-        return ucfirst(implode(' ', $words));
+            // 3. Dinas Kesehatan (tampilkan nama Puskesmas / RSUD / Faskes saja)
+            elseif (str_contains($parentLower, 'kesehatan')) {
+                if (preg_match('/(puskesmas|rsud|rs\s+pratama|bulupac|bulupan|pustu|faskes|uptd|klinik|lab|psc)/i', $childUnit)) {
+                    $displayUnit = $this->formatHealthUnitName($childUnit);
+                }
+            }
+        }
+
+        // 4. Normalisasi Global Jabatan Dinas, Badan, Inspektorat, Setda, Setwan
+        $jLower = strtolower(trim((string)$jabatan));
+        $isPlt = str_starts_with($jLower, 'plt.') || str_starts_with($jLower, 'plt ') || str_starts_with($jLower, 'plt.kepala') || str_starts_with($jLower, 'plt.sekretaris');
+        $prefix = $isPlt ? 'Plt. ' : '';
+
+        $clean = preg_replace('/^plt\.?\s*/i', '', $jabatan);
+        $clean = preg_replace('/^plt\.kepala\s*/i', 'Kepala ', $clean);
+        $clean = preg_replace('/^plt\.sekretaris\s*/i', 'Sekretaris ', $clean);
+
+        // A. Pimpinan Utama OPD, Puskesmas & Sekolah
+        if (preg_match('/^kepala dinas\b/i', $clean)) {
+            $jabatan = $prefix . 'Kepala Dinas';
+        } elseif (preg_match('/^sekretaris dinas\b/i', $clean)) {
+            $jabatan = $prefix . 'Sekretaris Dinas';
+        } elseif (preg_match('/^kepala badan\b/i', $clean)) {
+            $jabatan = $prefix . 'Kepala Badan';
+        } elseif (preg_match('/^sekretaris badan\b/i', $clean)) {
+            $jabatan = $prefix . 'Sekretaris Badan';
+        } elseif (preg_match('/^inspektur daerah\b/i', $clean) || (preg_match('/^inspektur\b/i', $clean) && !preg_match('/inspektur pembantu/i', $clean))) {
+            $jabatan = $prefix . 'Inspektur Daerah';
+        } elseif (preg_match('/^sekretaris dprd\b/i', $clean)) {
+            $jabatan = $prefix . 'Sekretaris DPRD';
+        } elseif (preg_match('/^sekretaris daerah\b/i', $clean)) {
+            $jabatan = $prefix . 'Sekretaris Daerah';
+        } elseif (preg_match('/^ktu\b/i', $clean)) {
+            $jabatan = $prefix . 'Kepala Sub Bagian Tata Usaha';
+        } elseif (preg_match('/^kepala\s+(uptd\s+)?puskesmas\b/i', $clean)) {
+            $jabatan = $prefix . 'Kepala Puskesmas';
+        } elseif (preg_match('/^kepala\s+(uptd\s+)?(sd|sdn|smp|smpn|tk|paud|sekolah)\b/i', $clean)) {
+            $jabatan = $prefix . 'Kepala Sekolah';
+        } elseif (preg_match('/^direktur\s+(uptd\s+)?(rsud|rs)\b.*(bulupancing|bulupaccing|bulu\s+paccing)/i', $clean)) {
+            $jabatan = $prefix . 'Direktur RS Pratama Bulupaccing';
+        } elseif (preg_match('/^direktur\s+(rsud|rs)\s*(sinjai)?/i', $clean)) {
+            $jabatan = $prefix . 'Direktur RSUD Sinjai';
+        } else {
+            // B. Bersihkan akhiran wilayah/induk pada jabatan dinas/badan/rsud/puskesmas/sekolah
+            $clean = preg_replace('/\s+dinas\s+pemuda\s+dan\s+olahraga.*$/i', '', $clean);
+            $clean = preg_replace('/\s+satpol\s+pp.*$/i', '', $clean);
+            $clean = preg_replace('/\s+(pada|di)\s+.+$/i', '', $clean);
+            $clean = preg_replace('/\s+(uptd\s+)?(rsud|rs)\b.*$/i', '', $clean);
+            $clean = preg_replace('/\s+(uptd\s+)?puskesmas\b.*$/i', '', $clean);
+            $clean = preg_replace('/\s+(uptd\s+)?(sd|sdn|smp|smpn|tk|paud|sekolah)\b.*$/i', '', $clean);
+            $clean = preg_replace('/\s+kab\.?\s+sinjai.*$/i', '', $clean);
+            $clean = preg_replace('/\s+kabupaten\s+sinjai.*$/i', '', $clean);
+            $clean = preg_replace('/\s+sekretariat\s+daerah.*$/i', '', $clean);
+            $clean = preg_replace('/\s+sekretariat\s+dprd.*$/i', '', $clean);
+
+            // C. Staf pelaksana & fungsional
+            if (preg_match('/^penelaah\b/i', $clean)) {
+                $clean = 'Penelaah Teknis Kebijakan';
+            } elseif (preg_match('/^pengolah\s+data\b/i', $clean)) {
+                $clean = 'Pengolah Data dan Informasi';
+            } elseif (preg_match('/^pengadministrasi\b/i', $clean)) {
+                $clean = 'Pengadministrasi Perkantoran';
+            } elseif (preg_match('/^pelak?a?sa?na\s+(bidan|perawat|dokter|nutrisionis|sanitarian|sanitasi|penyuluh|apoteker|asisten\s+apoteker|pranata)/i', $clean)) {
+                $clean = preg_replace('/^pelak?a?sa?na\s+/i', '', $clean);
+                if (preg_match('/\bpenyuluh\s+kesmas\b/i', $clean)) {
+                    $clean = 'Penyuluh Kesehatan Masyarakat';
+                }
+                $clean = $this->formatJabatanTitleCase($clean);
+            } elseif (preg_match('/^(ahli\s+(pertama|muda|madya|utama))\s*-\s*(.+)$/i', $clean, $m)) {
+                $jenjang = ucwords(strtolower($m[1]));
+                $namaJbt = $this->formatJabatanTitleCase($m[3]);
+                $clean = $namaJbt . ' ' . $jenjang;
+            } elseif (preg_match('/^(terampil|mahir|penyelia|pemula)\s*-\s*(.+)$/i', $clean, $m)) {
+                $jenjang = ucfirst(strtolower($m[1]));
+                $namaJbt = $this->formatJabatanTitleCase($m[2]);
+                $clean = $namaJbt . ' ' . $jenjang;
+            } elseif (preg_match('/^(kepala\s+bidang|kabid|kepala\s+bagian|kabag|kepala\s+seksi|kasi|kepala\s+sub\s+bagian|kasubag|kepala\s+sub\s+bidang|kasubid)\b/i', $clean)) {
+                $clean = $this->formatJabatanTitleCase($clean);
+            } else {
+                $clean = $this->formatJabatanTitleCase($clean);
+            }
+
+            $jabatan = $prefix . trim($clean);
+        }
+
+        return [
+            'jabatan' => $jabatan,
+            'unit' => $displayUnit,
+            'is_plt' => $isPlt,
+        ];
+    }
+
+    protected function formatJabatanTitleCase(string $str): string
+    {
+        $clean = preg_replace('/\s+/', ' ', trim($str));
+        $words = explode(' ', $clean);
+        $lowerWords = ['dan', 'atau', 'di', 'ke', 'dari', 'pada', 'untuk', 'tentang', 'yang', 'serta', 'per'];
+        $upperWords = ['sd', 'smp', 'sma', 'smk', 'tk', 'paud', 'pnf', 'sda', 'sdm', 'asn', 'pns', 'b3', 'tik', 'dprd', 'rsud', 'uptd', 'ppkn', 'ipa', 'ips', 'ktu', 'tu', 'bappeda', 'bkpsdma', 'bkad', 'dpmptsp', 'dinsos', 'dishub', 'disdik', 'dinkes', 'i', 'ii', 'iii', 'iv', 'v', 'vi', 'vii', 'viii', 'ix', 'x'];
+
+        $formatted = [];
+        foreach ($words as $i => $w) {
+            $prefixPunct = '';
+            $suffixPunct = '';
+            if (preg_match('/^([\(])(.*)$/', $w, $m)) {
+                $prefixPunct = $m[1];
+                $w = $m[2];
+            }
+            if (preg_match('/^(.*)([\),.:])$/', $w, $m)) {
+                $suffixPunct = $m[2];
+                $w = $m[1];
+            }
+
+            $wLower = strtolower($w);
+            if (in_array($wLower, $upperWords)) {
+                $resWord = strtoupper($wLower);
+            } elseif ($i > 0 && in_array($wLower, $lowerWords)) {
+                $resWord = $wLower;
+            } else {
+                $resWord = ucfirst($wLower);
+            }
+
+            $formatted[] = $prefixPunct . $resWord . $suffixPunct;
+        }
+
+        return implode(' ', $formatted);
+    }
+
+    protected function formatSchoolUnitName(string $str): string
+    {
+        $clean = preg_replace('/\s+/', ' ', trim($str));
+        // 1. Hapus embel-embel kecamatan / kabupaten di belakang
+        $clean = preg_replace('/\s+kec\.?\s*.+$/i', '', $clean);
+        $clean = preg_replace('/\s+kab\.?\s*sinjai.*$/i', '', $clean);
+
+        // 2. Normalisasi Jenjang SMP -> 'UPTD SMP Negeri [Nomor] Sinjai'
+        if (preg_match('/^(uptd\s+)?smp(n|\s+negeri|\s+neg\.?)?\s*(\d+)(\s+sinjai)?(\s+(utara|timur|barat|selatan|tengah|borong|tellulimpoe|bulupoddo|pulau\s+sembilan))?/i', $clean, $m)) {
+            $nomor = $m[3];
+            return 'UPTD SMP Negeri ' . $nomor . ' Sinjai';
+        }
+
+        // 3. Normalisasi Jenjang SD Sesuai Perbup Sinjai No. 5/2019
+        if (preg_match('/^sdn\.?\s*(no\.?)?\s*(\d+)\s*(.*)$/i', $clean, $m)) {
+            $nomor = $m[2];
+            $lokasi = trim($m[3]);
+            $lokasi = preg_replace('/\s+(sinjai\s+(utara|timur|barat|selatan|tengah|borong|tellulimpoe|bulupoddo|pulau\s+sembilan))$/i', '', $lokasi);
+            $words = explode(' ', $lokasi);
+            $words = array_map(fn($w) => ucfirst(strtolower($w)), $words);
+            return 'SDN No. ' . $nomor . ($lokasi ? ' ' . implode(' ', $words) : '');
+        }
+
+        if (preg_match('/^sd\s+negeri\s*(\d+)\s*(.*)$/i', $clean, $m)) {
+            $nomor = $m[1];
+            $lokasi = trim($m[2]);
+            $lokasi = preg_replace('/\s+(sinjai\s+(utara|timur|barat|selatan|tengah|borong|tellulimpoe|bulupoddo|pulau\s+sembilan))$/i', '', $lokasi);
+            $words = explode(' ', $lokasi);
+            $words = array_map(fn($w) => ucfirst(strtolower($w)), $words);
+            return 'SD Negeri ' . $nomor . ($lokasi ? ' ' . implode(' ', $words) : '');
+        }
+
+        // 4. Normalisasi TK Negeri / TK Pembina
+        if (preg_match('/^tk\s+(negeri|neg\.?)\s*(pembina)?\s*(.*)$/i', $clean, $m)) {
+            $isPembina = !empty($m[2]);
+            $lokasi = trim($m[3]);
+            $lokasi = preg_replace('/\s+(sinjai\s+(utara|timur|barat|selatan|tengah|borong|tellulimpoe|bulupoddo|pulau\s+sembilan))$/i', '', $lokasi);
+            $words = explode(' ', $lokasi);
+            $words = array_map(fn($w) => ucfirst(strtolower($w)), $words);
+            $cleanLokasi = implode(' ', $words);
+            return ($isPembina ? 'TK Negeri Pembina' : 'TK Negeri') . ($cleanLokasi ? ' ' . $cleanLokasi : '');
+        }
+
+        // 5. Default General Title Case
+        $words = explode(' ', $clean);
+        $upperKeywords = ['sd', 'sdn', 'smp', 'smpn', 'sma', 'sman', 'smk', 'smkn', 'tk', 'paud', 'uptd', 'spf', 'no.', 'ii', 'iii', 'iv', 'vi', 'vii', 'viii', 'ix', 'x'];
+
+        $formatted = [];
+        foreach ($words as $w) {
+            $wLower = strtolower($w);
+            if (in_array($wLower, $upperKeywords)) {
+                $formatted[] = strtoupper($wLower);
+            } else {
+                $formatted[] = ucfirst($wLower);
+            }
+        }
+
+        return preg_replace('/\s+/', ' ', trim(implode(' ', $formatted)));
+    }
+
+    protected function formatHealthUnitName(string $str): string
+    {
+        $clean = preg_replace('/\s+/', ' ', trim($str));
+        // 1. Hapus embel-embel kecamatan / kabupaten di belakang
+        $clean = preg_replace('/\s+kec\.?\s*.+$/i', '', $clean);
+        $clean = preg_replace('/\s+kab\.?\s*sinjai.*$/i', '', $clean);
+
+        // 2. RS Pratama Bulupaccing
+        if (preg_match('/(rsud|rs)\b.*(bulupancing|bulupaccing|bulu\s+paccing)/i', $clean)) {
+            return 'RS Pratama Bulupaccing';
+        }
+
+        // 3. RSUD Sinjai
+        if (preg_match('/^(rumah\s+sakit\s+umum\s+daerah|rsud)\s*(sinjai)?/i', $clean)) {
+            return 'RSUD Sinjai';
+        }
+
+        // 4. Labkesda
+        if (preg_match('/(laboratorium|lab\.?\s*kes)/i', $clean)) {
+            return 'UPTD Laboratorium Kesehatan Daerah';
+        }
+
+        // 5. PSC 119
+        if (preg_match('/(psc|public\s+safety\s+center)\s*119/i', $clean)) {
+            return 'UPTD PSC 119';
+        }
+
+        // 6. Deteksi Pustu yang memiliki Puskesmas Induk
+        if (preg_match('/(puskesmas\s+pembantu|pustu)\b.*(uptd\s+)?puskesmas\s+([a-z\s]+)/i', $clean, $m)) {
+            $induk = trim($m[3]);
+            $induk = preg_replace('/\s+(sinjai\s+(utara|timur|barat|selatan|tengah|borong|tellulimpoe|bulupoddo|pulau\s+sembilan))$/i', '', $induk);
+            return $this->formatHealthUnitName('UPTD Puskesmas ' . $induk);
+        }
+        if (preg_match('/(puskesmas\s+pembantu|pustu)\s+([a-z\s]+)\/.*puskesmas\s+([a-z\s]+)/i', $clean, $m)) {
+            $induk = trim($m[3]);
+            $induk = preg_replace('/\s+(sinjai\s+(utara|timur|barat|selatan|tengah|borong|tellulimpoe|bulupoddo|pulau\s+sembilan))$/i', '', $induk);
+            return $this->formatHealthUnitName('UPTD Puskesmas ' . $induk);
+        }
+
+        // 7. Normalisasi 16 UPTD Puskesmas Resmi
+        $puskesmasMap = [
+            'balangnipa' => 'Balangnipa',
+            'samataring' => 'Samataring',
+            'kampala' => 'Kampala',
+            'panaikang' => 'Panaikang',
+            'aska' => 'Aska',
+            'samaenre' => 'Samaenre',
+            'biji nangka' => 'Biji Nangka',
+            'bijinangka' => 'Biji Nangka',
+            'borong kompleks' => 'Borong Kompleks',
+            'manimpahoi' => 'Manimpahoi',
+            'lappae' => 'Lappae',
+            'lappadata' => 'Lappadata',
+            'manipi' => 'Manipi',
+            'tengnga lembang' => 'Tengnga Lembang',
+            'tengngalembang' => 'Tengnga Lembang',
+            'tengalembang' => 'Tengnga Lembang',
+            'mannanti' => 'Mannanti',
+            'bulupoddo' => 'Bulupoddo',
+            'pulau sembilan' => 'Pulau Sembilan',
+            'pulau ix' => 'Pulau Sembilan',
+        ];
+
+        $cleanLower = strtolower($clean);
+        foreach ($puskesmasMap as $key => $officialName) {
+            if (str_contains($cleanLower, $key)) {
+                return 'UPTD Puskesmas ' . $officialName;
+            }
+        }
+
+        // 8. Default Puskesmas Fallback
+        $clean = preg_replace('/^(tu|tata usaha|sub bagian tata usaha)\s+/i', '', $clean);
+        if (preg_match('/^puskesmas\b/i', $clean)) {
+            $clean = 'UPTD ' . $clean;
+        }
+
+        // Title Case
+        $words = explode(' ', $clean);
+        $words = array_map(fn($w) => in_array(strtolower($w), ['uptd', 'rsud', 'pustu', 'psc']) ? strtoupper($w) : ucfirst(strtolower($w)), $words);
+        return implode(' ', $words);
     }
 
     public function checkNip(?string $nipInput = null)
@@ -117,7 +487,7 @@ new #[Layout('layouts.guest')] class extends Component {
 
         // 1. Check official SIMPEG API (for fresh profile, child unit & registration)
         $baseUrl = config('services.simpeg.url', 'http://apps.sinjaikab.go.id/api/pegawai');
-        $timeout = (int) config('services.simpeg.timeout', 2);
+        $timeout = (int) config('services.simpeg.timeout', 5);
 
         try {
             $pegawaiResponse = \Illuminate\Support\Facades\Http::timeout($timeout)->get("{$baseUrl}/data_pegawai/", [
@@ -130,13 +500,13 @@ new #[Layout('layouts.guest')] class extends Component {
             if ($pegawaiResponse->successful() && is_array($pData) && !empty($pData['nama'] ?? $pData['nama_pegawai'] ?? null)) {
                 $name = $pData['nama_pegawai'] ?? $pData['nama'] ?? $nip;
                 $unit_id = $pData['unit_id'] ?? $pData['id_unit'] ?? null;
-                $jabatan = $pData['jabatan_nama'] ?? $pData['jabatan'] ?? null;
+                $rawJabatan = $pData['jabatan_nama'] ?? $pData['jabatan'] ?? null;
                 $pangkat = $pData['pangkat_nama'] ?? $pData['pangkat'] ?? null;
                 $childUnit = trim((string)($pData['jabatan_grup'] ?? ''));
                 $parentUnit = null;
 
                 if ($unit_id) {
-                    $unitResponse = \Illuminate\Support\Facades\Http::timeout(2)->get("{$baseUrl}/get_unit/", [
+                    $unitResponse = \Illuminate\Support\Facades\Http::timeout(5)->get("{$baseUrl}/get_unit/", [
                         'unit_id' => $unit_id
                     ]);
                     $unitData = $unitResponse->json();
@@ -144,35 +514,82 @@ new #[Layout('layouts.guest')] class extends Component {
                     $parentUnit = $uData['unit_nama'] ?? $uData['nama_unit'] ?? $uData['unit_kerja'] ?? null;
                 }
 
-                $displayUnit = $parentUnit;
-                if ($parentUnit && !empty($childUnit)) {
-                    $parentLower = strtolower($parentUnit);
-                    $childLower = strtolower($childUnit);
+                // Discover all positions for this employee (cross-OPD aware via cached index)
+                $allPnsMap = \Illuminate\Support\Facades\Cache::get('simpeg_all_pns_by_nip', []);
+                $roles = [];
 
-                    // 1. Kecamatan (tampilkan nama Kelurahan / Desa saja)
-                    if (str_contains($parentLower, 'kecamatan')) {
-                        if (str_contains($childLower, 'kelurahan') || str_contains($childLower, 'desa')) {
-                            $displayUnit = $childUnit;
-                        }
-                    }
-                    // 2. Dinas Pendidikan (tampilkan nama Sekolah / Satuan Pendidikan saja)
-                    elseif (str_contains($parentLower, 'pendidikan')) {
-                        if (!str_contains($childLower, 'bidang') && !str_contains($childLower, 'sekretariat') && !str_contains($childLower, 'sub bagian') && !str_contains($childLower, 'seksi')) {
-                            if (preg_match('/(sd|smp|tk|paud|negeri|sekolah|spf|uptd)/i', $childUnit)) {
-                                $displayUnit = $childUnit;
+                if (!empty($allPnsMap[$nip]) && is_array($allPnsMap[$nip])) {
+                    foreach ($allPnsMap[$nip] as $item) {
+                        $pUnit = $item['parent_unit'] ?? $parentUnit;
+                        $cUnit = trim((string)($item['jabatan_grup'] ?? ''));
+                        $rJabatan = $item['jabatan_nama'] ?? $rawJabatan;
+                        $norm = $this->normalizePosition($pUnit, $cUnit, $rJabatan);
+
+                        $exists = false;
+                        foreach ($roles as $existingRole) {
+                            if ($existingRole['jabatan'] === $norm['jabatan'] && $existingRole['unit'] === $norm['unit']) {
+                                $exists = true;
+                                break;
                             }
                         }
-                    }
-                    // 3. Dinas Kesehatan (tampilkan nama Puskesmas / RSUD / Faskes saja)
-                    elseif (str_contains($parentLower, 'kesehatan')) {
-                        if (!str_contains($childLower, 'bidang') && !str_contains($childLower, 'sekretariat') && !str_contains($childLower, 'sub bagian') && !str_contains($childLower, 'seksi')) {
-                            if (preg_match('/(puskesmas|rsud|pustu|faskes|uptd|klinik|lab)/i', $childUnit)) {
-                                $displayUnit = $childUnit;
-                            }
+                        if (!$exists) {
+                            $roles[] = $norm;
                         }
                     }
-                    // 4. Seluruh Kantor Dinas / Badan / Bagian lainnya -> Tetap hanya nama Dinas
                 }
+
+                // If not in cross-OPD cache, discover positions in the employee's unit
+                if (empty($roles) && $unit_id) {
+                    $listArray = \Illuminate\Support\Facades\Cache::remember("simpeg_unit_pegawai_{$unit_id}", 600, function () use ($baseUrl, $unit_id) {
+                        try {
+                            $listResponse = \Illuminate\Support\Facades\Http::timeout(5)->get("{$baseUrl}/get_pegawai/", [
+                                'unit_id' => $unit_id
+                            ]);
+                            $listData = $listResponse->json();
+                            return isset($listData['data']) ? $listData['data'] : (isset($listData[0]) ? $listData : $listData);
+                        } catch (\Throwable $e) {
+                            return [];
+                        }
+                    });
+
+                    if (is_array($listArray)) {
+                        foreach ($listArray as $item) {
+                            if (($item['nip'] ?? '') === $nip) {
+                                $cUnit = trim((string)($item['jabatan_grup'] ?? ''));
+                                $rJabatan = $item['jabatan_nama'] ?? $rawJabatan;
+                                $norm = $this->normalizePosition($parentUnit, $cUnit, $rJabatan);
+
+                                $exists = false;
+                                foreach ($roles as $existingRole) {
+                                    if ($existingRole['jabatan'] === $norm['jabatan'] && $existingRole['unit'] === $norm['unit']) {
+                                        $exists = true;
+                                        break;
+                                    }
+                                }
+                                if (!$exists) {
+                                    $roles[] = $norm;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (empty($roles)) {
+                    $roles[] = $this->normalizePosition($parentUnit, $childUnit, $rawJabatan);
+                }
+
+                // Selalu tampilkan jabatan definitif di atas, diikuti jabatan Plt
+                usort($roles, function ($a, $b) {
+                    if ($a['is_plt'] === $b['is_plt']) {
+                        return 0;
+                    }
+                    return $a['is_plt'] ? 1 : -1;
+                });
+
+                $this->available_roles = $roles;
+                $this->selected_role_index = 0;
+                $jabatan = $roles[0]['jabatan'];
+                $displayUnit = $roles[0]['unit'];
 
                 $userData = [
                     'name' => $name,
@@ -268,7 +685,7 @@ new #[Layout('layouts.guest')] class extends Component {
                     $pw = $pwList[0];
                     $name = $pw['name'] ?? $nip;
                     $rawJabatan = trim((string)($pw['jabatan'] ?? ''));
-                    $jabatan = $this->formatTitleCase($rawJabatan ?: 'PPPK Paruh Waktu');
+                    $jabatan = $rawJabatan ?: 'PPPK Paruh Waktu';
                     $unit_id = $pw['api_unit_id'] ?? null;
                     $rawUnit = trim((string)($pw['unit_kerja'] ?? ''));
 
@@ -288,7 +705,7 @@ new #[Layout('layouts.guest')] class extends Component {
                         $normOpd = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $opdName));
                         $normRaw = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $rawUnit));
                         if ($normOpd !== $normRaw) {
-                            $childUnit = $this->formatTitleCase($rawUnit);
+                            $childUnit = $rawUnit;
                         }
                     }
 
@@ -420,6 +837,7 @@ new #[Layout('layouts.guest')] class extends Component {
                     $this->meeting->attendances()->create([
                         'user_id' => $this->employee_id,
                         'guest_agency' => $this->employee_unit,
+                        'guest_position' => $this->employee_jabatan,
                         'signature' => $this->signature,
                         'check_in' => $now,
                         'method' => 'qr',
@@ -625,21 +1043,45 @@ new #[Layout('layouts.guest')] class extends Component {
 
             @if($nip_checked)
             <!-- Verified Employee Identity Card -->
-            <div class="mt-3 p-3.5 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center justify-between gap-3 animate-in fade-in slide-in-from-top-2">
-                <div class="min-w-0 space-y-0.5">
-                    <p class="text-sm font-bold text-emerald-900 truncate">{{ $employee_name }}</p>
-                    @if($employee_jabatan)
-                    <p class="text-xs font-semibold text-emerald-800 truncate">{{ $employee_jabatan }}</p>
-                    @endif
-                    @if($employee_unit)
-                    <p class="text-xs font-medium text-emerald-600 truncate">{{ $employee_unit }}</p>
-                    @endif
+            <div class="mt-3 p-3.5 bg-emerald-50 border border-emerald-200 rounded-xl space-y-3 animate-in fade-in slide-in-from-top-2">
+                <div class="flex items-center justify-between gap-3">
+                    <div class="min-w-0 space-y-0.5">
+                        <p class="text-sm font-bold text-emerald-900 truncate">{{ $employee_name }}</p>
+                        @if(empty($available_roles) || count($available_roles) <= 1)
+                            @if($employee_jabatan)
+                            <p class="text-xs font-semibold text-emerald-800 truncate">{{ $employee_jabatan }}</p>
+                            @endif
+                            @if($employee_unit)
+                            <p class="text-xs font-medium text-emerald-600 truncate">{{ $employee_unit }}</p>
+                            @endif
+                        @endif
+                    </div>
+                    <span class="shrink-0 flex items-center justify-center w-7 h-7 bg-emerald-500 text-white rounded-xl shadow-xs" title="Terverifikasi SIMPEG">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+                        </svg>
+                    </span>
                 </div>
-                <span class="shrink-0 flex items-center justify-center w-7 h-7 bg-emerald-500 text-white rounded-xl shadow-xs" title="Terverifikasi SIMPEG">
-                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
-                    </svg>
-                </span>
+
+                @if(!empty($available_roles) && count($available_roles) > 1)
+                <!-- Multi-Role / Jabatan Selector -->
+                <div class="pt-2.5 border-t border-emerald-200/80">
+                    <label class="block text-[11px] font-extrabold text-emerald-950 uppercase tracking-wider mb-2">
+                        Pilih Jabatan:
+                    </label>
+                    <div class="space-y-2">
+                        @foreach($available_roles as $idx => $role)
+                        <label class="flex items-start gap-2.5 p-2.5 rounded-xl border transition-all cursor-pointer {{ $selected_role_index === $idx ? 'bg-white border-emerald-500 ring-2 ring-emerald-500/20 shadow-xs' : 'bg-emerald-50/50 border-emerald-200/80 hover:bg-white' }}">
+                            <input type="radio" name="selected_role" wire:click="selectRole({{ $idx }})" value="{{ $idx }}" {{ $selected_role_index === $idx ? 'checked' : '' }} class="mt-0.5 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+                            <div class="flex-1 text-xs">
+                                <div class="font-extrabold text-slate-900 leading-tight">{{ $role['jabatan'] }}</div>
+                                <div class="text-slate-500 font-medium mt-0.5">{{ $role['unit'] }}</div>
+                            </div>
+                        </label>
+                        @endforeach
+                    </div>
+                </div>
+                @endif
             </div>
             @endif
         </div>

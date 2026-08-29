@@ -328,7 +328,7 @@ new #[Layout('layouts.app')] class extends Component {
                         </td>
                         <td class="py-4 px-6 text-left">
                             <div class="text-slate-600 font-medium text-xs">
-                                {{ $attendance->user ? ($attendance->user->jabatan ?? '-') : ($attendance->guest_position ?: '-') }}
+                                {{ $attendance->guest_position ?: ($attendance->user ? ($attendance->user->jabatan ?? '-') : '-') }}
                             </div>
                         </td>
                         <td class="py-4 px-6 text-left whitespace-nowrap">
