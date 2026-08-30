@@ -137,8 +137,9 @@ new #[Layout('layouts.app')] class extends Component {
                     $rawUnit = $uData['unit_nama'] ?? $uData['nama_unit'] ?? $uData['unit_kerja'] ?? $this->unit_name;
                 }
 
-                $norm = Opd::normalizePosition($rawUnit, '', $rawJabatan);
-                $this->jabatan = $norm['jabatan'] ?: $rawJabatan;
+                $cleanRawJabatan = preg_replace('/^(?:Plt\.|Pj\.|Pjs\.)\s*/i', '', (string)$rawJabatan);
+                $norm = Opd::normalizePosition($rawUnit, '', $cleanRawJabatan);
+                $this->jabatan = $norm['jabatan'] ?: $cleanRawJabatan;
                 $this->unit_name = $norm['unit'] ?: $rawUnit;
 
                 $this->apiSynced = true;
@@ -182,7 +183,8 @@ new #[Layout('layouts.app')] class extends Component {
         ];
 
         $validated = $this->validate($rules, $messages);
-        $normalizedJabatan = !empty($validated['jabatan']) ? (Opd::normalizePosition($validated['unit_name'] ?? '', '', trim($validated['jabatan']))['jabatan'] ?: trim($validated['jabatan'])) : null;
+        $norm = !empty($validated['jabatan']) ? (Opd::normalizePosition($validated['unit_name'] ?? '', '', trim($validated['jabatan']))['jabatan'] ?: trim($validated['jabatan'])) : null;
+        $normalizedJabatan = $norm ? preg_replace('/^(?:Plt\.|Pj\.|Pjs\.)\s*/i', '', $norm) : null;
 
         if ($this->isEdit) {
             $user = User::findOrFail($this->userId);

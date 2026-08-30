@@ -721,23 +721,38 @@ class Opd extends Model
                         $leaderUser = User::where('nip', $p['nip'])->first();
                         $isPltJob = str_starts_with(strtolower($jobTitle), 'plt');
 
-                        if (!$leaderUser) {
-                            $defJabatan = $jobTitle ?: $this->leader_title;
-                            $defUnit = $this->name;
-
-                            // Cek apakah pegawai memiliki jabatan definitif di OPD lain pada data SIMPEG
-                            $allPnsMap = \Illuminate\Support\Facades\Cache::get('simpeg_all_pns_by_nip', []);
-                            $pnsList = $allPnsMap[$p['nip']] ?? [];
-                            foreach ($pnsList as $rec) {
-                                if (($rec['jabatan_status_id'] ?? '1') == '1' && !str_starts_with(strtolower(trim($rec['jabatan_nama'] ?? '')), 'plt')) {
-                                    $defJabatan = trim($rec['jabatan_nama']);
-                                    $defUnit = trim($rec['parent_unit'] ?? $this->name);
-                                    break;
+                        $defJabatan = null;
+                        $defUnit = $this->name;
+                        if ($isPltJob) {
+                            foreach ($pegawaiList as $item) {
+                                if (($item['nip'] ?? '') === trim($p['nip'])) {
+                                    $jName = trim($item['jabatan_nama'] ?? '');
+                                    $jStatus = (string)($item['jabatan_status_id'] ?? '1');
+                                    if ($jStatus === '1' && !str_starts_with(strtolower($jName), 'plt')) {
+                                        $defJabatan = $jName;
+                                        break;
+                                    }
                                 }
                             }
+                            if (!$defJabatan) {
+                                $allPnsMap = \Illuminate\Support\Facades\Cache::get('simpeg_all_pns_by_nip', []);
+                                $pnsList = $allPnsMap[$p['nip']] ?? [];
+                                foreach ($pnsList as $rec) {
+                                    if (($rec['jabatan_status_id'] ?? '1') == '1' && !str_starts_with(strtolower(trim($rec['jabatan_nama'] ?? '')), 'plt')) {
+                                        $defJabatan = trim($rec['jabatan_nama']);
+                                        $defUnit = trim($rec['parent_unit'] ?? $this->name);
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                        if (!$defJabatan) {
+                            $defJabatan = $isPltJob ? preg_replace('/^(?:Plt\.|Pj\.|Pjs\.)\s*/i', '', $jobTitle ?: $this->leader_title) : ($jobTitle ?: $this->leader_title);
+                        }
 
-                            $normUser = self::normalizePosition($defUnit, '', $defJabatan);
+                        $normUser = self::normalizePosition($defUnit, '', $defJabatan);
 
+                        if (!$leaderUser) {
                             $leaderUser = User::create([
                                 'nip' => $p['nip'],
                                 'nik' => $finalLeaderNik ?: null,
@@ -754,10 +769,13 @@ class Opd extends Model
                                 'pangkat' => $pangkat ?: $leaderUser->pangkat,
                             ];
 
-                            // Hanya timpa jabatan & unit_name jika bukan Plt atau jika user belum punya jabatan definitif
+                            // Hanya timpa jabatan jika bukan Plt, atau bersihkan jika user saat ini masih Plt
                             $existingIsPlt = str_starts_with(strtolower(trim((string)$leaderUser->jabatan)), 'plt');
-                            if (!$isPltJob || $existingIsPlt || empty($leaderUser->jabatan)) {
-                                $normUser = self::normalizePosition($this->name, '', $jobTitle);
+                            if (!$isPltJob) {
+                                $normLeaderDef = self::normalizePosition($this->name, '', $jobTitle);
+                                $updateData['jabatan'] = $normLeaderDef['jabatan'] ?: $leaderUser->jabatan;
+                                $updateData['unit_name'] = $normLeaderDef['unit'] ?: $this->name;
+                            } elseif ($existingIsPlt || empty($leaderUser->jabatan)) {
                                 $updateData['jabatan'] = $normUser['jabatan'] ?: $leaderUser->jabatan;
                                 $updateData['unit_name'] = $normUser['unit'] ?: $this->name;
                             }
@@ -869,22 +887,41 @@ class Opd extends Model
                     $signerUser = User::where('nip', trim($p['nip']))->first();
                     $isPltJob = str_starts_with(strtolower($title), 'plt');
 
-                    if (!$signerUser) {
-                        $defJabatan = $title;
-                        $defUnit = $this->name;
+                    // Cari jabatan definitif pegawai (bukan Plt)
+                    $defJabatan = null;
+                    $defUnit = $this->name;
 
-                        $allPnsMap = \Illuminate\Support\Facades\Cache::get('simpeg_all_pns_by_nip', []);
-                        $pnsList = $allPnsMap[trim($p['nip'])] ?? [];
-                        foreach ($pnsList as $rec) {
-                            if (($rec['jabatan_status_id'] ?? '1') == '1' && !str_starts_with(strtolower(trim($rec['jabatan_nama'] ?? '')), 'plt')) {
-                                $defJabatan = trim($rec['jabatan_nama']);
-                                $defUnit = trim($rec['parent_unit'] ?? $this->name);
-                                break;
+                    if ($isPltJob) {
+                        foreach ($pegawaiList as $item) {
+                            if (($item['nip'] ?? '') === trim($p['nip'])) {
+                                $jName = trim($item['jabatan_nama'] ?? '');
+                                $jStatus = (string)($item['jabatan_status_id'] ?? '1');
+                                if ($jStatus === '1' && !str_starts_with(strtolower($jName), 'plt')) {
+                                    $defJabatan = $jName;
+                                    break;
+                                }
                             }
                         }
+                        if (!$defJabatan) {
+                            $allPnsMap = \Illuminate\Support\Facades\Cache::get('simpeg_all_pns_by_nip', []);
+                            $pnsList = $allPnsMap[trim($p['nip'])] ?? [];
+                            foreach ($pnsList as $rec) {
+                                if (($rec['jabatan_status_id'] ?? '1') == '1' && !str_starts_with(strtolower(trim($rec['jabatan_nama'] ?? '')), 'plt')) {
+                                    $defJabatan = trim($rec['jabatan_nama']);
+                                    $defUnit = trim($rec['parent_unit'] ?? $this->name);
+                                    break;
+                                }
+                            }
+                        }
+                    }
 
-                        $normUser = self::normalizePosition($defUnit, '', $defJabatan);
+                    if (!$defJabatan) {
+                        $defJabatan = $isPltJob ? preg_replace('/^(?:Plt\.|Pj\.|Pjs\.)\s*/i', '', $title) : $title;
+                    }
 
+                    $normUser = self::normalizePosition($defUnit, '', $defJabatan);
+
+                    if (!$signerUser) {
                         $signerUser = User::create([
                             'nip' => trim($p['nip']),
                             'nik' => $finalSignerNik ?: null,
@@ -901,9 +938,13 @@ class Opd extends Model
                             'pangkat' => $pangkat ?: $signerUser->pangkat,
                         ];
 
+                        // Hanya timpa jabatan jika bukan Plt, atau jika jabatan user saat ini masih mengandung Plt
                         $existingIsPlt = str_starts_with(strtolower(trim((string)$signerUser->jabatan)), 'plt');
-                        if (!$isPltJob || $existingIsPlt || empty($signerUser->jabatan)) {
-                            $normUser = self::normalizePosition($this->name, $bidangName, $title);
+                        if (!$isPltJob) {
+                            $normSignerDef = self::normalizePosition($this->name, $bidangName, $title);
+                            $updateData['jabatan'] = $normSignerDef['jabatan'];
+                            $updateData['unit_name'] = $normSignerDef['unit'];
+                        } elseif ($existingIsPlt || empty($signerUser->jabatan)) {
                             $updateData['jabatan'] = $normUser['jabatan'];
                             $updateData['unit_name'] = $normUser['unit'];
                         }

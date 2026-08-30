@@ -4,6 +4,13 @@ Semua perubahan penting pada proyek ini dicatat dalam berkas ini.
 
 Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/1.0.0/), dan proyek ini mematuhi [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.30] - 2026-08-30
+
+### Diperbaiki
+- **Penyelarasan Jabatan Definitif pada Tabel Pengguna**:
+  - Memastikan data akun pengguna di tabel `users` (Manajemen Pengguna) selalu menyimpan dan menampilkan jabatan definitif asli pegawai dari SIMPEG, terpisah dari jabatan peran penandatangan Plt di `opd_signers`.
+  - Menyempurnakan pencarian jabatan definitif pada sinkronisasi SIMPEG (`syncSignersFromApi`) agar pejabat yang mengemban tugas Plt tetap terdaftar dengan jabatan definitifnya di profil pengguna.
+
 ## [1.5.29] - 2026-08-30
 
 ### Diperbaiki
