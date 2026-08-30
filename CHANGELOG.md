@@ -4,6 +4,13 @@ Semua perubahan penting pada proyek ini dicatat dalam berkas ini.
 
 Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/1.0.0/), dan proyek ini mematuhi [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.27] - 2026-08-30
+
+### Diperbaiki
+- **Pencatatan Penandatangan Rangkap/Plt Antar-Bidang**:
+  - Menyempurnakan pencocokan penandatangan berbasis `[NIP + Bidang/Title]` sehingga pejabat yang mengemban jabatan definitif sekaligus merangkap Plt pada bidang lain (misalnya Kepala Bidang yang merangkap Plt. Sekretaris) dicatat secara utuh untuk kedua unit kerja tersebut.
+  - Memperluas pemangkasan sufiks nama dinas/badan/kabupaten yang redundan pada pembentukan nama bidang (`cleanBidangName`).
+
 ## [1.5.26] - 2026-08-30
 
 ### Ditambahkan

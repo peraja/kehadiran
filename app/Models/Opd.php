@@ -172,31 +172,32 @@ class Opd extends Model
     public static function cleanBidangName(string $title): string
     {
         $title = trim($title);
+        $res = $title;
+
         if (preg_match('/^(?:Plt\.\s+)?Sekretaris\b/i', $title)) {
-            return str_starts_with($title, 'Plt.') ? 'Sekretariat (Plt. Sekretaris)' : 'Sekretariat';
+            $res = str_starts_with($title, 'Plt.') ? 'Sekretariat (Plt. Sekretaris)' : 'Sekretariat';
+        } elseif (preg_match('/^(?:Plt\.\s+)?Kepala\s+(Bidang\s+.+)/i', $title, $m)) {
+            $res = (str_starts_with($title, 'Plt.') ? 'Plt. ' : '') . $m[1];
+        } elseif (preg_match('/^(?:Plt\.\s+)?Kepala\s+(Bagian\s+.+)/i', $title, $m)) {
+            $res = (str_starts_with($title, 'Plt.') ? 'Plt. ' : '') . $m[1];
+        } elseif (preg_match('/^(?:Plt\.\s+)?Kepala\s+(Sub\s*bagian\s+.+)/i', $title, $m)) {
+            $res = (str_starts_with($title, 'Plt.') ? 'Plt. ' : '') . preg_replace('/^Sub\s*bagian/i', 'Sub Bagian', $m[1]);
+        } elseif (preg_match('/^(?:Plt\.\s+)?Kepala\s+(Seksi\s+.+)/i', $title, $m)) {
+            $res = (str_starts_with($title, 'Plt.') ? 'Plt. ' : '') . $m[1];
+        } elseif (preg_match('/^(?:Plt\.\s+)?Kepala\s+(UPT\s+.+)/i', $title, $m)) {
+            $res = (str_starts_with($title, 'Plt.') ? 'Plt. ' : '') . $m[1];
+        } elseif (preg_match('/^(?:Plt\.\s+)?Kepala\s+(Tata\s+Usaha\s+.+)/i', $title, $m)) {
+            $res = (str_starts_with($title, 'Plt.') ? 'Plt. ' : '') . $m[1];
+        } elseif (preg_match('/^(?:Plt\.\s+)?Lurah\s+(.+)/i', $title, $m)) {
+            $res = (str_starts_with($title, 'Plt.') ? 'Plt. ' : '') . 'Kelurahan ' . $m[1];
         }
-        if (preg_match('/^(?:Plt\.\s+)?Kepala\s+(Bidang\s+.+)/i', $title, $m)) {
-            return (str_starts_with($title, 'Plt.') ? 'Plt. ' : '') . $m[1];
-        }
-        if (preg_match('/^(?:Plt\.\s+)?Kepala\s+(Bagian\s+.+)/i', $title, $m)) {
-            return (str_starts_with($title, 'Plt.') ? 'Plt. ' : '') . $m[1];
-        }
-        if (preg_match('/^(?:Plt\.\s+)?Kepala\s+(Sub\s*bagian\s+.+)/i', $title, $m)) {
-            return (str_starts_with($title, 'Plt.') ? 'Plt. ' : '') . preg_replace('/^Sub\s*bagian/i', 'Sub Bagian', $m[1]);
-        }
-        if (preg_match('/^(?:Plt\.\s+)?Kepala\s+(Seksi\s+.+)/i', $title, $m)) {
-            return (str_starts_with($title, 'Plt.') ? 'Plt. ' : '') . $m[1];
-        }
-        if (preg_match('/^(?:Plt\.\s+)?Kepala\s+(UPT\s+.+)/i', $title, $m)) {
-            return (str_starts_with($title, 'Plt.') ? 'Plt. ' : '') . $m[1];
-        }
-        if (preg_match('/^(?:Plt\.\s+)?Kepala\s+(Tata\s+Usaha\s+.+)/i', $title, $m)) {
-            return (str_starts_with($title, 'Plt.') ? 'Plt. ' : '') . $m[1];
-        }
-        if (preg_match('/^(?:Plt\.\s+)?Lurah\s+(.+)/i', $title, $m)) {
-            return (str_starts_with($title, 'Plt.') ? 'Plt. ' : '') . 'Kelurahan ' . $m[1];
-        }
-        return $title;
+
+        // Pangkas sufiks nama dinas / badan / kabupaten yang redundan
+        $res = preg_replace('/\s+(sekretariat\s+)?(dinas|badan|satpol|satuan\s+polisi|inspektorat)\s+.*$/i', '', $res);
+        $res = preg_replace('/\s+kab\.?\s*sinjai.*$/i', '', $res);
+        $res = preg_replace('/\s+kabupaten\s*sinjai.*$/i', '', $res);
+
+        return trim($res);
     }
 
     /**
@@ -807,16 +808,21 @@ class Opd extends Model
                 $normSigner = self::normalizePosition($this->name, $bidangName, $title);
                 $signerTitle = $normSigner['jabatan'];
 
-                // Cari signer yang sudah ada berdasarkan NIP (jika ada) atau berdasarkan title
+                // Cari signer yang sudah ada berdasarkan NIP + Bidang/Title (memungkinkan pejabat merangkap Plt pada bidang berbeda)
                 $signer = null;
                 if (!empty($p['nip'])) {
                     $signer = OpdSigner::where('opd_id', $this->id)
                         ->where('nip', trim($p['nip']))
+                        ->where(function ($query) use ($bidangName, $signerTitle) {
+                            $query->where('bidang_name', $bidangName)
+                                ->orWhere('title', $signerTitle);
+                        })
                         ->first();
                 }
                 if (!$signer) {
                     $signer = OpdSigner::where('opd_id', $this->id)
                         ->where('title', $signerTitle)
+                        ->where('bidang_name', $bidangName)
                         ->first();
                 }
                 if (!$signer) {
