@@ -103,25 +103,57 @@ new #[Layout('layouts.app')] class extends Component {
         $this->validate([
             'address' => 'nullable|string|max:500',
             'phone' => 'nullable|string|max:50',
-            'email' => 'nullable|email|max:100',
+            'email' => 'nullable|email|max:255',
+        ], [
+            'email.email' => 'Format email tidak valid.',
         ]);
 
-        if ($this->opd) {
-            $this->opd->update([
-                'address' => $this->address ? trim($this->address) : null,
-                'phone' => $this->phone ? trim($this->phone) : null,
-                'email' => $this->email ? trim($this->email) : null,
-            ]);
-        }
+        $this->opd->update([
+            'name' => trim($this->name),
+            'address' => $this->address ? trim($this->address) : null,
+            'phone' => $this->phone ? trim($this->phone) : null,
+            'email' => $this->email ? trim($this->email) : null,
+        ]);
 
-        session()->flash('message', 'Informasi OPD berhasil disimpan.');
+        session()->flash('message', 'Profil OPD berhasil diperbarui.');
+    }
+
+    public function syncFromApi(): void
+    {
+        $this->isSyncing = true;
+        try {
+            $count = $this->opd->syncSignersFromApi();
+            $this->opd->refresh();
+            $this->name = $this->opd->name;
+            session()->flash('message', "Sinkronisasi berhasil! {$count} pejabat penandatangan berhasil diperbarui dari SIMPEG.");
+        } catch (\Exception $e) {
+            session()->flash('error', 'Gagal sinkronisasi dari SIMPEG: ' . $e->getMessage());
+        } finally {
+            $this->isSyncing = false;
+        }
+    }
+
+    public function openAddSignerModal(): void
+    {
+        $this->resetValidation();
+        $this->isEditingLeader = false;
+        $this->editingSignerId = null;
+        $this->editingManualPimpinanId = null;
+
+        $this->signer_name = '';
+        $this->signer_nip = '';
+        $this->signer_nik = '';
+        $this->signer_title = '';
+        $this->signer_rank = '';
+        $this->signer_bidang = '';
+        $this->signer_eselon = 'III.a';
+
+        $this->dispatch('open-modal', 'signer-form-modal');
     }
 
     public function openEditLeaderModal(): void
     {
         $this->resetValidation();
-        $this->apiSynced = false;
-        $this->apiStatusMessage = '';
         $this->isEditingLeader = true;
         $this->editingSignerId = null;
         $this->editingManualPimpinanId = null;
@@ -140,8 +172,6 @@ new #[Layout('layouts.app')] class extends Component {
     public function openEditSignerModal(int $id): void
     {
         $this->resetValidation();
-        $this->apiSynced = false;
-        $this->apiStatusMessage = '';
         $this->isEditingLeader = false;
         $this->editingManualPimpinanId = null;
 
@@ -162,8 +192,6 @@ new #[Layout('layouts.app')] class extends Component {
     public function openEditManualPimpinanModal(int $id): void
     {
         $this->resetValidation();
-        $this->apiSynced = false;
-        $this->apiStatusMessage = '';
         $this->isEditingLeader = false;
         $this->editingSignerId = null;
         $this->editingManualPimpinanId = $id;
@@ -178,66 +206,6 @@ new #[Layout('layouts.app')] class extends Component {
         $this->signer_eselon = 'Non-Eselon';
 
         $this->dispatch('open-modal', 'signer-form-modal');
-    }
-
-    public function checkNipFromApi(): void
-    {
-        $this->resetValidation('signer_nip');
-        $this->apiSynced = false;
-        $this->apiStatusMessage = '';
-
-        $nip = trim($this->signer_nip);
-        if (empty($nip)) {
-            $this->addError('signer_nip', 'Ketikkan NIP terlebih dahulu.');
-            return;
-        }
-
-        $baseUrl = config('services.simpeg.url', 'http://apps.sinjaikab.go.id/api/pegawai');
-        $timeout = config('services.simpeg.timeout', 10);
-
-        try {
-            $pegawaiResponse = \Illuminate\Support\Facades\Http::timeout($timeout)->get("{$baseUrl}/data_pegawai/", [
-                'nip' => $nip
-            ]);
-
-            $pegawaiData = $pegawaiResponse->json();
-            $pData = isset($pegawaiData['data']) ? $pegawaiData['data'] : (isset($pegawaiData[0]) ? $pegawaiData[0] : $pegawaiData);
-
-            if ($pegawaiResponse->successful() && is_array($pData) && !empty($pData['nama'] ?? $pData['nama_pegawai'] ?? null)) {
-                $this->signer_name = $pData['nama_pegawai'] ?? $pData['nama'] ?? $this->signer_name;
-                $rawTitle = $pData['jabatan_nama'] ?? $pData['jabatan'] ?? $this->signer_title;
-                $normTitle = Opd::normalizePosition($this->opd->name ?? '', '', $rawTitle);
-                $this->signer_title = $normTitle['jabatan'] ?: $rawTitle;
-                $this->signer_rank = $pData['pangkat_nama'] ?? $this->signer_rank;
-
-                $nik = trim((string)($pData['nik'] ?? ($pData['no_ktp'] ?? ($pData['ktp'] ?? ($pData['no_identitas'] ?? '')))));
-                if (!$nik && !empty($nip)) {
-                    $existingUser = User::where('nip', $nip)->first();
-                    if ($existingUser && !empty($existingUser->nik)) {
-                        $nik = $existingUser->nik;
-                    }
-                }
-                if ($nik) {
-                    $this->signer_nik = $nik;
-                }
-
-                $eselon = trim((string)($pData['jabatan_jenis_eselon'] ?? ($pData['eselon'] ?? '')));
-                if ($eselon) {
-                    $this->signer_eselon = $eselon;
-                }
-
-                if (!$this->isEditingLeader) {
-                    $this->signer_bidang = Opd::cleanBidangName($this->signer_title);
-                }
-
-                $this->apiSynced = true;
-                $this->apiStatusMessage = 'Data pegawai berhasil disinkronkan dari SIMPEG.';
-            } else {
-                $this->addError('signer_nip', 'NIP tidak ditemukan di database SIMPEG Sinjai.');
-            }
-        } catch (\Exception $e) {
-            $this->addError('signer_nip', 'Gagal terhubung ke API SIMPEG: ' . $e->getMessage());
-        }
     }
 
     public function saveSigner(): void
@@ -511,8 +479,6 @@ new #[Layout('layouts.app')] class extends Component {
                                     $wire.signer_rank = @js($opd->leader_rank ?? '');
                                     $wire.signer_bidang = @js($opd->name);
                                     $wire.signer_eselon = @js($opd->leader_eselon ?: 'II.a');
-                                    $wire.apiSynced = false;
-                                    $wire.apiStatusMessage = '';
                                     $dispatch('open-modal', 'signer-form-modal');
                                 "
                                 class="inline-flex items-center gap-1 px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-xs font-bold transition-all shadow-xs active:scale-95 cursor-pointer">
@@ -575,8 +541,6 @@ new #[Layout('layouts.app')] class extends Component {
                                         $wire.signer_rank = @js($signer->rank ?? '');
                                         $wire.signer_bidang = @js($signer->bidang_name ?? '');
                                         $wire.signer_eselon = @js($signer->eselon ?? 'III.a');
-                                        $wire.apiSynced = false;
-                                        $wire.apiStatusMessage = '';
                                         $dispatch('open-modal', 'signer-form-modal');
                                     "
                                     class="inline-flex items-center gap-1 px-2.5 py-1.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-xs font-bold transition-all shadow-xs active:scale-95 cursor-pointer" 
@@ -663,8 +627,6 @@ new #[Layout('layouts.app')] class extends Component {
                                         $wire.signer_rank = @js($pu->pangkat ?? '');
                                         $wire.signer_bidang = @js($pu->unit_name ?? $opd->name);
                                         $wire.signer_eselon = 'Non-Eselon';
-                                        $wire.apiSynced = false;
-                                        $wire.apiStatusMessage = '';
                                         $dispatch('open-modal', 'signer-form-modal');
                                     "
                                     class="inline-flex items-center gap-1 px-2.5 py-1.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-xs font-bold transition-all shadow-xs active:scale-95 cursor-pointer" 
@@ -710,23 +672,10 @@ new #[Layout('layouts.app')] class extends Component {
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <!-- NIP dengan Cek SIMPEG -->
+                    <!-- NIP -->
                     <div>
                         <label for="signer_nip" class="block text-sm font-bold text-slate-700 mb-1">NIP</label>
-                        <div class="flex items-center gap-2">
-                            <x-text-input wire:model="signer_nip" wire:keydown.enter.prevent="checkNipFromApi" id="signer_nip" type="text" class="font-mono" placeholder="Contoh: 198501012010011001" />
-
-                            <button type="button" wire:click="checkNipFromApi" wire:loading.attr="disabled" wire:target="checkNipFromApi" class="shrink-0 inline-flex items-center justify-center px-3 py-2.5 bg-slate-800 hover:bg-slate-900 active:scale-95 text-white rounded-xl font-bold text-xs transition-all shadow-sm gap-1.5" title="Tarik dari SIMPEG">
-                                <svg wire:loading.remove wire:target="checkNipFromApi" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                                </svg>
-                                <svg wire:loading wire:target="checkNipFromApi" class="animate-spin w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24">
-                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
-                                </svg>
-                                <span>Cek NIP</span>
-                            </button>
-                        </div>
+                        <x-text-input wire:model="signer_nip" id="signer_nip" type="text" class="font-mono" placeholder="Contoh: 198501012010011001" />
                         @error('signer_nip') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                     </div>
 
@@ -737,26 +686,6 @@ new #[Layout('layouts.app')] class extends Component {
                         @error('signer_nik') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                     </div>
                 </div>
-
-                <!-- API Status Feedback -->
-                @if($apiSynced)
-                <div class="p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center justify-between gap-3">
-                    <div class="min-w-0 space-y-0.5">
-                        <p class="text-sm font-bold text-emerald-900 truncate">{{ $signer_name }}</p>
-                        @if($signer_title)
-                        <p class="text-xs font-semibold text-emerald-800 truncate">{{ $signer_title }}</p>
-                        @endif
-                        @if($signer_bidang)
-                        <p class="text-xs font-medium text-emerald-600 truncate">{{ $signer_bidang }}</p>
-                        @endif
-                    </div>
-                    <span class="shrink-0 flex items-center justify-center w-7 h-7 bg-emerald-500 text-white rounded-xl shadow-xs" title="Terverifikasi SIMPEG">
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
-                        </svg>
-                    </span>
-                </div>
-                @endif
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <!-- Eselon -->
