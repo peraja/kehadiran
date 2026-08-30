@@ -4,6 +4,14 @@ Semua perubahan penting pada proyek ini dicatat dalam berkas ini.
 
 Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/1.0.0/), dan proyek ini mematuhi [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.25] - 2026-08-30
+
+### Diperbaiki
+- **Sinkronisasi Penandatangan OPD (`syncSignersFromApi`)**:
+  - Mengubah logika pencocokan penandatangan agar memprioritaskan pencarian berdasarkan `NIP` (bukan hanya `title`), sehingga perubahan jabatan yang dinormalisasi dapat langsung memperbarui data yang sudah ada (*in-place update*) tanpa membuat rekaman duplikat.
+  - Menambahkan pembersihan otomatis (*cleanup*) untuk menghapus penandatangan lama/duplikat yang memiliki NIP jika sudah tidak ada dalam respons API aktif.
+  - Mengintegrasikan normalisasi jabatan otomatis pada akun Admin OPD dan pengguna OPD terkait saat sinkronisasi API dijalankan.
+
 ## [1.5.24] - 2026-08-30
 
 ### Diperbaiki

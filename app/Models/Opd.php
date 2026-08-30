@@ -797,21 +797,35 @@ class Opd extends Model
                 $normSigner = self::normalizePosition($this->name, $bidangName, $title);
                 $signerTitle = $normSigner['jabatan'];
 
-                OpdSigner::updateOrCreate(
-                    [
-                        'opd_id' => $this->id,
-                        'title' => $signerTitle,
-                    ],
-                    [
-                        'bidang_name' => $bidangName,
-                        'name' => trim($p['nama'] ?? ''),
-                        'nip' => !empty($p['nip']) ? trim($p['nip']) : null,
-                        'nik' => $signerNik ?: null,
-                        'rank' => $pangkat ?: null,
-                        'eselon' => $eselon,
-                        'is_active' => true,
-                    ]
-                );
+                // Cari signer yang sudah ada berdasarkan NIP (jika ada) atau berdasarkan title
+                $signer = null;
+                if (!empty($p['nip'])) {
+                    $signer = OpdSigner::where('opd_id', $this->id)
+                        ->where('nip', trim($p['nip']))
+                        ->first();
+                }
+                if (!$signer) {
+                    $signer = OpdSigner::where('opd_id', $this->id)
+                        ->where('title', $signerTitle)
+                        ->first();
+                }
+                if (!$signer) {
+                    $signer = new OpdSigner();
+                    $signer->opd_id = $this->id;
+                }
+
+                $signer->fill([
+                    'title' => $signerTitle,
+                    'bidang_name' => $bidangName,
+                    'name' => trim($p['nama'] ?? ''),
+                    'nip' => !empty($p['nip']) ? trim($p['nip']) : null,
+                    'nik' => $signerNik ?: null,
+                    'rank' => $pangkat ?: null,
+                    'eselon' => $eselon,
+                    'is_active' => true,
+                ])->save();
+
+                $syncedSignerIds[] = $signer->id;
 
                 // Sync Signer as User with role: pimpinan (prioritas jabatan definitif)
                 if (!empty($p['nip'])) {
@@ -867,6 +881,11 @@ class Opd extends Model
                 $syncedCount++;
             }
 
+            // Bersihkan penandatangan usang / duplikat yang memiliki NIP dari OPD ini
+            if (!empty($syncedSignerIds)) {
+                $this->signers()->whereNotIn('id', $syncedSignerIds)->whereNotNull('nip')->delete();
+            }
+
             // Sync Admin OPD (Kasubag Kepegawaian / Kasubag Umum dan Kepegawaian / Kasubag TU & Kepegawaian)
             $adminOpdCandidate = null;
 
@@ -896,20 +915,22 @@ class Opd extends Model
                 $nip = trim($adminOpdCandidate['nip']);
                 $adminPangkat = trim((string)($adminOpdCandidate['pangkat_nama'] ?? ''));
                 $adminUser = User::where('nip', $nip)->first();
+                $normAdmin = self::normalizePosition($this->name, '', $adminOpdCandidate['jabatan_nama'] ?? '');
+
                 if (!$adminUser) {
                     $adminUser = User::create([
                         'nip' => $nip,
                         'name' => trim($adminOpdCandidate['nama'] ?? $nip),
-                        'unit_name' => $this->name,
-                        'jabatan' => trim($adminOpdCandidate['jabatan_nama'] ?? ''),
+                        'unit_name' => $normAdmin['unit'],
+                        'jabatan' => $normAdmin['jabatan'],
                         'pangkat' => $adminPangkat ?: null,
                         'password' => bcrypt($nip),
                     ]);
                 } else {
                     $adminUser->update([
                         'name' => trim($adminOpdCandidate['nama'] ?? $adminUser->name),
-                        'unit_name' => $this->name,
-                        'jabatan' => trim($adminOpdCandidate['jabatan_nama'] ?? $adminUser->jabatan),
+                        'unit_name' => $normAdmin['unit'],
+                        'jabatan' => $normAdmin['jabatan'] ?: $adminUser->jabatan,
                         'pangkat' => $adminPangkat ?: $adminUser->pangkat,
                     ]);
                 }
@@ -926,13 +947,15 @@ class Opd extends Model
                 if ($nipsInApi->has($u->nip)) {
                     $pData = $nipsInApi->get($u->nip);
                     $uPangkat = trim((string)($pData['pangkat_nama'] ?? ''));
-                    $uJabatan = trim((string)($pData['jabatan_nama'] ?? ''));
+                    $rawUJabatan = trim((string)($pData['jabatan_nama'] ?? ''));
                     $uName = trim((string)($pData['nama'] ?? $pData['nama_pegawai'] ?? ''));
                     $uNik = trim((string)($pData['nik'] ?? ($pData['no_ktp'] ?? ($pData['ktp'] ?? ($pData['no_identitas'] ?? '')))));
 
+                    $normU = self::normalizePosition($this->name, '', $rawUJabatan);
+
                     $u->update([
                         'pangkat' => $uPangkat ?: $u->pangkat,
-                        'jabatan' => $uJabatan ?: $u->jabatan,
+                        'jabatan' => $normU['jabatan'] ?: $u->jabatan,
                         'name'    => $uName ?: $u->name,
                         'nik'     => $uNik ?: $u->nik,
                     ]);
