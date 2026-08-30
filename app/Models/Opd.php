@@ -745,12 +745,29 @@ class Opd extends Model
                                     }
                                 }
                             }
+                            if (!$defJabatan) {
+                                try {
+                                    $baseUrl = config('services.simpeg.url', 'http://apps.sinjaikab.go.id/api/pegawai');
+                                    $pResp = \Illuminate\Support\Facades\Http::timeout(5)->get("{$baseUrl}/data_pegawai/", ['nip' => trim($p['nip'])]);
+                                    if ($pResp->successful()) {
+                                        $pJson = $pResp->json();
+                                        $pInfo = isset($pJson['data']) ? $pJson['data'] : (isset($pJson[0]) ? $pJson[0] : $pJson);
+                                        $apiJabatan = trim((string)($pInfo['jabatan_nama'] ?? ''));
+                                        if (!empty($apiJabatan) && !str_starts_with(strtolower($apiJabatan), 'plt')) {
+                                            $defJabatan = $apiJabatan;
+                                        }
+                                    }
+                                } catch (\Throwable $e) {
+                                    // Ignore API fail
+                                }
+                            }
                         }
                         if (!$defJabatan) {
                             $defJabatan = $isPltJob ? preg_replace('/^(?:Plt\.|Pj\.|Pjs\.)\s*/i', '', $jobTitle ?: $this->leader_title) : ($jobTitle ?: $this->leader_title);
                         }
 
                         $normUser = self::normalizePosition($defUnit, '', $defJabatan);
+                        $cleanUserJabatan = preg_replace('/^(?:Plt\.|Pj\.|Pjs\.)\s*/i', '', $normUser['jabatan']);
 
                         if (!$leaderUser) {
                             $leaderUser = User::create([
@@ -758,7 +775,7 @@ class Opd extends Model
                                 'nik' => $finalLeaderNik ?: null,
                                 'name' => trim($p['nama'] ?? $p['nip']),
                                 'unit_name' => $normUser['unit'],
-                                'jabatan' => $normUser['jabatan'],
+                                'jabatan' => $cleanUserJabatan,
                                 'pangkat' => $pangkat ?: null,
                                 'password' => null,
                             ]);
@@ -769,15 +786,10 @@ class Opd extends Model
                                 'pangkat' => $pangkat ?: $leaderUser->pangkat,
                             ];
 
-                            // Hanya timpa jabatan jika bukan Plt, atau bersihkan jika user saat ini masih Plt
-                            $existingIsPlt = str_starts_with(strtolower(trim((string)$leaderUser->jabatan)), 'plt');
-                            if (!$isPltJob) {
-                                $normLeaderDef = self::normalizePosition($this->name, '', $jobTitle);
-                                $updateData['jabatan'] = $normLeaderDef['jabatan'] ?: $leaderUser->jabatan;
-                                $updateData['unit_name'] = $normLeaderDef['unit'] ?: $this->name;
-                            } elseif ($existingIsPlt || empty($leaderUser->jabatan)) {
-                                $updateData['jabatan'] = $normUser['jabatan'] ?: $leaderUser->jabatan;
-                                $updateData['unit_name'] = $normUser['unit'] ?: $this->name;
+                            // Hanya timpa jabatan jika bukan Plt, atau jika user belum memiliki jabatan definitif
+                            if (!$isPltJob || empty($leaderUser->jabatan) || str_starts_with(strtolower(trim((string)$leaderUser->jabatan)), 'plt')) {
+                                $updateData['jabatan'] = $cleanUserJabatan;
+                                $updateData['unit_name'] = $normUser['unit'];
                             }
 
                             $leaderUser->update($updateData);
@@ -885,7 +897,7 @@ class Opd extends Model
                 // Sync Signer as User with role: pimpinan (prioritas jabatan definitif)
                 if (!empty($p['nip'])) {
                     $signerUser = User::where('nip', trim($p['nip']))->first();
-                    $isPltJob = str_starts_with(strtolower($title), 'plt');
+                    $isPltJob = str_starts_with(strtolower($title), 'plt') || ($p['jabatan_status_id'] ?? null) == '2';
 
                     // Cari jabatan definitif pegawai (bukan Plt)
                     $defJabatan = null;
@@ -913,6 +925,22 @@ class Opd extends Model
                                 }
                             }
                         }
+                        if (!$defJabatan) {
+                            try {
+                                $baseUrl = config('services.simpeg.url', 'http://apps.sinjaikab.go.id/api/pegawai');
+                                $pResp = \Illuminate\Support\Facades\Http::timeout(5)->get("{$baseUrl}/data_pegawai/", ['nip' => trim($p['nip'])]);
+                                if ($pResp->successful()) {
+                                    $pJson = $pResp->json();
+                                    $pInfo = isset($pJson['data']) ? $pJson['data'] : (isset($pJson[0]) ? $pJson[0] : $pJson);
+                                    $apiJabatan = trim((string)($pInfo['jabatan_nama'] ?? ''));
+                                    if (!empty($apiJabatan) && !str_starts_with(strtolower($apiJabatan), 'plt')) {
+                                        $defJabatan = $apiJabatan;
+                                    }
+                                }
+                            } catch (\Throwable $e) {
+                                // Ignore API fail
+                            }
+                        }
                     }
 
                     if (!$defJabatan) {
@@ -920,6 +948,7 @@ class Opd extends Model
                     }
 
                     $normUser = self::normalizePosition($defUnit, '', $defJabatan);
+                    $cleanUserJabatan = preg_replace('/^(?:Plt\.|Pj\.|Pjs\.)\s*/i', '', $normUser['jabatan']);
 
                     if (!$signerUser) {
                         $signerUser = User::create([
@@ -927,7 +956,7 @@ class Opd extends Model
                             'nik' => $finalSignerNik ?: null,
                             'name' => trim($p['nama'] ?? $p['nip']),
                             'unit_name' => $normUser['unit'],
-                            'jabatan' => $normUser['jabatan'],
+                            'jabatan' => $cleanUserJabatan,
                             'pangkat' => $pangkat ?: null,
                             'password' => null,
                         ]);
@@ -938,14 +967,9 @@ class Opd extends Model
                             'pangkat' => $pangkat ?: $signerUser->pangkat,
                         ];
 
-                        // Hanya timpa jabatan jika bukan Plt, atau jika jabatan user saat ini masih mengandung Plt
-                        $existingIsPlt = str_starts_with(strtolower(trim((string)$signerUser->jabatan)), 'plt');
-                        if (!$isPltJob) {
-                            $normSignerDef = self::normalizePosition($this->name, $bidangName, $title);
-                            $updateData['jabatan'] = $normSignerDef['jabatan'];
-                            $updateData['unit_name'] = $normSignerDef['unit'];
-                        } elseif ($existingIsPlt || empty($signerUser->jabatan)) {
-                            $updateData['jabatan'] = $normUser['jabatan'];
+                        // Hanya perbarui jabatan ke definitif jika saat ini bukan Plt, atau jika profil user masih kosong/Plt
+                        if (!$isPltJob || empty($signerUser->jabatan) || str_starts_with(strtolower(trim((string)$signerUser->jabatan)), 'plt')) {
+                            $updateData['jabatan'] = $cleanUserJabatan;
                             $updateData['unit_name'] = $normUser['unit'];
                         }
 
@@ -1018,22 +1042,37 @@ class Opd extends Model
                 }
             }
 
-            // Sync all existing users in this OPD from the API list (refresh pangkat, jabatan, nik, name)
-            $nipsInApi = collect($pegawaiList)->filter(fn($item) => !empty($item['nip']))->keyBy('nip');
+            // Sync all existing users in this OPD from the API list (prioritaskan jabatan definitif)
+            $pegawaiByNip = [];
+            foreach ($pegawaiList as $item) {
+                $nip = trim((string)($item['nip'] ?? ''));
+                if (empty($nip)) continue;
+
+                $jName = trim((string)($item['jabatan_nama'] ?? ''));
+                $jStatus = (string)($item['jabatan_status_id'] ?? '1');
+                $isPlt = str_starts_with(strtolower($jName), 'plt') || $jStatus === '2';
+
+                // Jika belum ada, atau jika item saat ini definitif sedangkan yang tersimpan sebelumnya Plt
+                if (!isset($pegawaiByNip[$nip]) || (!$isPlt && (str_starts_with(strtolower($pegawaiByNip[$nip]['jabatan_nama'] ?? ''), 'plt') || ($pegawaiByNip[$nip]['jabatan_status_id'] ?? '1') === '2'))) {
+                    $pegawaiByNip[$nip] = $item;
+                }
+            }
+
             $opdUsers = User::where('unit_name', $this->name)->whereNotNull('nip')->get();
             foreach ($opdUsers as $u) {
-                if ($nipsInApi->has($u->nip)) {
-                    $pData = $nipsInApi->get($u->nip);
+                if (isset($pegawaiByNip[$u->nip])) {
+                    $pData = $pegawaiByNip[$u->nip];
                     $uPangkat = trim((string)($pData['pangkat_nama'] ?? ''));
                     $rawUJabatan = trim((string)($pData['jabatan_nama'] ?? ''));
                     $uName = trim((string)($pData['nama'] ?? $pData['nama_pegawai'] ?? ''));
                     $uNik = trim((string)($pData['nik'] ?? ($pData['no_ktp'] ?? ($pData['ktp'] ?? ($pData['no_identitas'] ?? '')))));
 
                     $normU = self::normalizePosition($this->name, '', $rawUJabatan);
+                    $cleanUJabatan = preg_replace('/^(?:Plt\.|Pj\.|Pjs\.)\s*/i', '', $normU['jabatan']);
 
                     $u->update([
                         'pangkat' => $uPangkat ?: $u->pangkat,
-                        'jabatan' => $normU['jabatan'] ?: $u->jabatan,
+                        'jabatan' => $cleanUJabatan ?: $u->jabatan,
                         'name'    => $uName ?: $u->name,
                         'nik'     => $uNik ?: $u->nik,
                     ]);

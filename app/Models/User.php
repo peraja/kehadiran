@@ -42,6 +42,11 @@ class User extends Authenticatable
         ];
     }
 
+    public function setJabatanAttribute($value): void
+    {
+        $this->attributes['jabatan'] = $value ? preg_replace('/^(?:Plt\.|Pj\.|Pjs\.)\s*/i', '', trim($value)) : null;
+    }
+
     public function attendances(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(MeetingAttendance::class);

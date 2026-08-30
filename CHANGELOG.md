@@ -4,6 +4,13 @@ Semua perubahan penting pada proyek ini dicatat dalam berkas ini.
 
 Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/1.0.0/), dan proyek ini mematuhi [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.32] - 2026-08-30
+
+### Diperbaiki
+- **Pengamanan Prioritas Jabatan Definitif pada Sinkronisasi Massal Pengguna OPD**:
+  - Memperbaiki pengelompokan NIP pada sinkronisasi pegawai OPD (`Opd::syncSignersFromApi`) agar selalu memprioritaskan data jabatan definitif (`status_id = 1`) dibandingkan data Plt, sehingga profil pengguna tidak tertimpa jabatan Plt saat OPD disinkronkan.
+  - Menambahkan mutator `setJabatanAttribute` pada model `User` untuk menjamin jabatan akun pengguna selalu tersimpan dalam bentuk definitif bersih tanpa awalan `Plt.`.
+
 ## [1.5.31] - 2026-08-30
 
 ### Diperbaiki
