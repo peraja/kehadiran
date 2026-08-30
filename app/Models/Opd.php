@@ -764,28 +764,38 @@ class Opd extends Model
 
             $allowedEselons = ['II.A', 'II.B', 'III.A', 'III.B'];
 
-            // Delete any existing signers below Eselon III.b (e.g. IV.a, IV.b) for this OPD
-            $this->signers()->whereNotIn('eselon', ['II.a', 'II.b', 'III.a', 'III.b'])->delete();
+            // Delete any existing signers below Eselon III.b for this OPD (kecuali yang berstatus Plt)
+            $this->signers()->whereNotIn('eselon', ['II.a', 'II.b', 'III.a', 'III.b'])->where('title', 'not like', '%Plt%')->where('title', 'not like', '%Pj%')->delete();
 
             $syncedCount = 0;
             foreach ($pegawaiList as $p) {
-                $eselon = trim((string)($p['jabatan_jenis_eselon'] ?? ($p['eselon'] ?? null)));
-                if (empty($eselon) || $eselon === '-' || $eselon === 'null') {
+                $title = trim($p['jabatan_nama'] ?? '');
+                if (empty($title)) {
                     continue;
                 }
 
-                // Filter up to Eselon III.b only (exclude IV.a, IV.b, V, etc.)
-                if (!in_array(strtoupper($eselon), $allowedEselons, true)) {
+                $eselon = trim((string)($p['jabatan_jenis_eselon'] ?? ($p['eselon'] ?? null)));
+                $isPlt = str_starts_with(strtolower($title), 'plt') || ($p['jabatan_status_id'] ?? null) == '2';
+                $isSignerPosition = preg_match('/^(?:Plt\.\s+|Pj\.\s+|Pjs\.\s+)?(?:Sekretaris|Kepala\s+(?:Bidang|Bagian)|Inspektur\s+Pembantu|Irban)\b/i', $title);
+                $isEselonValid = !empty($eselon) && in_array(strtoupper($eselon), $allowedEselons, true);
+
+                // Lolos jika eselon resmi II/III ATAU jika merupakan Plt pada posisi penandatangan eselon III
+                if (!$isEselonValid && !($isPlt && $isSignerPosition)) {
                     continue;
+                }
+
+                if (empty($eselon) || $eselon === '-' || !in_array(strtoupper($eselon), $allowedEselons, true)) {
+                    if (preg_match('/^(?:Plt\.\s+)?Sekretaris\b/i', $title) || preg_match('/^(?:Plt\.\s+)?Kepala\s+Bagian\b/i', $title) || preg_match('/^(?:Plt\.\s+)?Inspektur\s+Pembantu\b/i', $title)) {
+                        $eselon = 'III.a';
+                    } elseif (preg_match('/^(?:Plt\.\s+)?Kepala\s+Bidang\b/i', $title)) {
+                        $eselon = 'III.b';
+                    } else {
+                        $eselon = $eselon ?: 'III.b';
+                    }
                 }
 
                 // If this is the main Kepala OPD, skip adding to sub-bidang
                 if (!empty($this->leader_nip) && ($p['nip'] ?? '') === $this->leader_nip) {
-                    continue;
-                }
-
-                $title = trim($p['jabatan_nama'] ?? '');
-                if (empty($title)) {
                     continue;
                 }
 

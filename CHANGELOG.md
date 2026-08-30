@@ -4,6 +4,14 @@ Semua perubahan penting pada proyek ini dicatat dalam berkas ini.
 
 Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/1.0.0/), dan proyek ini mematuhi [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.26] - 2026-08-30
+
+### Ditambahkan
+- **Dukungan Pelaksana Tugas (Plt.) pada Penandatangan OPD**:
+  - Menambahkan *checkbox toggle* `Pelaksana Tugas (Plt.)` pada form modal penandatangan (`opd/settings.blade.php`) dengan format otomatis awalan `Plt. ` pada kolom jabatan.
+  - Menambahkan badge visual `PLT` pada tabel daftar Kepala OPD dan Penandatangan.
+  - Menyempurnakan sinkronisasi SIMPEG (`syncSignersFromApi`) agar pejabat yang mengemban tugas Plt pada posisi penandatangan (Sekretaris, Kepala Bidang, Kepala Bagian, Irban) otomatis diikutsertakan.
+
 ## [1.5.25] - 2026-08-30
 
 ### Diperbaiki

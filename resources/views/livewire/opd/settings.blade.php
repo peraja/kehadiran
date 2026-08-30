@@ -26,9 +26,16 @@ new #[Layout('layouts.app')] class extends Component {
     public string $signer_rank = '';
     public string $signer_bidang = '';
     public string $signer_eselon = '';
+    public bool $signer_is_plt = false;
     public ?int $editingManualPimpinanId = null;
     public bool $apiSynced = false;
     public string $apiStatusMessage = '';
+
+    public function updatedSignerIsPlt(bool $value): void
+    {
+        $clean = preg_replace('/^plt\.?\s*/i', '', $this->signer_title);
+        $this->signer_title = $value ? 'Plt. ' . trim($clean) : trim($clean);
+    }
 
     public function mount(): void
     {
@@ -130,6 +137,7 @@ new #[Layout('layouts.app')] class extends Component {
         $this->signer_nip = $this->opd->leader_nip ?? '';
         $this->signer_nik = $this->opd->leader_nik ?? '';
         $this->signer_title = $this->opd->leader_title ?? '';
+        $this->signer_is_plt = str_starts_with(strtolower((string)$this->signer_title), 'plt');
         $this->signer_rank = $this->opd->leader_rank ?? '';
         $this->signer_bidang = $this->opd->name;
         $this->signer_eselon = $this->opd->leader_eselon ?: 'II.a';
@@ -152,6 +160,7 @@ new #[Layout('layouts.app')] class extends Component {
         $this->signer_nip = $signer->nip ?? '';
         $this->signer_nik = $signer->nik ?? '';
         $this->signer_title = $signer->title ?? '';
+        $this->signer_is_plt = str_starts_with(strtolower((string)$this->signer_title), 'plt');
         $this->signer_rank = $signer->rank ?? '';
         $this->signer_bidang = $signer->bidang_name ?? '';
         $this->signer_eselon = $signer->eselon ?? 'III.a';
@@ -173,6 +182,7 @@ new #[Layout('layouts.app')] class extends Component {
         $this->signer_nip = $user->nip ?? '';
         $this->signer_nik = $user->nik ?? '';
         $this->signer_title = $user->jabatan ?? '';
+        $this->signer_is_plt = str_starts_with(strtolower((string)$this->signer_title), 'plt');
         $this->signer_rank = $user->pangkat ?? '';
         $this->signer_bidang = $user->unit_name ?? $this->opd->name;
         $this->signer_eselon = 'Non-Eselon';
@@ -208,6 +218,7 @@ new #[Layout('layouts.app')] class extends Component {
                 $rawTitle = $pData['jabatan_nama'] ?? $pData['jabatan'] ?? $this->signer_title;
                 $normTitle = Opd::normalizePosition($this->opd->name ?? '', '', $rawTitle);
                 $this->signer_title = $normTitle['jabatan'] ?: $rawTitle;
+                $this->signer_is_plt = $normTitle['is_plt'] || str_starts_with(strtolower((string)$this->signer_title), 'plt');
                 $this->signer_rank = $pData['pangkat_nama'] ?? $this->signer_rank;
 
                 $nik = trim((string)($pData['nik'] ?? ($pData['no_ktp'] ?? ($pData['ktp'] ?? ($pData['no_identitas'] ?? '')))));
@@ -249,12 +260,19 @@ new #[Layout('layouts.app')] class extends Component {
             'signer_title.required' => 'Jabatan wajib diisi.',
         ]);
 
+        $finalTitle = trim($this->signer_title);
+        if ($this->signer_is_plt && !str_starts_with(strtolower($finalTitle), 'plt')) {
+            $finalTitle = 'Plt. ' . $finalTitle;
+        } elseif (!$this->signer_is_plt) {
+            $finalTitle = preg_replace('/^plt\.?\s*/i', '', $finalTitle);
+        }
+
         if ($this->isEditingLeader) {
             $this->opd->update([
                 'leader_name' => trim($this->signer_name),
                 'leader_nip' => $this->signer_nip ? trim($this->signer_nip) : null,
                 'leader_nik' => $this->signer_nik ? trim($this->signer_nik) : null,
-                'leader_title' => trim($this->signer_title),
+                'leader_title' => $finalTitle,
                 'leader_rank' => $this->signer_rank ? trim($this->signer_rank) : null,
                 'leader_eselon' => $this->signer_eselon ? trim($this->signer_eselon) : null,
             ]);
@@ -266,7 +284,7 @@ new #[Layout('layouts.app')] class extends Component {
                 'name' => trim($this->signer_name),
                 'nip' => $this->signer_nip ? trim($this->signer_nip) : null,
                 'nik' => $this->signer_nik ? trim($this->signer_nik) : null,
-                'title' => trim($this->signer_title),
+                'title' => $finalTitle,
                 'rank' => $this->signer_rank ? trim($this->signer_rank) : null,
                 'bidang_name' => $this->signer_bidang ? trim($this->signer_bidang) : null,
                 'eselon' => $this->signer_eselon ? trim($this->signer_eselon) : null,
@@ -278,7 +296,7 @@ new #[Layout('layouts.app')] class extends Component {
                 'name' => trim($this->signer_name),
                 'nip' => $this->signer_nip ? trim($this->signer_nip) : null,
                 'nik' => $this->signer_nik ? trim($this->signer_nik) : null,
-                'jabatan' => trim($this->signer_title),
+                'jabatan' => $finalTitle,
                 'pangkat' => $this->signer_rank ? trim($this->signer_rank) : null,
                 'unit_name' => $this->signer_bidang ? trim($this->signer_bidang) : $user->unit_name,
             ]);
@@ -470,7 +488,12 @@ new #[Layout('layouts.app')] class extends Component {
                             </div>
                         </td>
                         <td class="py-4 px-6">
-                            <div class="text-xs font-semibold text-slate-800">{{ $opd->leader_title ?: '-' }}</div>
+                            <div class="flex items-center gap-1.5 flex-wrap">
+                                @if(str_starts_with(strtolower($opd->leader_title ?? ''), 'plt'))
+                                <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-black bg-amber-100 text-amber-800 border border-amber-300">PLT</span>
+                                @endif
+                                <div class="text-xs font-semibold text-slate-800">{{ $opd->leader_title ?: '-' }}</div>
+                            </div>
                             @if($opd->leader_rank)
                             <div class="text-xs text-slate-500 font-medium mt-0.5">{{ $opd->leader_rank }}</div>
                             @endif
@@ -489,6 +512,7 @@ new #[Layout('layouts.app')] class extends Component {
                                     $wire.signer_nip = @js($opd->leader_nip ?? '');
                                     $wire.signer_nik = @js($opd->leader_nik ?? '');
                                     $wire.signer_title = @js($opd->leader_title ?? '');
+                                    $wire.signer_is_plt = (@js($opd->leader_title ?? '')).toLowerCase().startsWith('plt');
                                     $wire.signer_rank = @js($opd->leader_rank ?? '');
                                     $wire.signer_bidang = @js($opd->name);
                                     $wire.signer_eselon = @js($opd->leader_eselon ?: 'II.a');
@@ -533,7 +557,12 @@ new #[Layout('layouts.app')] class extends Component {
                             <div class="text-xs text-slate-400 font-mono mt-0.5">NIP. {{ $signer->nip ?: '-' }}</div>
                         </td>
                         <td class="py-4 px-6">
-                            <div class="text-xs font-semibold text-slate-800">{{ $signer->title }}</div>
+                            <div class="flex items-center gap-1.5 flex-wrap">
+                                @if(str_starts_with(strtolower($signer->title ?? ''), 'plt'))
+                                <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-black bg-amber-100 text-amber-800 border border-amber-300">PLT</span>
+                                @endif
+                                <div class="text-xs font-semibold text-slate-800">{{ $signer->title }}</div>
+                            </div>
                             @if($signer->rank)
                             <div class="text-xs text-slate-500 font-medium mt-0.5">{{ $signer->rank }}</div>
                             @endif
@@ -553,6 +582,7 @@ new #[Layout('layouts.app')] class extends Component {
                                         $wire.signer_nip = @js($signer->nip ?? '');
                                         $wire.signer_nik = @js($signer->nik ?? '');
                                         $wire.signer_title = @js($signer->title ?? '');
+                                        $wire.signer_is_plt = (@js($signer->title ?? '')).toLowerCase().startsWith('plt');
                                         $wire.signer_rank = @js($signer->rank ?? '');
                                         $wire.signer_bidang = @js($signer->bidang_name ?? '');
                                         $wire.signer_eselon = @js($signer->eselon ?? 'III.a');
@@ -763,10 +793,16 @@ new #[Layout('layouts.app')] class extends Component {
                     </div>
                 </div>
 
-                <!-- Jabatan -->
+                <!-- Jabatan & Toggle Plt -->
                 <div>
-                    <label for="signer_title" class="block text-sm font-bold text-slate-700 mb-1">Jabatan</label>
-                    <x-text-input wire:model="signer_title" id="signer_title" type="text"  placeholder="Contoh: Kepala Bidang Hubungan Masyarakat" required />
+                    <div class="flex items-center justify-between mb-1">
+                        <label for="signer_title" class="block text-sm font-bold text-slate-700">Jabatan</label>
+                        <label class="inline-flex items-center gap-1.5 cursor-pointer text-xs font-bold text-slate-600 select-none hover:text-slate-900 transition">
+                            <input type="checkbox" wire:model.live="signer_is_plt" class="rounded border-slate-300 text-primary-600 shadow-sm focus:ring-primary-500">
+                            <span>Pelaksana Tugas (Plt.)</span>
+                        </label>
+                    </div>
+                    <x-text-input wire:model="signer_title" id="signer_title" type="text" placeholder="Contoh: Kepala Bidang Hubungan Masyarakat" required />
                     @error('signer_title') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                 </div>
 
