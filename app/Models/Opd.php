@@ -174,22 +174,22 @@ class Opd extends Model
         $title = trim($title);
         $res = $title;
 
-        if (preg_match('/^(?:Plt\.\s+)?Sekretaris\b/i', $title)) {
-            $res = str_starts_with($title, 'Plt.') ? 'Sekretariat (Plt. Sekretaris)' : 'Sekretariat';
-        } elseif (preg_match('/^(?:Plt\.\s+)?Kepala\s+(Bidang\s+.+)/i', $title, $m)) {
-            $res = (str_starts_with($title, 'Plt.') ? 'Plt. ' : '') . $m[1];
-        } elseif (preg_match('/^(?:Plt\.\s+)?Kepala\s+(Bagian\s+.+)/i', $title, $m)) {
-            $res = (str_starts_with($title, 'Plt.') ? 'Plt. ' : '') . $m[1];
-        } elseif (preg_match('/^(?:Plt\.\s+)?Kepala\s+(Sub\s*bagian\s+.+)/i', $title, $m)) {
-            $res = (str_starts_with($title, 'Plt.') ? 'Plt. ' : '') . preg_replace('/^Sub\s*bagian/i', 'Sub Bagian', $m[1]);
-        } elseif (preg_match('/^(?:Plt\.\s+)?Kepala\s+(Seksi\s+.+)/i', $title, $m)) {
-            $res = (str_starts_with($title, 'Plt.') ? 'Plt. ' : '') . $m[1];
-        } elseif (preg_match('/^(?:Plt\.\s+)?Kepala\s+(UPT\s+.+)/i', $title, $m)) {
-            $res = (str_starts_with($title, 'Plt.') ? 'Plt. ' : '') . $m[1];
-        } elseif (preg_match('/^(?:Plt\.\s+)?Kepala\s+(Tata\s+Usaha\s+.+)/i', $title, $m)) {
-            $res = (str_starts_with($title, 'Plt.') ? 'Plt. ' : '') . $m[1];
-        } elseif (preg_match('/^(?:Plt\.\s+)?Lurah\s+(.+)/i', $title, $m)) {
-            $res = (str_starts_with($title, 'Plt.') ? 'Plt. ' : '') . 'Kelurahan ' . $m[1];
+        if (preg_match('/^(?:Plt\.\s+|Pj\.\s+|Pjs\.\s+)?Sekretaris\b/i', $title)) {
+            $res = 'Sekretariat';
+        } elseif (preg_match('/^(?:Plt\.\s+|Pj\.\s+|Pjs\.\s+)?Kepala\s+(Bidang\s+.+)/i', $title, $m)) {
+            $res = $m[1];
+        } elseif (preg_match('/^(?:Plt\.\s+|Pj\.\s+|Pjs\.\s+)?Kepala\s+(Bagian\s+.+)/i', $title, $m)) {
+            $res = $m[1];
+        } elseif (preg_match('/^(?:Plt\.\s+|Pj\.\s+|Pjs\.\s+)?Kepala\s+(Sub\s*bagian\s+.+)/i', $title, $m)) {
+            $res = preg_replace('/^Sub\s*bagian/i', 'Sub Bagian', $m[1]);
+        } elseif (preg_match('/^(?:Plt\.\s+|Pj\.\s+|Pjs\.\s+)?Kepala\s+(Seksi\s+.+)/i', $title, $m)) {
+            $res = $m[1];
+        } elseif (preg_match('/^(?:Plt\.\s+|Pj\.\s+|Pjs\.\s+)?Kepala\s+(UPT\s+.+)/i', $title, $m)) {
+            $res = $m[1];
+        } elseif (preg_match('/^(?:Plt\.\s+|Pj\.\s+|Pjs\.\s+)?Kepala\s+(Tata\s+Usaha\s+.+)/i', $title, $m)) {
+            $res = $m[1];
+        } elseif (preg_match('/^(?:Plt\.\s+|Pj\.\s+|Pjs\.\s+)?Lurah\s+(.+)/i', $title, $m)) {
+            $res = 'Kelurahan ' . $m[1];
         }
 
         // Pangkas sufiks nama dinas / badan / kabupaten yang redundan

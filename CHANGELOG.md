@@ -4,6 +4,13 @@ Semua perubahan penting pada proyek ini dicatat dalam berkas ini.
 
 Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/1.0.0/), dan proyek ini mematuhi [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.28] - 2026-08-30
+
+### Diperbaiki
+- **Pembersihan UI & Normalisasi Unit Kerja**:
+  - Menghapus badge visual `PLT` pada tabel daftar Kepala OPD dan Penandatangan di halaman Pengaturan OPD (`opd/settings.blade.php`).
+  - Menstandarkan penamaan unit kerja/bidang untuk jabatan Sekretaris / Plt. Sekretaris menjadi murni **`Sekretariat`** pada fungsi `cleanBidangName` dan basis data.
+
 ## [1.5.27] - 2026-08-30
 
 ### Diperbaiki

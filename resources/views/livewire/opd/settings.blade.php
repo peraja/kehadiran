@@ -488,12 +488,7 @@ new #[Layout('layouts.app')] class extends Component {
                             </div>
                         </td>
                         <td class="py-4 px-6">
-                            <div class="flex items-center gap-1.5 flex-wrap">
-                                @if(str_starts_with(strtolower($opd->leader_title ?? ''), 'plt'))
-                                <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-black bg-amber-100 text-amber-800 border border-amber-300">PLT</span>
-                                @endif
-                                <div class="text-xs font-semibold text-slate-800">{{ $opd->leader_title ?: '-' }}</div>
-                            </div>
+                            <div class="text-xs font-semibold text-slate-800">{{ $opd->leader_title ?: '-' }}</div>
                             @if($opd->leader_rank)
                             <div class="text-xs text-slate-500 font-medium mt-0.5">{{ $opd->leader_rank }}</div>
                             @endif
@@ -557,12 +552,7 @@ new #[Layout('layouts.app')] class extends Component {
                             <div class="text-xs text-slate-400 font-mono mt-0.5">NIP. {{ $signer->nip ?: '-' }}</div>
                         </td>
                         <td class="py-4 px-6">
-                            <div class="flex items-center gap-1.5 flex-wrap">
-                                @if(str_starts_with(strtolower($signer->title ?? ''), 'plt'))
-                                <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-black bg-amber-100 text-amber-800 border border-amber-300">PLT</span>
-                                @endif
-                                <div class="text-xs font-semibold text-slate-800">{{ $signer->title }}</div>
-                            </div>
+                            <div class="text-xs font-semibold text-slate-800">{{ $signer->title }}</div>
                             @if($signer->rank)
                             <div class="text-xs text-slate-500 font-medium mt-0.5">{{ $signer->rank }}</div>
                             @endif
