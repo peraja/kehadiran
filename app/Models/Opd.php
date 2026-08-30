@@ -693,6 +693,16 @@ class Opd extends Model
                     $eselonRaw = trim((string)($p['jabatan_jenis_eselon'] ?? ($p['eselon'] ?? '')));
                     $nik = trim((string)($p['nik'] ?? ($p['no_ktp'] ?? ($p['ktp'] ?? ($p['no_identitas'] ?? '')))));
 
+                    // Jaga agar NIK tidak hilang jika API SIMPEG mengembalikan nilai kosong
+                    $existingLeaderNik = $this->leader_nik;
+                    if (empty($nik) && !empty($p['nip'])) {
+                        $existingUser = User::where('nip', trim($p['nip']))->first();
+                        if ($existingUser && !empty($existingUser->nik)) {
+                            $nik = $existingUser->nik;
+                        }
+                    }
+                    $finalLeaderNik = $nik ?: (($p['nip'] ?? '') === $this->leader_nip ? $existingLeaderNik : null);
+
                     // Normalisasi jabatan Kepala OPD
                     $normLeader = self::normalizePosition($this->name, '', $jobTitle);
                     $leaderJobTitle = $normLeader['jabatan'];
@@ -700,7 +710,7 @@ class Opd extends Model
                     $this->update([
                         'leader_name' => $p['nama'],
                         'leader_nip' => $p['nip'],
-                        'leader_nik' => $nik ?: $this->leader_nik,
+                        'leader_nik' => $finalLeaderNik ?: null,
                         'leader_title' => $leaderJobTitle ?: $this->leader_title,
                         'leader_rank' => $pangkat ?: null,
                         'leader_eselon' => $eselonRaw ?: ($eselon ?: 'II.a'),
@@ -730,7 +740,7 @@ class Opd extends Model
 
                             $leaderUser = User::create([
                                 'nip' => $p['nip'],
-                                'nik' => $nik ?: null,
+                                'nik' => $finalLeaderNik ?: null,
                                 'name' => trim($p['nama'] ?? $p['nip']),
                                 'unit_name' => $normUser['unit'],
                                 'jabatan' => $normUser['jabatan'],
@@ -740,7 +750,7 @@ class Opd extends Model
                         } else {
                             $updateData = [
                                 'name' => trim($p['nama'] ?? $leaderUser->name),
-                                'nik' => $nik ?: $leaderUser->nik,
+                                'nik' => $finalLeaderNik ?: $leaderUser->nik,
                                 'pangkat' => $pangkat ?: $leaderUser->pangkat,
                             ];
 
@@ -825,6 +835,17 @@ class Opd extends Model
                         ->where('bidang_name', $bidangName)
                         ->first();
                 }
+
+                // Jaga agar NIK tidak hilang jika API SIMPEG mengembalikan nilai kosong
+                $existingSignerNik = ($signer && $signer->exists) ? $signer->nik : null;
+                if (empty($signerNik) && !empty($p['nip'])) {
+                    $existingUser = User::where('nip', trim($p['nip']))->first();
+                    if ($existingUser && !empty($existingUser->nik)) {
+                        $signerNik = $existingUser->nik;
+                    }
+                }
+                $finalSignerNik = $signerNik ?: $existingSignerNik;
+
                 if (!$signer) {
                     $signer = new OpdSigner();
                     $signer->opd_id = $this->id;
@@ -835,7 +856,7 @@ class Opd extends Model
                     'bidang_name' => $bidangName,
                     'name' => trim($p['nama'] ?? ''),
                     'nip' => !empty($p['nip']) ? trim($p['nip']) : null,
-                    'nik' => $signerNik ?: null,
+                    'nik' => $finalSignerNik ?: null,
                     'rank' => $pangkat ?: null,
                     'eselon' => $eselon,
                     'is_active' => true,
@@ -866,7 +887,7 @@ class Opd extends Model
 
                         $signerUser = User::create([
                             'nip' => trim($p['nip']),
-                            'nik' => $signerNik ?: null,
+                            'nik' => $finalSignerNik ?: null,
                             'name' => trim($p['nama'] ?? $p['nip']),
                             'unit_name' => $normUser['unit'],
                             'jabatan' => $normUser['jabatan'],
@@ -876,7 +897,7 @@ class Opd extends Model
                     } else {
                         $updateData = [
                             'name' => trim($p['nama'] ?? $signerUser->name),
-                            'nik' => $signerNik ?: $signerUser->nik,
+                            'nik' => $finalSignerNik ?: $signerUser->nik,
                             'pangkat' => $pangkat ?: $signerUser->pangkat,
                         ];
 

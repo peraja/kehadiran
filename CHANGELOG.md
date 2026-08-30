@@ -4,6 +4,14 @@ Semua perubahan penting pada proyek ini dicatat dalam berkas ini.
 
 Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/1.0.0/), dan proyek ini mematuhi [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.29] - 2026-08-30
+
+### Diperbaiki
+- **Pengamanan dan Sinkronisasi NIK Multi-Posisi Pejabat**:
+  - Mengamankan persistensi NIK agar tidak tertimpa nilai `null` saat sinkronisasi ulang OPD (`syncSignersFromApi`) apabila API SIMPEG tidak mengirimkan data NIK.
+  - Mengintegrasikan sinkronisasi NIK antar-posisi berbasis NIP secara otomatis (misalnya pembaruan NIK pada Kepala Bidang otomatis memperbarui NIK pada Plt. Sekretaris, akun Pengguna, dan Kepala OPD).
+  - Menghapus *checkbox* Plt dari modal form penandatangan dan menerapkan normalisasi penulisan jabatan `Plt.` secara langsung dan rapi.
+
 ## [1.5.28] - 2026-08-30
 
 ### Diperbaiki

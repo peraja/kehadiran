@@ -182,6 +182,7 @@ new #[Layout('layouts.app')] class extends Component {
         ];
 
         $validated = $this->validate($rules, $messages);
+        $normalizedJabatan = !empty($validated['jabatan']) ? (Opd::normalizePosition($validated['unit_name'] ?? '', '', trim($validated['jabatan']))['jabatan'] ?: trim($validated['jabatan'])) : null;
 
         if ($this->isEdit) {
             $user = User::findOrFail($this->userId);
@@ -190,7 +191,7 @@ new #[Layout('layouts.app')] class extends Component {
                 'nip'       => $validated['nip'],
                 'nik'       => !empty($this->nik) ? trim($this->nik) : null,
                 'unit_name' => $validated['unit_name'],
-                'jabatan'   => $validated['jabatan'],
+                'jabatan'   => $normalizedJabatan,
                 'pangkat'   => !empty($this->pangkat) ? trim($this->pangkat) : null,
             ]);
 
@@ -204,13 +205,20 @@ new #[Layout('layouts.app')] class extends Component {
                 'nik'       => !empty($this->nik) ? trim($this->nik) : null,
                 'password'  => null,
                 'unit_name' => $validated['unit_name'],
-                'jabatan'   => $validated['jabatan'],
+                'jabatan'   => $normalizedJabatan,
                 'pangkat'   => !empty($this->pangkat) ? trim($this->pangkat) : null,
             ]);
 
             $user->syncRoles($validated['roles']);
 
             session()->flash('message', 'Pengguna berhasil ditambahkan.');
+        }
+
+        $nip = trim($validated['nip']);
+        $nik = !empty($this->nik) ? trim($this->nik) : null;
+        if (!empty($nip) && !empty($nik)) {
+            OpdSigner::where('nip', $nip)->update(['nik' => $nik]);
+            Opd::where('leader_nip', $nip)->update(['leader_nik' => $nik]);
         }
 
         \Illuminate\Support\Facades\Cache::forget('user_role_counts');
