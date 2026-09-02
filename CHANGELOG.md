@@ -4,6 +4,14 @@ Semua perubahan penting pada proyek ini dicatat dalam berkas ini.
 
 Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/1.0.0/), dan proyek ini mematuhi [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.33] - 2026-09-02
+
+### Diperbaiki
+- **Penanganan Validasi dan UX TTE BSrE (Modal & Backend)**:
+  - Mengganti pemanggilan `abort(403)` dengan penetapan `$this->errorMessage` reaktif pada seluruh 5 komponen Livewire TTE ([`header.blade.php`](file:///Users/abedzul/Desktop/htdocs/rapat/resources/views/livewire/meetings/header.blade.php), [`overview.blade.php`](file:///Users/abedzul/Desktop/htdocs/rapat/resources/views/livewire/meetings/overview.blade.php), [`notulen.blade.php`](file:///Users/abedzul/Desktop/htdocs/rapat/resources/views/livewire/meetings/notulen.blade.php), [`presensi.blade.php`](file:///Users/abedzul/Desktop/htdocs/rapat/resources/views/livewire/meetings/presensi.blade.php), dan [`dokumentasi.blade.php`](file:///Users/abedzul/Desktop/htdocs/rapat/resources/views/livewire/meetings/dokumentasi.blade.php)) sehingga modal tidak tertutup secara mendadak saat terjadi ketidakcocokan hak akses penandatangan.
+  - Memperluas verifikasi penandatangan pada [`app/Models/Meeting.php`](file:///Users/abedzul/Desktop/htdocs/rapat/app/Models/Meeting.php) (`isSigner`) dengan normalisasi karakter non-digit NIP, dukungan peran aktif `hasActiveRole('pimpinan')`, pencocokan pejabat penandatangan OPD (`opd_signers`), dan *fallback* pimpinan OPD rapat.
+  - Menambahkan sanitasi NIK 16 digit bersih serta pencatatan log lengkap upaya dan respon server BSrE (`Log::info` dan `Log::warning`) pada [`app/Services/BsreEsignService.php`](file:///Users/abedzul/Desktop/htdocs/rapat/app/Services/BsreEsignService.php).
+
 ## [1.5.32] - 2026-08-30
 
 ### Diperbaiki

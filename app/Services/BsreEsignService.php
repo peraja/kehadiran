@@ -36,7 +36,8 @@ class BsreEsignService
      */
     public function checkUserStatus(?string $nik): array
     {
-        if (empty($nik)) {
+        $cleanNik = preg_replace('/\D/', '', (string) $nik);
+        if (empty($cleanNik)) {
             return [
                 'status' => 'NOT_REGISTERED',
                 'label' => 'NIK Kosong',
@@ -53,13 +54,13 @@ class BsreEsignService
         }
 
         // Cache live BSrE check for 10 minutes to ensure instant UI response
-        return \Illuminate\Support\Facades\Cache::remember("bsre_status_{$nik}", 600, function () use ($nik) {
+        return \Illuminate\Support\Facades\Cache::remember("bsre_status_{$cleanNik}", 600, function () use ($cleanNik) {
             try {
                 $timeout = app()->environment('local', 'testing') ? 1.5 : 3;
                 $response = Http::timeout($timeout)
                     ->withBasicAuth($this->username, $this->password)
                     ->post("{$this->url}/user/check/status", [
-                        'nik' => $nik,
+                        'nik' => $cleanNik,
                     ]);
 
                 if ($response->successful()) {
@@ -205,7 +206,7 @@ class BsreEsignService
      */
     public function signDocument(Meeting $meeting, User $user, string $type, string $passphrase): array
     {
-        if (!$user->hasRole('pimpinan')) {
+        if (!$user->hasRole('pimpinan') && !$user->hasActiveRole('pimpinan')) {
             return [
                 'success' => false,
                 'message' => 'Hanya pengguna dengan peran Pimpinan yang berhak menandatangani dokumen secara elektronik.',
@@ -247,9 +248,10 @@ class BsreEsignService
 
         // 2. Call BSrE API /sign/pdf if configured and reachable
         try {
+            $cleanNik = preg_replace('/\D/', '', (string) $user->nik);
             $pdfBase64 = base64_encode($pdfOutput);
             $payload = [
-                'nik' => $user->nik,
+                'nik' => $cleanNik,
                 'passphrase' => $passphrase,
                 'signatureProperties' => [
                     [
@@ -260,6 +262,8 @@ class BsreEsignService
                 ],
                 'file' => [$pdfBase64],
             ];
+
+            Log::info("BSrE Sign Attempt: Meeting #{$meeting->id} ({$type}) by User {$user->name} [NIK: {$cleanNik}] to {$this->url}/sign/pdf");
 
             $response = Http::timeout(30)
                 ->withBasicAuth($this->username, $this->password)
@@ -279,6 +283,8 @@ class BsreEsignService
 
                 $this->updateMeetingSignedStatus($meeting, $user, $type, $filename);
 
+                Log::info("BSrE Sign SUCCESS: Meeting #{$meeting->id} ({$type}) signed -> {$filename}");
+
                 return [
                     'success' => true,
                     'message' => "Dokumen {$documentName} berhasil ditandatangani.",
@@ -288,6 +294,7 @@ class BsreEsignService
 
             // Handle API error response from BSrE
             $errorMessage = $this->parseBsreSigningError($response);
+            Log::warning("BSrE Sign Failed [HTTP {$response->status()}]: " . $response->body());
 
             return [
                 'success' => false,

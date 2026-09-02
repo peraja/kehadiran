@@ -117,12 +117,15 @@ class Meeting extends Model
         }
 
         // TTE is exclusively for users with role 'pimpinan'
-        if (!$user->hasRole('pimpinan')) {
+        if (!$user->hasRole('pimpinan') && !$user->hasActiveRole('pimpinan')) {
             return false;
         }
 
+        $userNip = preg_replace('/\D/', '', (string) $user->nip);
+        $signerNip = preg_replace('/\D/', '', (string) $this->signer_nip);
+
         // 1. Direct match with meeting signer NIP or name
-        if (!empty($user->nip) && !empty($this->signer_nip) && $user->nip === $this->signer_nip) {
+        if (!empty($userNip) && !empty($signerNip) && $userNip === $signerNip) {
             return true;
         }
         if (!empty($user->name) && !empty($this->signer_name) && strcasecmp(trim($user->name), trim($this->signer_name)) === 0) {
@@ -132,10 +135,26 @@ class Meeting extends Model
         // 2. Check if meeting is assigned to an OPD where this user is the Kepala OPD
         $opd = $this->opd;
         if ($opd) {
-            if (!empty($user->nip) && !empty($opd->leader_nip) && $user->nip === $opd->leader_nip) {
+            $opdLeaderNip = preg_replace('/\D/', '', (string) $opd->leader_nip);
+            if (!empty($userNip) && !empty($opdLeaderNip) && $userNip === $opdLeaderNip) {
                 return true;
             }
             if (!empty($user->name) && !empty($opd->leader_name) && strcasecmp(trim($user->name), trim($opd->leader_name)) === 0) {
+                return true;
+            }
+        }
+
+        // 3. Check if user is a registered signer in this OPD
+        if ($opd && !empty($userNip)) {
+            $isOpdSigner = $opd->signers()->whereRaw("REPLACE(REPLACE(nip, ' ', ''), '-', '') = ?", [$userNip])->exists();
+            if ($isOpdSigner) {
+                return true;
+            }
+        }
+
+        // 4. Fallback: If meeting has no specific signer designated, allow Pimpinan of the meeting's OPD
+        if (empty($signerNip) && empty($this->signer_name)) {
+            if ($opd && $user->unit_name && strcasecmp(trim($user->unit_name), trim($opd->name)) === 0) {
                 return true;
             }
         }

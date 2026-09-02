@@ -113,7 +113,9 @@ new #[Layout('layouts.app')] class extends Component {
     public function executeSign(BsreEsignService $esignService)
     {
         if (!auth()->user()->hasActiveRole('pimpinan') || !$this->meeting->isSigner(auth()->user())) {
-            abort(403, 'Anda bukan pejabat penandatangan yang ditunjuk untuk rapat ini.');
+            $this->errorMessage = 'Anda bukan pejabat penandatangan yang ditunjuk untuk rapat ini.';
+            $this->passphrase = '';
+            return;
         }
 
         if (empty(auth()->user()->nik)) {
