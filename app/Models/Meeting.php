@@ -27,6 +27,15 @@ class Meeting extends Model
         'signer_name',
         'signer_nip',
         'signer_rank',
+        'minutes_signed_at',
+        'minutes_signed_by',
+        'minutes_signed_path',
+        'attendance_signed_at',
+        'attendance_signed_by',
+        'attendance_signed_path',
+        'photos_signed_at',
+        'photos_signed_by',
+        'photos_signed_path',
     ];
 
     protected $casts = [

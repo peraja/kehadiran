@@ -501,23 +501,23 @@ class BsreEsignService
         };
 
         if ($type === 'minutes') {
-            $meeting->update([
+            $meeting->forceFill([
                 'minutes_signed_at' => now(),
                 'minutes_signed_by' => $user->id,
                 'minutes_signed_path' => $path,
-            ]);
+            ])->save();
         } elseif ($type === 'attendance') {
-            $meeting->update([
+            $meeting->forceFill([
                 'attendance_signed_at' => now(),
                 'attendance_signed_by' => $user->id,
                 'attendance_signed_path' => $path,
-            ]);
+            ])->save();
         } elseif (in_array($type, ['photos', 'documentation'])) {
-            $meeting->update([
+            $meeting->forceFill([
                 'photos_signed_at' => now(),
                 'photos_signed_by' => $user->id,
                 'photos_signed_path' => $path,
-            ]);
+            ])->save();
         }
 
         \App\Services\AuditLogger::log('sign_tte', "TTE {$typeName}: {$meeting->title}", $user);
