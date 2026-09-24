@@ -115,6 +115,7 @@ new #[Layout('layouts.guest')] class extends Component {
         \Illuminate\Support\Facades\Log::info("checkNip started for NIP: {$nip}");
         $user = User::where('nip', $nip)->first();
         $displayUnit = null;
+        $simpegFound = false;
 
         // 1. Check official SIMPEG API (for fresh profile, child unit & registration)
         $baseUrl = config('services.simpeg.url', 'http://apps.sinjaikab.go.id/api/pegawai');
@@ -129,6 +130,7 @@ new #[Layout('layouts.guest')] class extends Component {
             $pData = isset($pegawaiData['data']) ? $pegawaiData['data'] : (isset($pegawaiData[0]) ? $pegawaiData[0] : $pegawaiData);
 
             if ($pegawaiResponse->successful() && is_array($pData) && !empty($pData['nama'] ?? $pData['nama_pegawai'] ?? null)) {
+                $simpegFound = true;
                 $name = $pData['nama_pegawai'] ?? $pData['nama'] ?? $nip;
                 $unit_id = $pData['unit_id'] ?? $pData['id_unit'] ?? null;
                 $rawJabatan = $pData['jabatan_nama'] ?? $pData['jabatan'] ?? null;
@@ -247,7 +249,8 @@ new #[Layout('layouts.guest')] class extends Component {
         }
 
         // 2. If not found in SIMPEG, check PPPK Paruh Waktu API (Presensi only, do NOT persist to users table)
-        if (!$user) {
+        $isUserStub = $user && (trim((string)$user->name) === $nip || trim((string)($user->jabatan ?? '')) === '-' || empty(trim((string)($user->jabatan ?? ''))));
+        if (!$simpegFound && (!$user || $isUserStub)) {
             $pwUrl = config('services.pppk_pw.url') ?: 'https://tte.sinjaikab.go.id/api/v1/pppk-pw';
             $pwToken = config('services.pppk_pw.token') ?: 'sJ9k2Lp5mN8qR1t4vW7xZ0y3bC6fH9hS';
             $pwTimeout = (int) (config('services.pppk_pw.timeout') ?: 8);
@@ -342,15 +345,36 @@ new #[Layout('layouts.guest')] class extends Component {
 
                     $displayUnit = $childUnit ?: $parentUnit;
 
+                    // If a stub user existed locally, clean it up or update
+                    if ($isUserStub && $user) {
+                        try {
+                            $user->delete();
+                            $user = null;
+                        } catch (\Throwable $e) {
+                            $user->update([
+                                'name' => $name,
+                                'jabatan' => $jabatan,
+                                'unit_name' => $displayUnit,
+                            ]);
+                        }
+                    }
+
                     // Check if PPPK-PW already checked in to this meeting
                     $existingAttendance = $this->meeting->attendances()
-                        ->whereNull('user_id')
-                        ->where('guest_nip', $nip)
+                        ->where(function ($q) use ($nip, $name, $user) {
+                            $q->where('guest_nip', $nip)
+                              ->orWhere(function ($sub) use ($name) {
+                                  $sub->whereNull('user_id')->where('guest_name', $name);
+                              });
+                            if ($user) {
+                                $q->orWhere('user_id', $user->id);
+                            }
+                        })
                         ->first();
 
                     if ($existingAttendance) {
                         $this->status = 'success';
-                        $this->employee_name = $existingAttendance->guest_name;
+                        $this->employee_name = $existingAttendance->guest_name ?: $name;
                         $this->employee_unit = $existingAttendance->guest_agency ?: $displayUnit;
                         $this->employee_jabatan = $existingAttendance->guest_position ?: $jabatan;
                         $this->recorded_time = $existingAttendance->check_in ? $existingAttendance->check_in->format('H:i') . ' WITA' : now()->format('H:i') . ' WITA';

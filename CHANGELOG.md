@@ -4,6 +4,18 @@ Semua perubahan penting pada proyek ini dicatat dalam berkas ini.
 
 Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/1.0.0/), dan proyek ini mematuhi [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.34] - 2026-09-24
+
+### Diperbaiki
+- **Pencegahan Pembuatan Akun Stub pada Form Login (`app/Livewire/Forms/LoginForm.php`)**:
+  - Memperketat validasi hasil autentikasi SIMPEG pada form login dengan memfilter respon berformat HTML/error notice serta mewajibkan respon `data_pegawai` mengembalikan nama pegawai yang sah dari SIMPEG sebelum membuat/memperbarui akun pengguna.
+  - Menghilangkan celah pembentukan akun stub (nama terisi NIP dan jabatan `-`) saat API kepegawaian mengalami gangguan atau mengembalikan respon non-standar.
+- **Penyempurnaan Pengecekan Presensi PPPK Paruh Waktu (`resources/views/livewire/meetings/check-in.blade.php`)**:
+  - Menambahkan pelacakan `$simpegFound` agar sistem selalu melakukan panggilan lanjutan ke API PPPK Paruh Waktu apabila data pegawai tidak ditemukan di SIMPEG, sekalipun terdapat record lokal lama yang datanya tidak lengkap atau berupa stub.
+  - Mengintegrasikan pembersihan atau pembaruan otomatis record stub lokal saat verifikasi presensi PPPK Paruh Waktu berhasil dilakukan, sehingga identitas resmi (nama, jabatan, dan OPD) dari API PPPK-PW tampil akurat pada kartu identitas peserta rapat.
+- **Dukungan API PPPK Paruh Waktu pada Manajemen Pengguna (`resources/views/livewire/users/index.blade.php`)**:
+  - Menambahkan *fallback* ke API PPPK Paruh Waktu pada fungsi `checkNipFromApi()` sehingga tombol *Cek NIP* di modal penambahan pengguna dapat mengenali dan mengisi otomatis data pegawai berstatus PPPK Paruh Waktu.
+
 ## [1.5.33] - 2026-09-02
 
 ### Diperbaiki

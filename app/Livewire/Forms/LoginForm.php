@@ -49,8 +49,9 @@ class LoginForm extends Form
                 $apiConnectionError = true;
             } else {
                 $authBody = trim($authResponse->body());
+                $isHtml = str_contains($authBody, '<html') || str_contains($authBody, '<!DOCTYPE') || str_contains($authBody, '<br') || str_contains($authBody, '<h1>');
 
-                if ($authResponse->successful() && !empty($authBody) && $authBody !== '0' && $authBody !== 'false') {
+                if (!$isHtml && $authResponse->successful() && !empty($authBody) && $authBody !== '0' && $authBody !== 'false') {
                     // API Auth Succeeded -> Fetch full employee details
                     $pegawaiResponse = \Illuminate\Support\Facades\Http::timeout(min(5, $timeout))->get("{$baseUrl}/data_pegawai/", [
                         'nip' => $nip
@@ -59,7 +60,14 @@ class LoginForm extends Form
                     $pegawaiData = $pegawaiResponse->json();
                     $pData = isset($pegawaiData['data']) ? $pegawaiData['data'] : (isset($pegawaiData[0]) ? $pegawaiData[0] : $pegawaiData);
 
-                    $name = $pData['nama_pegawai'] ?? $pData['nama'] ?? $nip;
+                    // Validasi ketat: Jangan membuat/mengizinkan login akun stub jika data SIMPEG tidak mengembalikan nama valid
+                    if (!$pegawaiResponse->successful() || !is_array($pData) || empty($pData['nama'] ?? $pData['nama_pegawai'] ?? null)) {
+                        throw ValidationException::withMessages([
+                            'form.nip' => 'Data pegawai tidak ditemukan di SIMPEG Sinjai.',
+                        ]);
+                    }
+
+                    $name = $pData['nama_pegawai'] ?? $pData['nama'];
                     $unit_id = $pData['unit_id'] ?? $pData['id_unit'] ?? null;
                     $rawJabatan = $pData['jabatan_nama'] ?? $pData['jabatan'] ?? null;
                     $pangkat = $pData['pangkat_nama'] ?? $pData['pangkat'] ?? null;
