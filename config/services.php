@@ -36,7 +36,7 @@ return [
     ],
 
     'simpeg' => [
-        'url' => rtrim(env('SIMPEG_API_URL', 'http://apps.sinjaikab.go.id/api/pegawai'), '/'),
+        'url' => rtrim(env('SIMPEG_API_URL', 'https://apps.sinjaikab.go.id/api/pegawai'), '/'),
         'timeout' => (int) env('SIMPEG_API_TIMEOUT', 10),
     ],
 

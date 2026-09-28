@@ -25,22 +25,7 @@ new class extends Component {
         // Filter based on active role
         if ($user->hasActiveRole('pimpinan')) {
             $query->where('status', 'completed')
-                ->where(function ($q) use ($user) {
-                    $q->where(function ($sq) use ($user) {
-                        if (!empty($user->nip)) {
-                            $sq->where('signer_nip', $user->nip)
-                                ->orWhere('signer_name', $user->name);
-                        } else {
-                            $sq->where('signer_name', $user->name);
-                        }
-                    })->orWhereHas('opd', function ($oq) use ($user) {
-                        if (!empty($user->nip)) {
-                            $oq->where('leader_nip', $user->nip)->orWhere('leader_name', $user->name);
-                        } else {
-                            $oq->where('leader_name', $user->name);
-                        }
-                    });
-                });
+                ->forSigner($user);
         } elseif ($user->hasActiveRole('admin_opd')) {
             $unitName = $user->unit_name;
             $query->where(function ($q) use ($unitName) {
@@ -276,11 +261,14 @@ new class extends Component {
                         {{ $meeting->title }}
                     </a>
                     <div class="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs text-slate-500 mt-1.5 font-medium">
+                        @php
+                            $signerNameDisplay = $meeting->signer_name ?: ($meeting->opd?->leader_name ?? null);
+                        @endphp
                         @if($isAdmin)
                         <span class="font-bold text-slate-700">{{ $meeting->opd?->name ?? $meeting->creator?->unit_name ?? 'Pemerintah Kabupaten Sinjai' }}</span>
-                        @if($meeting->signer_name)
+                        @if($signerNameDisplay)
                         <span>&bull;</span>
-                        <span>Penandatangan: <span class="font-bold text-slate-700">{{ $meeting->signer_name }}</span></span>
+                        <span>Penandatangan: <span class="font-bold text-slate-700">{{ $signerNameDisplay }}</span></span>
                         @endif
                         @else
                         <span>{{ $meeting->date->translatedFormat('d F Y') }}</span>
@@ -288,9 +276,9 @@ new class extends Component {
                         <span>&bull;</span>
                         <span>{{ $meeting->start_time->format('H:i') }} - {{ $meeting->end_time ? $meeting->end_time->format('H:i') : 'Selesai' }} WITA</span>
                         @endif
-                        @if($meeting->signer_name)
+                        @if($signerNameDisplay)
                         <span>&bull;</span>
-                        <span>Penandatangan: <span class="font-bold text-slate-700">{{ $meeting->signer_name }}</span></span>
+                        <span>Penandatangan: <span class="font-bold text-slate-700">{{ $signerNameDisplay }}</span></span>
                         @endif
                         @endif
                     </div>

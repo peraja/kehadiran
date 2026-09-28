@@ -4,6 +4,37 @@ Semua perubahan penting pada proyek ini dicatat dalam berkas ini.
 
 Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/1.0.0/), dan proyek ini mematuhi [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.35] - 2026-09-28
+
+### Diperbaiki
+- **Penanganan Simpan Pengguna (`resources/views/livewire/users/index.blade.php`)**:
+  - Memperbaiki fatal error (HTTP 500) saat menyimpan akun pengguna dengan menambahkan import `use App\Models\OpdSigner;` yang sebelumnya belum diimpor saat eksekusi sinkronisasi NIK penandatangan OPD.
+  - Menambahkan pembersihan cache posisi jabatan pengguna (`$user->forgetPositionsCache()`) saat pembaruan atau penghapusan pengguna agar profil langsung mutakhir.
+  - Memastikan reset flag modal `$isEdit = false;` berjalan rapi setelah formulir disimpan.
+- **Penyempurnaan Hak Akses Penandatangan & Query Rapat (`app/Models/Meeting.php`, `resources/views/livewire/dashboard-summary.blade.php`, `resources/views/livewire/meetings/index.blade.php`)**:
+  - Menambahkan scope `forSigner($user)` pada model `Meeting` untuk standardisasi dan optimasi filter daftar rapat bagi akun pimpinan/penandatangan.
+  - Memperketat metode `isSigner()` agar pejabat penandatangan hanya dapat menandatangani rapat yang secara definitif menunjuk dirinya (atau *fallback* Kepala OPD jika belum ditunjuk secara spesifik).
+  - Menyempurnakan tampilan nama penandatangan rapat pada dashboard dengan *fallback* nama pimpinan OPD.
+- **Validasi dan Pembatasan Login PPPK Paruh Waktu (`app/Livewire/Forms/LoginForm.php`, `resources/views/livewire/pages/auth/login.blade.php`)**:
+  - Menambahkan proteksi autentikasi akun PPPK Paruh Waktu agar diarahkan khusus pada presensi rapat dan tidak dapat masuk ke dashboard panel administrasi.
+  - Menyempurnakan penanganan *exception* form login untuk mencegah tampilan *crashed page* dan mencatat log error sistem.
+- **Sinkronisasi Pegawai & Peran Pimpinan OPD (`app/Models/Opd.php`)**:
+  - Menyesuaikan deteksi kandidat otomatis Admin OPD berbasis regex agar mendukung penulisan `Kasubbag`.
+  - Mengotomatiskan penyesuaian peran dari `pimpinan` menjadi `pegawai` apabila pegawai bersangkutan telah dimutasi dan tidak lagi menjabat sebagai Kepala OPD maupun penandatangan bidang.
+
+### Dihapus
+- **Pembersihan Berkas Usang & Residu Prototipe**:
+  - Menghapus skrip SQLite prototipe lama (`database/db.js` dan `database/db.php`).
+  - Menghapus komponen Blade yang tidak digunakan (`danger-button.blade.php`, `document-status-badge.blade.php`, `nav-link.blade.php`, `responsive-nav-link.blade.php`).
+  - Menghapus berkas template paginasi terduplikasi `resources/views/vendor/livewire/tailwind.blade.php` serta berkas penanda `resources/views/livewire/.gitkeep`.
+  - Menghapus draf PDF laporan penanganan server di root repositori dan boilerplate pengujian contoh (`tests/Unit/ExampleTest.php` dan `tests/Feature/ExampleTest.php`).
+
+### Keamanan
+- Menambahkan header `Strict-Transport-Security` (HSTS) pada [`public/.htaccess`](file:///Users/abedzul/Desktop/htdocs/rapat/public/.htaccess).
+- Memperbarui skema protokol default gateway SIMPEG ke HTTPS pada [`config/services.php`](file:///Users/abedzul/Desktop/htdocs/rapat/config/services.php) dan [`.env.example`](file:///Users/abedzul/Desktop/htdocs/rapat/.env.example).
+
+
+
 ## [1.5.34] - 2026-09-24
 
 ### Diperbaiki

@@ -206,6 +206,7 @@ class LoginForm extends Form
         // Check if user exists locally or in API Kepegawaian
         $userExistsLocally = \App\Models\User::where('nip', $nip)->exists();
         $userExistsInApi = false;
+        $isPppkPw = false;
 
         if (!$userExistsLocally && !$apiConnectionError) {
             try {
@@ -220,8 +221,49 @@ class LoginForm extends Form
                     }
                 }
             } catch (\Exception $e) {
-                // Ignore API connection issue
+                // Abaikan masalah koneksi saat pengecekan keberadaan NIP
             }
+
+            // Jika tidak ada di SIMPEG, cek apakah NIP terdaftar di basis data PPPK Paruh Waktu
+            if (!$userExistsInApi) {
+                try {
+                    $pwUrl = config('services.pppk_pw.url') ?: 'https://tte.sinjaikab.go.id/api/v1/pppk-pw';
+                    $pwToken = config('services.pppk_pw.token') ?: 'sJ9k2Lp5mN8qR1t4vW7xZ0y3bC6fH9hS';
+                    $host = parse_url($pwUrl, PHP_URL_HOST) ?: 'tte.sinjaikab.go.id';
+
+                    $targets = [
+                        ['url' => $pwUrl, 'options' => ['force_ip_resolve' => 'v4', 'curl' => [CURLOPT_RESOLVE => ["{$host}:443:10.91.162.2"]]]],
+                        ['url' => $pwUrl, 'options' => ['force_ip_resolve' => 'v4']],
+                    ];
+
+                    foreach ($targets as $target) {
+                        try {
+                            $pwRes = \Illuminate\Support\Facades\Http::timeout(3)->connectTimeout(1)->withoutVerifying()->withToken($pwToken);
+                            if (!empty($target['options'])) {
+                                $pwRes->withOptions($target['options']);
+                            }
+                            $r = $pwRes->get($target['url'], ['nip' => $nip]);
+                            if ($r->successful()) {
+                                $j = $r->json();
+                                if (!empty($j['data'][0])) {
+                                    $isPppkPw = true;
+                                    break;
+                                }
+                            }
+                        } catch (\Throwable $e) {
+                            // Abaikan target dan coba target berikutnya
+                        }
+                    }
+                } catch (\Throwable $e) {
+                    // Abaikan kesalahan koneksi PPPK
+                }
+            }
+        }
+
+        if ($isPppkPw) {
+            throw ValidationException::withMessages([
+                'form.nip' => 'PPPK Paruh Waktu hanya untuk presensi rapat.',
+            ]);
         }
 
         if (!$userExistsLocally && !$userExistsInApi && !$apiConnectionError) {
@@ -232,7 +274,7 @@ class LoginForm extends Form
 
         if ($apiConnectionError && !$userExistsLocally) {
             throw ValidationException::withMessages([
-                'form.password' => 'Koneksi SIMPEG gagal.',
+                'form.nip' => 'Koneksi SIMPEG gagal.',
             ]);
         }
 

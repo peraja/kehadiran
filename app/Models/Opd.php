@@ -893,6 +893,9 @@ class Opd extends Model
                 ])->save();
 
                 $syncedSignerIds[] = $signer->id;
+                if (!empty($p['nip'])) {
+                    $syncedSignerNips[] = trim($p['nip']);
+                }
 
                 // Sync Signer as User with role: pimpinan (prioritas jabatan definitif)
                 if (!empty($p['nip'])) {
@@ -994,7 +997,7 @@ class Opd extends Model
             // Prioritas 1: Jabatan Kasubag yang mengandung kata 'Kepegawaian'
             foreach ($pegawaiList as $p) {
                 $jab = trim($p['jabatan_nama'] ?? '');
-                if (preg_match('/(?:Kasubag|Kepala\s+Sub\s*\.?\s*Bagian)\s+.*kepegawaian/i', $jab)
+                if (preg_match('/(?:Kasubag|Kepala\s+Sub\s*\.?\s*Bagian|Kasubbag)\b.*kepegawaian/i', $jab)
                     && !preg_match('/(?:RSUD|Puskesmas|SDN|SMPN|Kelurahan|Pustu)/i', $jab)) {
                     $adminOpdCandidate = $p;
                     break;
@@ -1005,7 +1008,7 @@ class Opd extends Model
             if (!$adminOpdCandidate) {
                 foreach ($pegawaiList as $p) {
                     $jab = trim($p['jabatan_nama'] ?? '');
-                    if (preg_match('/(?:Kasubag|Kepala\s+Sub\s*\.?\s*Bagian)\s+.*(?:umum|tata\s+usaha)/i', $jab)
+                    if (preg_match('/(?:Kasubag|Kepala\s+Sub\s*\.?\s*Bagian|Kasubbag)\b.*(?:umum|tata\s+usaha)/i', $jab)
                         && !preg_match('/(?:RSUD|Puskesmas|SDN|SMPN|Kelurahan|Pustu)/i', $jab)) {
                         $adminOpdCandidate = $p;
                         break;
@@ -1058,7 +1061,13 @@ class Opd extends Model
                 }
             }
 
-            $opdUsers = User::where('unit_name', $this->name)->whereNotNull('nip')->get();
+            $nipsInOpd = array_keys($pegawaiByNip);
+            $opdUsers = User::whereIn('nip', $nipsInOpd)
+                ->orWhere(function ($q) {
+                    $q->where('unit_name', $this->name)->whereNotNull('nip');
+                })
+                ->get();
+
             foreach ($opdUsers as $u) {
                 if (isset($pegawaiByNip[$u->nip])) {
                     $pData = $pegawaiByNip[$u->nip];
@@ -1071,11 +1080,27 @@ class Opd extends Model
                     $cleanUJabatan = preg_replace('/^(?:Plt\.|Pj\.|Pjs\.)\s*/i', '', $normU['jabatan']);
 
                     $u->update([
-                        'pangkat' => $uPangkat ?: $u->pangkat,
-                        'jabatan' => $cleanUJabatan ?: $u->jabatan,
-                        'name'    => $uName ?: $u->name,
-                        'nik'     => $uNik ?: $u->nik,
+                        'unit_name' => $normU['unit'] ?: $this->name,
+                        'pangkat'   => $uPangkat ?: $u->pangkat,
+                        'jabatan'   => $cleanUJabatan ?: $u->jabatan,
+                        'name'      => $uName ?: $u->name,
+                        'nik'       => $uNik ?: $u->nik,
                     ]);
+
+                    // Jika pengguna memiliki peran 'pimpinan' namun di OPD ini bukan Kepala OPD
+                    // dan bukan penandatangan sub-bidang (misal mutasi menjadi pejabat fungsional/pelaksana),
+                    // turunkan peran 'pimpinan' menjadi 'pegawai'
+                    if ($u->hasRole('pimpinan') && !$u->hasRole('admin')) {
+                        $isLeader = (!empty($this->leader_nip) && $u->nip === $this->leader_nip);
+                        $isSigner = in_array($u->nip, $syncedSignerNips ?? [], true);
+
+                        if (!$isLeader && !$isSigner) {
+                            $u->removeRole('pimpinan');
+                            if (!$u->hasRole('admin_opd') && !$u->hasRole('pegawai')) {
+                                $u->assignRole('pegawai');
+                            }
+                        }
+                    }
                 }
             }
 

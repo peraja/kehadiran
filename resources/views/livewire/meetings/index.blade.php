@@ -233,22 +233,8 @@ new #[Layout('layouts.app')] class extends Component {
         if ($user->hasActiveRole('pimpinan')) {
             // Pimpinan hanya melihat rapat yang berstatus SELESAI dan penandatangannya adalah dirinya sendiri
             $query->where('status', 'completed')
-                ->where(function ($q) use ($user) {
-                    $q->where(function ($sq) use ($user) {
-                        if (!empty($user->nip)) {
-                            $sq->where('signer_nip', $user->nip)
-                                ->orWhere('signer_name', $user->name);
-                        } else {
-                            $sq->where('signer_name', $user->name);
-                        }
-                    })->orWhereHas('opd', function ($oq) use ($user) {
-                        if (!empty($user->nip)) {
-                            $oq->where('leader_nip', $user->nip)->orWhere('leader_name', $user->name);
-                        } else {
-                            $oq->where('leader_name', $user->name);
-                        }
-                    });
-                })->where(function ($q) {
+                ->forSigner($user)
+                ->where(function ($q) {
                     // Jangan tampilkan jika belum ada berkas dokumen (presensi, foto, atau notulen) dan belum pernah di-TTE
                     $q->has('attendances')
                         ->orHas('photos')

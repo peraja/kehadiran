@@ -116,6 +116,51 @@ class Meeting extends Model
     }
 
     /**
+     * Scope to filter meetings where the given user is the designated signer.
+     */
+    public function scopeForSigner($query, ?User $user = null)
+    {
+        $user = $user ?: auth()->user();
+        if (!$user) {
+            return $query->whereRaw('0 = 1');
+        }
+
+        $userNip = preg_replace('/\D/', '', (string) $user->nip);
+        $userName = trim((string) $user->name);
+
+        return $query->where(function ($q) use ($userNip, $userName) {
+            // 1. Direct match: meeting has designated signer matching user NIP or name
+            $q->where(function ($sq) use ($userNip, $userName) {
+                if (!empty($userNip)) {
+                    $sq->where('signer_nip', $userNip)
+                        ->orWhereRaw("REPLACE(REPLACE(signer_nip, ' ', ''), '-', '') = ?", [$userNip])
+                        ->orWhere('signer_name', $userName);
+                } else {
+                    $sq->where('signer_name', $userName);
+                }
+            })
+            // 2. Fallback: meeting has NO designated signer, but user is Kepala OPD of the meeting's OPD
+            ->orWhere(function ($fallbackQ) use ($userNip, $userName) {
+                $fallbackQ->where(function ($emptyQ) {
+                    $emptyQ->whereNull('signer_nip')->orWhere('signer_nip', '');
+                })
+                ->where(function ($emptyQ) {
+                    $emptyQ->whereNull('signer_name')->orWhere('signer_name', '');
+                })
+                ->whereHas('opd', function ($oq) use ($userNip, $userName) {
+                    if (!empty($userNip)) {
+                        $oq->where('leader_nip', $userNip)
+                            ->orWhereRaw("REPLACE(REPLACE(leader_nip, ' ', ''), '-', '') = ?", [$userNip])
+                            ->orWhere('leader_name', $userName);
+                    } else {
+                        $oq->where('leader_name', $userName);
+                    }
+                });
+            });
+        });
+    }
+
+    /**
      * Check if the given user is the designated signer for this meeting.
      */
     public function isSigner(?User $user = null): bool
@@ -133,15 +178,18 @@ class Meeting extends Model
         $userNip = preg_replace('/\D/', '', (string) $user->nip);
         $signerNip = preg_replace('/\D/', '', (string) $this->signer_nip);
 
-        // 1. Direct match with meeting signer NIP or name
-        if (!empty($userNip) && !empty($signerNip) && $userNip === $signerNip) {
-            return true;
-        }
-        if (!empty($user->name) && !empty($this->signer_name) && strcasecmp(trim($user->name), trim($this->signer_name)) === 0) {
-            return true;
+        // 1. If meeting has a specific designated signer
+        if (!empty($signerNip) || !empty($this->signer_name)) {
+            if (!empty($userNip) && !empty($signerNip) && $userNip === $signerNip) {
+                return true;
+            }
+            if (!empty($user->name) && !empty($this->signer_name) && strcasecmp(trim($user->name), trim($this->signer_name)) === 0) {
+                return true;
+            }
+            return false;
         }
 
-        // 2. Check if meeting is assigned to an OPD where this user is the Kepala OPD
+        // 2. Fallback: If meeting has no specific signer designated, allow Kepala OPD
         $opd = $this->opd;
         if ($opd) {
             $opdLeaderNip = preg_replace('/\D/', '', (string) $opd->leader_nip);
@@ -149,21 +197,6 @@ class Meeting extends Model
                 return true;
             }
             if (!empty($user->name) && !empty($opd->leader_name) && strcasecmp(trim($user->name), trim($opd->leader_name)) === 0) {
-                return true;
-            }
-        }
-
-        // 3. Check if user is a registered signer in this OPD
-        if ($opd && !empty($userNip)) {
-            $isOpdSigner = $opd->signers()->whereRaw("REPLACE(REPLACE(nip, ' ', ''), '-', '') = ?", [$userNip])->exists();
-            if ($isOpdSigner) {
-                return true;
-            }
-        }
-
-        // 4. Fallback: If meeting has no specific signer designated, allow Pimpinan of the meeting's OPD
-        if (empty($signerNip) && empty($this->signer_name)) {
-            if ($opd && $user->unit_name && strcasecmp(trim($user->unit_name), trim($opd->name)) === 0) {
                 return true;
             }
         }

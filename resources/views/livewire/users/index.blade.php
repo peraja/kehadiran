@@ -2,6 +2,7 @@
 
 use Livewire\Volt\Component;
 use App\Models\Opd;
+use App\Models\OpdSigner;
 use App\Models\User;
 use Spatie\Permission\Models\Role;
 use Livewire\WithPagination;
@@ -271,6 +272,7 @@ new #[Layout('layouts.app')] class extends Component {
             ]);
 
             $user->syncRoles($validated['roles']);
+            $user->forgetPositionsCache();
 
             session()->flash('message', 'Pengguna berhasil diperbarui.');
         } else {
@@ -285,6 +287,7 @@ new #[Layout('layouts.app')] class extends Component {
             ]);
 
             $user->syncRoles($validated['roles']);
+            $user->forgetPositionsCache();
 
             session()->flash('message', 'Pengguna berhasil ditambahkan.');
         }
@@ -299,6 +302,7 @@ new #[Layout('layouts.app')] class extends Component {
         \Illuminate\Support\Facades\Cache::forget('user_role_counts');
         $this->dispatch('close-modal', 'user-form-modal');
         $this->reset(['userId', 'name', 'nip', 'nik', 'roles', 'unit_name', 'jabatan', 'pangkat', 'password', 'apiSynced', 'apiStatusMessage']);
+        $this->isEdit = false;
         $this->roles = ['pegawai'];
     }
 
@@ -310,6 +314,7 @@ new #[Layout('layouts.app')] class extends Component {
         }
 
         $user = User::findOrFail($id);
+        $user->forgetPositionsCache();
         $user->delete();
         \Illuminate\Support\Facades\Cache::forget('user_role_counts');
         session()->flash('message', 'Pengguna berhasil dihapus.');

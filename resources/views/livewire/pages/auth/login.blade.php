@@ -26,10 +26,15 @@ new #[Layout('layouts.guest', [
             Session::regenerate();
 
             $this->redirectIntended(default: route('dashboard', absolute: false), navigate: false);
-        } catch (\Throwable $e) {
+        } catch (\Illuminate\Validation\ValidationException $e) {
             $this->form->password = '';
             $this->dispatch('login-failed');
             throw $e;
+        } catch (\Throwable $e) {
+            $this->form->password = '';
+            $this->dispatch('login-failed');
+            \Illuminate\Support\Facades\Log::error('Login error: ' . $e->getMessage());
+            $this->addError('form.nip', 'Terjadi kesalahan sistem.');
         }
     }
 }; ?>
