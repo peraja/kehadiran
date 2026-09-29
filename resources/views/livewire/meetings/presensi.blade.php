@@ -176,6 +176,29 @@ new #[Layout('layouts.app')] class extends Component {
         session()->flash('message', 'Kunci presensi dibuka untuk revisi.');
         $this->dispatch('meeting-updated');
     }
+
+    public function deleteAttendance($id): void
+    {
+        if (!auth()->user()->hasActiveRole('admin')) {
+            abort(403, 'Akses khusus Super Admin.');
+        }
+
+        if ($this->meeting->attendance_signed_at) {
+            abort(403, 'Tidak dapat menghapus peserta pada rapat yang sudah ditandatangani secara elektronik (TTE).');
+        }
+
+        $attendance = $this->meeting->attendances()->find($id);
+        if ($attendance) {
+            $name = $attendance->user?->name ?: $attendance->guest_name;
+            $attendance->delete();
+
+            $this->meeting->refresh();
+            $this->dispatch('meeting-updated');
+            $this->alertKey = hrtime(true);
+            $this->successMessage = "Peserta {$name} berhasil dihapus dari daftar presensi.";
+            session()->flash('message', "Peserta {$name} berhasil dihapus dari daftar presensi.");
+        }
+    }
 }; ?>
 
 <x-meeting-layout :meeting="$meeting" activeTab="presensi">
@@ -287,6 +310,9 @@ new #[Layout('layouts.app')] class extends Component {
                         <th class="py-3.5 px-6 text-left">Jabatan</th>
                         <th class="py-3.5 px-6 text-left">Waktu Presensi</th>
                         <th class="py-3.5 px-6 text-center">Tanda Tangan</th>
+                        @if(auth()->user()->hasActiveRole('admin') && !$meeting->attendance_signed_at)
+                        <th class="py-3.5 px-4 text-center w-16">Aksi</th>
+                        @endif
                     </tr>
                 </thead>
                 <tbody wire:loading.class="opacity-50" class="divide-y divide-slate-100 text-sm bg-white transition-opacity duration-200">
@@ -339,10 +365,23 @@ new #[Layout('layouts.app')] class extends Component {
                             <span class="inline-flex px-2.5 py-1 bg-slate-100 text-slate-400 rounded-full text-[10px] font-bold tracking-wider">TIDAK ADA</span>
                             @endif
                         </td>
+                        @if(auth()->user()->hasActiveRole('admin') && !$meeting->attendance_signed_at)
+                        <td class="py-4 px-4 text-center whitespace-nowrap">
+                            <button type="button"
+                                wire:click="deleteAttendance({{ $attendance->id }})"
+                                wire:confirm="Hapus peserta {{ $attendance->user?->name ?: $attendance->guest_name }} dari daftar presensi rapat?"
+                                class="inline-flex items-center justify-center p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl active:scale-95 transition-all cursor-pointer"
+                                title="Hapus Peserta">
+                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                            </button>
+                        </td>
+                        @endif
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="6" class="py-16 px-6 text-center">
+                        <td colspan="{{ (auth()->user()->hasActiveRole('admin') && !$meeting->attendance_signed_at) ? 7 : 6 }}" class="py-16 px-6 text-center">
                             <div class="flex flex-col items-center justify-center max-w-sm mx-auto">
                                 <div class="w-14 h-14 bg-slate-100 rounded-2xl flex items-center justify-center mb-3 text-slate-400">
                                     <svg class="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">

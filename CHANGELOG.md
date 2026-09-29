@@ -4,6 +4,14 @@ Semua perubahan penting pada proyek ini dicatat dalam berkas ini.
 
 Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/1.0.0/), dan proyek ini mematuhi [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.36] - 2026-09-29
+
+### Ditambahkan
+- **Fitur Hapus Peserta Presensi bagi Super Admin (`resources/views/livewire/meetings/presensi.blade.php`)**:
+  - Menambahkan kolom dan tombol hapus peserta pada tabel presensi rapat khusus untuk pengguna berstatus Super Admin (`hasActiveRole('admin')`).
+  - Memproteksi aksi penghapusan agar hanya aktif dan diizinkan pada rapat yang belum ditandatangani secara elektronik (belum TTE / `!$meeting->attendance_signed_at`).
+  - Menyertakan konfirmasi dialog interaktif sebelum penghapusan serta pembaruan otomatis jumlah kehadiran peserta.
+
 ## [1.5.35] - 2026-09-28
 
 ### Diperbaiki
