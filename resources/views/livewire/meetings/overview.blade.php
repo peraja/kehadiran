@@ -23,20 +23,28 @@ new #[Layout('layouts.app')] class extends Component {
         $this->meeting = $meeting;
 
         $user = auth()->user();
+        $isAttendee = $meeting->attendances()->where('user_id', $user->id)->exists();
+
         if ($user->hasActiveRole('pimpinan')) {
-            if ($meeting->status !== 'completed' || !$meeting->isSigner($user)) {
-                abort(403, 'Anda hanya dapat mengakses rapat berstatus selesai yang penandatangannya adalah Anda sendiri.');
+            $isSigner = ($meeting->status === 'completed' && $meeting->isSigner($user));
+            if (!$isSigner && !$isAttendee) {
+                abort(403, 'Anda hanya dapat mengakses rapat berstatus selesai yang Anda tanda tangani atau rapat yang Anda hadiri.');
             }
             $this->canEdit = false;
         } elseif ($user->hasActiveRole('admin')) {
             $this->canEdit = true;
         } elseif ($user->hasActiveRole('admin_opd')) {
-            $this->canEdit = $user->unit_name === $meeting->opd?->name || $user->unit_name === $meeting->creator?->unit_name;
-        } else {
-            if ($meeting->created_by !== $user->id) {
-                abort(403, 'Anda hanya dapat mengakses rapat yang Anda buat sendiri.');
+            $isOpdMeeting = ($user->unit_name === $meeting->opd?->name || $user->unit_name === $meeting->creator?->unit_name);
+            if (!$isOpdMeeting && !$isAttendee) {
+                abort(403, 'Akses tidak diizinkan.');
             }
-            $this->canEdit = true;
+            $this->canEdit = $isOpdMeeting;
+        } else {
+            $isCreator = ($meeting->created_by === $user->id);
+            if (!$isCreator && !$isAttendee) {
+                abort(403, 'Anda hanya dapat mengakses rapat yang Anda buat sendiri atau rapat yang Anda hadiri.');
+            }
+            $this->canEdit = $isCreator;
         }
     }
 
@@ -210,7 +218,7 @@ new #[Layout('layouts.app')] class extends Component {
                                 </a>
                                 @endif
 
-                                @if(!$meeting->attendance_signed_at && $meeting->status === 'completed')
+                                @if(!$meeting->attendance_signed_at && $meeting->status === 'completed' && $meeting->isSigner(auth()->user()))
                                 <button type="button" wire:click="openSingleSignModal('attendance')" class="only:col-span-2 w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl text-sm font-bold transition-all shadow-sm cursor-pointer">
                                     <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
@@ -247,7 +255,7 @@ new #[Layout('layouts.app')] class extends Component {
                                 </a>
                                 @endif
 
-                                @if(!$meeting->photos_signed_at && $meeting->status === 'completed')
+                                @if(!$meeting->photos_signed_at && $meeting->status === 'completed' && $meeting->isSigner(auth()->user()))
                                 <button type="button" wire:click="openSingleSignModal('photos')" class="only:col-span-2 w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl text-sm font-bold transition-all shadow-sm cursor-pointer">
                                     <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
@@ -284,7 +292,7 @@ new #[Layout('layouts.app')] class extends Component {
                                 </a>
                                 @endif
 
-                                @if(!$meeting->minutes_signed_at && $meeting->status === 'completed')
+                                @if(!$meeting->minutes_signed_at && $meeting->status === 'completed' && $meeting->isSigner(auth()->user()))
                                 <button type="button" wire:click="openSingleSignModal('minutes')" class="only:col-span-2 w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl text-sm font-bold transition-all shadow-sm cursor-pointer">
                                     <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />

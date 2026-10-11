@@ -4,6 +4,23 @@ Semua perubahan penting pada proyek ini dicatat dalam berkas ini.
 
 Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/1.0.0/), dan proyek ini mematuhi [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.37] - 2026-10-11
+
+### Ditambahkan
+- **Visibilitas Rapat yang Dihadiri (`app/Models/Meeting.php`, `resources/views/livewire/meetings/index.blade.php`, `resources/views/livewire/dashboard-summary.blade.php`)**:
+  - Menampilkan rapat yang pernah dihadiri oleh pengguna (`attendances.user_id`) pada daftar rapat dan dasbor untuk peran Pegawai, Pimpinan, dan Admin OPD.
+  - Menambahkan metode pembantu `userParticipationRole()` pada model `Meeting` untuk mendeteksi peran keterlibatan pengguna dalam rapat (`penyelenggara`, `penandatangan`, `peserta`).
+  - Menambahkan badge status partisipasi (**Penyelenggara**, **Penandatangan**, **Peserta**) di kolom Agenda pada tabel daftar rapat.
+
+### Diperbaiki
+- **Otorisasi Akses Berkas Rapat bagi Peserta Hadir (`overview`, `header`, `presensi`, `dokumentasi`, `notulen`, `MeetingExportController`)**:
+  - Mengizinkan peserta yang hadir untuk membuka dan membaca berkas rapat dalam mode *Read-Only* (`canEdit = false`).
+  - Mengizinkan peserta yang hadir untuk mengunduh berkas PDF notulen, presensi, dan dokumentasi rapat resmi.
+  - Membatasi tombol tanda tangan elektronik (TTE) agar hanya muncul bila pengguna merupakan pejabat penandatangan yang sah pada rapat tersebut.
+- **Autentikasi Gateway ENIKDA / SIMPEG Bertingkat (`app/Livewire/Forms/LoginForm.php`)**:
+  - Menambahkan verifikasi *fallback* ke hash resmi gateway SIMPEG `/data_pegawai/` apabila endpoint `/user_auth/` mengalami anomali atau respons teks non-standar.
+  - Menegaskan prinsip *pure gateway* tanpa menyimpan hash kata sandi ASN di basis data lokal.
+
 ## [1.5.36] - 2026-09-29
 
 ### Ditambahkan

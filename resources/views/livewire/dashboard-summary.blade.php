@@ -24,20 +24,33 @@ new class extends Component {
 
         // Filter based on active role
         if ($user->hasActiveRole('pimpinan')) {
-            $query->where('status', 'completed')
-                ->forSigner($user);
+            $query->where(function ($q) use ($user) {
+                $q->where(function ($sq) use ($user) {
+                    $sq->where('status', 'completed')
+                        ->forSigner($user);
+                })->orWhereHas('attendances', function ($aq) use ($user) {
+                    $aq->where('user_id', $user->id);
+                });
+            });
         } elseif ($user->hasActiveRole('admin_opd')) {
             $unitName = $user->unit_name;
-            $query->where(function ($q) use ($unitName) {
+            $query->where(function ($q) use ($unitName, $user) {
                 $q->whereHas('creator', function ($cq) use ($unitName) {
                     $cq->where('unit_name', $unitName);
                 })->orWhereHas('opd', function ($oq) use ($unitName) {
                     $oq->where('name', $unitName)
                        ->orWhere('name', 'like', '%' . $unitName . '%');
+                })->orWhereHas('attendances', function ($aq) use ($user) {
+                    $aq->where('user_id', $user->id);
                 });
             });
         } elseif ($user->hasActiveRole('pegawai')) {
-            $query->where('created_by', $user->id);
+            $query->where(function ($q) use ($user) {
+                $q->where('created_by', $user->id)
+                    ->orWhereHas('attendances', function ($aq) use ($user) {
+                        $aq->where('user_id', $user->id);
+                    });
+            });
         }
 
         $meetingsToday = (clone $query)->whereDate('date', $today)->count();

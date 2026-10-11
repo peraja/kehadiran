@@ -161,6 +161,52 @@ class Meeting extends Model
     }
 
     /**
+     * Dapatkan peran partisipasi pengguna dalam rapat ini:
+     * - 'penyelenggara' (Admin global, Admin OPD terkait, atau pembuat rapat)
+     * - 'penandatangan' (Pejabat penandatangan dokumen rapat)
+     * - 'peserta' (Tercatat dalam daftar hadir/presensi)
+     * - null (Tidak terkait)
+     */
+    public function userParticipationRole(?User $user = null): ?string
+    {
+        $user = $user ?: auth()->user();
+        if (!$user) {
+            return null;
+        }
+
+        // 1. Penyelenggara
+        if ($user->hasActiveRole('admin') || $this->created_by === $user->id) {
+            return 'penyelenggara';
+        }
+
+        if ($user->hasActiveRole('admin_opd')) {
+            $userUnit = trim((string) $user->unit_name);
+            if ($userUnit && ($userUnit === ($this->opd?->name ?? '') || $userUnit === ($this->creator?->unit_name ?? ''))) {
+                return 'penyelenggara';
+            }
+        }
+
+        // 2. Penandatangan
+        if ($this->isSigner($user)) {
+            return 'penandatangan';
+        }
+
+        // 3. Peserta (hadir)
+        // Cek melalui relation attendances yang telah di-load atau query
+        if ($this->relationLoaded('attendances')) {
+            $hasAttended = $this->attendances->contains('user_id', $user->id);
+        } else {
+            $hasAttended = $this->attendances()->where('user_id', $user->id)->exists();
+        }
+
+        if ($hasAttended) {
+            return 'peserta';
+        }
+
+        return null;
+    }
+
+    /**
      * Check if the given user is the designated signer for this meeting.
      */
     public function isSigner(?User $user = null): bool

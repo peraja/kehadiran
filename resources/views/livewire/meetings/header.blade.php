@@ -109,12 +109,25 @@ new class extends Component {
         $this->meeting = $meeting;
 
         $user = auth()->user();
-        if ($user->hasActiveRole('pimpinan') && ($meeting->status !== 'completed' || !$meeting->isSigner($user))) {
-            abort(403, 'Anda hanya dapat mengakses rapat berstatus selesai yang penandatangannya adalah Anda sendiri.');
-        }
+        $isAttendee = $meeting->attendances()->where('user_id', $user->id)->exists();
 
-        if ($user->hasActiveRole('pegawai') && $meeting->created_by !== $user->id) {
-            abort(403, 'Anda hanya dapat mengakses rapat yang Anda buat sendiri.');
+        if ($user->hasActiveRole('pimpinan')) {
+            $isSigner = ($meeting->status === 'completed' && $meeting->isSigner($user));
+            if (!$isSigner && !$isAttendee) {
+                abort(403, 'Anda hanya dapat mengakses rapat berstatus selesai yang Anda tanda tangani atau rapat yang Anda hadiri.');
+            }
+        } elseif ($user->hasActiveRole('admin')) {
+            // Admin can access all
+        } elseif ($user->hasActiveRole('admin_opd')) {
+            $isOpdMeeting = ($user->unit_name === $meeting->opd?->name || $user->unit_name === $meeting->creator?->unit_name);
+            if (!$isOpdMeeting && !$isAttendee) {
+                abort(403, 'Akses tidak diizinkan.');
+            }
+        } else {
+            $isCreator = ($meeting->created_by === $user->id);
+            if (!$isCreator && !$isAttendee) {
+                abort(403, 'Anda hanya dapat mengakses rapat yang Anda buat sendiri atau rapat yang Anda hadiri.');
+            }
         }
 
         $this->loadMeetingData();
@@ -542,7 +555,7 @@ new class extends Component {
         }
         $signableCount = count($signableDocs);
 
-        $showPimpinanSignAll = $meeting->status === 'completed' && auth()->user()->hasActiveRole('pimpinan') && $signableCount > 0;
+        $showPimpinanSignAll = $meeting->status === 'completed' && auth()->user()->hasActiveRole('pimpinan') && $meeting->isSigner(auth()->user()) && $signableCount > 0;
         $showDownloadBundle = $meeting->status === 'completed' && $meeting->isFullySigned();
         $canManage = $this->canManageMeeting();
         $showStartMeeting = $canManage && $meeting->status == 'scheduled';

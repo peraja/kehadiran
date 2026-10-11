@@ -63,15 +63,28 @@ new #[Layout('layouts.app')] class extends Component {
         $this->meeting = $meeting;
 
         $user = auth()->user();
-        if ($user->hasActiveRole('pimpinan')) {
-            if (!$meeting->isSigner($user)) {
-                abort(403, 'Anda hanya dapat mengakses presensi rapat yang penandatangannya adalah Anda sendiri.');
-            }
-            return $this->redirect(route('meetings.overview', $meeting->id), navigate: true);
-        }
+        $isAttendee = $meeting->attendances()->where('user_id', $user->id)->exists();
 
-        if ($user->hasActiveRole('pegawai') && $meeting->created_by !== $user->id) {
-            abort(403, 'Anda hanya dapat mengakses presensi rapat yang Anda buat sendiri.');
+        if ($user->hasActiveRole('pimpinan')) {
+            $isSigner = ($meeting->status === 'completed' && $meeting->isSigner($user));
+            if (!$isSigner && !$isAttendee) {
+                abort(403, 'Anda hanya dapat mengakses presensi rapat yang Anda tanda tangani atau rapat yang Anda hadiri.');
+            }
+            if ($isSigner) {
+                return $this->redirect(route('meetings.overview', $meeting->id), navigate: true);
+            }
+        } elseif ($user->hasActiveRole('admin')) {
+            // Super Admin can access
+        } elseif ($user->hasActiveRole('admin_opd')) {
+            $isOpdMeeting = ($user->unit_name === $meeting->opd?->name || $user->unit_name === $meeting->creator?->unit_name);
+            if (!$isOpdMeeting && !$isAttendee) {
+                abort(403, 'Akses tidak diizinkan.');
+            }
+        } else {
+            $isCreator = ($meeting->created_by === $user->id);
+            if (!$isCreator && !$isAttendee) {
+                abort(403, 'Anda hanya dapat mengakses presensi rapat yang Anda buat sendiri atau rapat yang Anda hadiri.');
+            }
         }
 
         if ($user->hasActiveRole('pimpinan')) {

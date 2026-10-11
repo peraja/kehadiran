@@ -220,7 +220,8 @@ new #[Layout('layouts.app')] class extends Component {
 
     public function with(): array
     {
-        $query = Meeting::query()->with(['opd', 'creator', 'minutes'])->where(function ($q) {
+        $user = auth()->user();
+        $query = Meeting::query()->with(['opd', 'creator', 'minutes', 'attendances'])->where(function ($q) {
             $q->where('title', 'like', '%' . $this->search . '%')
                 ->orWhere('location', 'like', '%' . $this->search . '%');
         });
@@ -229,34 +230,51 @@ new #[Layout('layouts.app')] class extends Component {
             $query->where('status', $this->statusFilter);
         }
 
-        $user = auth()->user();
         if ($user->hasActiveRole('pimpinan')) {
-            // Pimpinan hanya melihat rapat yang berstatus SELESAI dan penandatangannya adalah dirinya sendiri
-            $query->where('status', 'completed')
-                ->forSigner($user)
-                ->where(function ($q) {
-                    // Jangan tampilkan jika belum ada berkas dokumen (presensi, foto, atau notulen) dan belum pernah di-TTE
-                    $q->has('attendances')
-                        ->orHas('photos')
-                        ->orWhereHas('minutes', function ($mq) {
-                            $mq->whereNotNull('content')->where('content', '!=', '');
-                        })
-                        ->orWhereNotNull('minutes_signed_at')
-                        ->orWhereNotNull('attendance_signed_at')
-                        ->orWhereNotNull('photos_signed_at');
+            // Pimpinan melihat:
+            // 1. Rapat selesai yang penandatangannya adalah dirinya sendiri (dengan dokumen)
+            // 2. Rapat yang dihadirinya sebagai peserta
+            $query->where(function ($q) use ($user) {
+                $q->where(function ($sq) use ($user) {
+                    $sq->where('status', 'completed')
+                        ->forSigner($user)
+                        ->where(function ($sub) {
+                            $sub->has('attendances')
+                                ->orHas('photos')
+                                ->orWhereHas('minutes', function ($mq) {
+                                    $mq->whereNotNull('content')->where('content', '!=', '');
+                                })
+                                ->orWhereNotNull('minutes_signed_at')
+                                ->orWhereNotNull('attendance_signed_at')
+                                ->orWhereNotNull('photos_signed_at');
+                        });
+                })->orWhereHas('attendances', function ($aq) use ($user) {
+                    $aq->where('user_id', $user->id);
                 });
+            });
         } elseif ($user->hasActiveRole('admin_opd')) {
-            // Admin OPD melihat seluruh rapat di lingkungan unit kerjanya
+            // Admin OPD melihat:
+            // 1. Seluruh rapat di lingkungan unit kerjanya
+            // 2. Rapat yang dihadirinya sebagai peserta (misal rapat antar OPD/kabupaten)
             $query->where(function ($q) use ($user) {
                 $q->whereHas('creator', function ($cq) use ($user) {
                     $cq->where('unit_name', $user->unit_name);
                 })->orWhereHas('opd', function ($oq) use ($user) {
                     $oq->where('name', $user->unit_name);
+                })->orWhereHas('attendances', function ($aq) use ($user) {
+                    $aq->where('user_id', $user->id);
                 });
             });
         } elseif ($user->hasActiveRole('pegawai')) {
-            // Pegawai biasa HANYA melihat rapat yang dibuatnya sendiri
-            $query->where('created_by', $user->id);
+            // Pegawai melihat:
+            // 1. Rapat yang dibuatnya sendiri
+            // 2. Rapat yang dihadirinya sebagai peserta
+            $query->where(function ($q) use ($user) {
+                $q->where('created_by', $user->id)
+                    ->orWhereHas('attendances', function ($aq) use ($user) {
+                        $aq->where('user_id', $user->id);
+                    });
+            });
         }
 
         $isAdmin = $user->hasActiveRole('admin');
@@ -470,6 +488,24 @@ new #[Layout('layouts.app')] class extends Component {
                     <tr class="hover:bg-slate-50/80 transition-colors group">
                         <!-- Agenda & Lokasi -->
                         <td class="py-4 px-6 text-left">
+                            <div class="flex flex-wrap items-center gap-1.5 mb-1.5">
+                                @php
+                                    $pRole = $meeting->userParticipationRole(auth()->user());
+                                @endphp
+                                @if($pRole === 'penyelenggara')
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold tracking-wide uppercase bg-emerald-50 text-emerald-700 border border-emerald-200/80 shadow-2xs">
+                                        Penyelenggara
+                                    </span>
+                                @elseif($pRole === 'penandatangan')
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold tracking-wide uppercase bg-indigo-50 text-indigo-700 border border-indigo-200/80 shadow-2xs">
+                                        Penandatangan
+                                    </span>
+                                @elseif($pRole === 'peserta')
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold tracking-wide uppercase bg-sky-50 text-sky-700 border border-sky-200/80 shadow-2xs">
+                                        Peserta
+                                    </span>
+                                @endif
+                            </div>
                             <a href="{{ route('meetings.overview', $meeting->id) }}" wire:navigate class="font-extrabold text-slate-900 group-hover:text-primary-600 block text-base leading-tight mb-1.5 transition-colors">
                                 {{ $meeting->title }}
                             </a>

@@ -45,13 +45,28 @@ class LoginForm extends Form
                 'password' => $password
             ]);
 
-            if ($authResponse->serverError()) {
+            $authBody = trim($authResponse->body());
+            $isHtml = str_contains($authBody, '<html') || str_contains($authBody, '<!DOCTYPE') || str_contains($authBody, '<br') || str_contains($authBody, '<h1>');
+            $authPassed = (!$isHtml && $authResponse->successful() && !empty($authBody) && $authBody !== '0' && $authBody !== 'false');
+
+            // Fallback: Jika endpoint user_auth tidak mengembalikan '1', verifikasi langsung via hash MD5 data_pegawai
+            if (!$authPassed && !$authResponse->serverError()) {
+                $pegawaiCheck = \Illuminate\Support\Facades\Http::timeout(min(5, $timeout))->get("{$baseUrl}/data_pegawai/", [
+                    'nip' => $nip
+                ]);
+                if ($pegawaiCheck->successful()) {
+                    $pCheckData = $pegawaiCheck->json();
+                    $pc = isset($pCheckData['data']) ? $pCheckData['data'] : (isset($pCheckData[0]) ? $pCheckData[0] : $pCheckData);
+                    if (is_array($pc) && !empty($pc['password']) && strtolower($pc['password']) === md5($password)) {
+                        $authPassed = true;
+                    }
+                }
+            }
+
+            if ($authResponse->serverError() && !$authPassed) {
                 $apiConnectionError = true;
             } else {
-                $authBody = trim($authResponse->body());
-                $isHtml = str_contains($authBody, '<html') || str_contains($authBody, '<!DOCTYPE') || str_contains($authBody, '<br') || str_contains($authBody, '<h1>');
-
-                if (!$isHtml && $authResponse->successful() && !empty($authBody) && $authBody !== '0' && $authBody !== 'false') {
+                if ($authPassed) {
                     // API Auth Succeeded -> Fetch full employee details
                     $pegawaiResponse = \Illuminate\Support\Facades\Http::timeout(min(5, $timeout))->get("{$baseUrl}/data_pegawai/", [
                         'nip' => $nip

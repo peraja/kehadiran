@@ -54,6 +54,11 @@ class MeetingExportController extends Controller
             }
         }
 
+        // Peserta yang hadir diizinkan mengunduh dokumen rapat
+        if ($meeting->attendances()->where('user_id', $user->id)->exists()) {
+            return;
+        }
+
         abort(403, 'Anda tidak memiliki hak untuk mengunduh dokumen rapat ini.');
     }
 
