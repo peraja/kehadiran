@@ -10,6 +10,7 @@ new #[Layout('layouts.app')] class extends Component {
 
     public $search = '';
     public $statusFilter = '';
+    public $roleFilter = ''; // '' (Semua), 'penyelenggara', 'peserta', 'penandatangan'
 
     // Form fields
     public $title, $date, $start_time, $end_time, $location;
@@ -37,6 +38,11 @@ new #[Layout('layouts.app')] class extends Component {
         $this->resetPage();
     }
 
+    public function updatingRoleFilter()
+    {
+        $this->resetPage();
+    }
+
     public function updatedSelectedOpdId($val)
     {
         $this->selected_signer_id = 'kepala_opd';
@@ -46,6 +52,7 @@ new #[Layout('layouts.app')] class extends Component {
     {
         $this->search = '';
         $this->statusFilter = '';
+        $this->roleFilter = '';
         $this->resetPage();
     }
 
@@ -277,6 +284,32 @@ new #[Layout('layouts.app')] class extends Component {
             });
         }
 
+        // Apply Role Filter
+        if ($this->roleFilter) {
+            if ($this->roleFilter === 'penyelenggara') {
+                if ($user->hasActiveRole('admin')) {
+                    // Admin is always penyelenggara
+                } elseif ($user->hasActiveRole('admin_opd')) {
+                    $query->where(function ($sq) use ($user) {
+                        $sq->where('created_by', $user->id)
+                            ->orWhereHas('creator', fn($cq) => $cq->where('unit_name', $user->unit_name))
+                            ->orWhereHas('opd', fn($oq) => $oq->where('name', $user->unit_name));
+                    });
+                } elseif ($user->hasActiveRole('pegawai')) {
+                    $query->where('created_by', $user->id);
+                } else {
+                    // Pimpinan is never creator unless custom
+                    $query->where('created_by', $user->id);
+                }
+            } elseif ($this->roleFilter === 'peserta') {
+                $query->whereHas('attendances', function ($aq) use ($user) {
+                    $aq->where('user_id', $user->id);
+                });
+            } elseif ($this->roleFilter === 'penandatangan') {
+                $query->forSigner($user);
+            }
+        }
+
         $isAdmin = $user->hasActiveRole('admin');
         
         $allOpds = $isAdmin 
@@ -330,17 +363,71 @@ new #[Layout('layouts.app')] class extends Component {
             }
         }
 
-        $baseCountQuery = Meeting::query();
-        if (!$isAdmin) {
-            $baseCountQuery->where(function ($q) use ($user) {
+        // Base query for counts reflects user's accessible meetings (and role filter if selected)
+        $baseAccessibleQuery = Meeting::query();
+        if ($user->hasActiveRole('pimpinan')) {
+            $baseAccessibleQuery->where(function ($q) use ($user) {
+                $q->where(function ($sq) use ($user) {
+                    $sq->where('status', 'completed')
+                        ->forSigner($user)
+                        ->where(function ($sub) {
+                            $sub->has('attendances')
+                                ->orHas('photos')
+                                ->orWhereHas('minutes', function ($mq) {
+                                    $mq->whereNotNull('content')->where('content', '!=', '');
+                                })
+                                ->orWhereNotNull('minutes_signed_at')
+                                ->orWhereNotNull('attendance_signed_at')
+                                ->orWhereNotNull('photos_signed_at');
+                        });
+                })->orWhereHas('attendances', function ($aq) use ($user) {
+                    $aq->where('user_id', $user->id);
+                });
+            });
+        } elseif ($user->hasActiveRole('admin_opd')) {
+            $baseAccessibleQuery->where(function ($q) use ($user) {
                 $q->whereHas('creator', function ($cq) use ($user) {
                     $cq->where('unit_name', $user->unit_name);
                 })->orWhereHas('opd', function ($oq) use ($user) {
                     $oq->where('name', $user->unit_name);
+                })->orWhereHas('attendances', function ($aq) use ($user) {
+                    $aq->where('user_id', $user->id);
                 });
             });
+        } elseif ($user->hasActiveRole('pegawai')) {
+            $baseAccessibleQuery->where(function ($q) use ($user) {
+                $q->where('created_by', $user->id)
+                    ->orWhereHas('attendances', function ($aq) use ($user) {
+                        $aq->where('user_id', $user->id);
+                    });
+            });
         }
-        $countRow = (clone $baseCountQuery)->selectRaw("
+
+        // Status counts (respecting active roleFilter if any)
+        $statusCountQuery = clone $baseAccessibleQuery;
+        if ($this->roleFilter) {
+            if ($this->roleFilter === 'penyelenggara') {
+                if ($user->hasActiveRole('admin')) {
+                    // all
+                } elseif ($user->hasActiveRole('admin_opd')) {
+                    $statusCountQuery->where(function ($sq) use ($user) {
+                        $sq->where('created_by', $user->id)
+                            ->orWhereHas('creator', fn($cq) => $cq->where('unit_name', $user->unit_name))
+                            ->orWhereHas('opd', fn($oq) => $oq->where('name', $user->unit_name));
+                    });
+                } elseif ($user->hasActiveRole('pegawai')) {
+                    $statusCountQuery->where('created_by', $user->id);
+                } else {
+                    $statusCountQuery->where('created_by', $user->id);
+                }
+            } elseif ($this->roleFilter === 'peserta') {
+                $statusCountQuery->whereHas('attendances', fn($aq) => $aq->where('user_id', $user->id));
+            } elseif ($this->roleFilter === 'penandatangan') {
+                $statusCountQuery->forSigner($user);
+            }
+        }
+
+        $countRow = $statusCountQuery->selectRaw("
             COUNT(*) as total,
             SUM(CASE WHEN status = 'scheduled' THEN 1 ELSE 0 END) as scheduled,
             SUM(CASE WHEN status = 'ongoing' THEN 1 ELSE 0 END) as ongoing,
@@ -354,6 +441,37 @@ new #[Layout('layouts.app')] class extends Component {
             'completed' => (int) ($countRow->completed ?? 0),
         ];
 
+        // Role counts (respecting active statusFilter if any)
+        $roleBaseQuery = clone $baseAccessibleQuery;
+        if ($this->statusFilter) {
+            $roleBaseQuery->where('status', $this->statusFilter);
+        }
+
+        $pesertaCount = (clone $roleBaseQuery)->whereHas('attendances', fn($aq) => $aq->where('user_id', $user->id))->count();
+        $penandatanganCount = (clone $roleBaseQuery)->forSigner($user)->count();
+
+        $penyelenggaraQuery = clone $roleBaseQuery;
+        if ($user->hasActiveRole('admin')) {
+            $penyelenggaraCount = $penyelenggaraQuery->count();
+        } elseif ($user->hasActiveRole('admin_opd')) {
+            $penyelenggaraCount = $penyelenggaraQuery->where(function ($sq) use ($user) {
+                $sq->where('created_by', $user->id)
+                    ->orWhereHas('creator', fn($cq) => $cq->where('unit_name', $user->unit_name))
+                    ->orWhereHas('opd', fn($oq) => $oq->where('name', $user->unit_name));
+            })->count();
+        } elseif ($user->hasActiveRole('pegawai')) {
+            $penyelenggaraCount = $penyelenggaraQuery->where('created_by', $user->id)->count();
+        } else {
+            $penyelenggaraCount = $penyelenggaraQuery->where('created_by', $user->id)->count();
+        }
+
+        $roleCounts = [
+            'all' => (clone $roleBaseQuery)->count(),
+            'penyelenggara' => $penyelenggaraCount,
+            'peserta' => $pesertaCount,
+            'penandatangan' => $penandatanganCount,
+        ];
+
         $meetings = $query->orderBy('date', 'desc')
             ->orderBy('start_time', 'desc')
             ->paginate(10);
@@ -361,6 +479,7 @@ new #[Layout('layouts.app')] class extends Component {
         return [
             'meetings' => $meetings,
             'counts' => $counts,
+            'roleCounts' => $roleCounts,
             'opd' => $targetOpd,
             'opdSigners' => $opdSigners,
             'allOpds' => $allOpds,
@@ -403,71 +522,108 @@ new #[Layout('layouts.app')] class extends Component {
     <div class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
 
         <!-- Toolbar -->
-        <div class="p-5 sm:p-6 border-b border-slate-100 bg-slate-50/50">
-            <div class="grid grid-cols-1 lg:grid-cols-12 gap-3 items-center">
-                <!-- Filter Pills -->
+        <div class="p-5 sm:p-6 border-b border-slate-100 bg-slate-50/50 space-y-3.5">
+            <!-- Row 1: Search and Reset -->
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-3">
+                <!-- Search Field -->
+                <div class="relative w-full sm:max-w-md">
+                    <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                        <svg class="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                    </div>
+                    <input wire:model.live.debounce.300ms="search" type="text"
+                        class="block w-full h-10 rounded-xl border border-slate-200 pl-9 pr-9 py-2 text-base sm:text-sm focus:border-primary-500 focus:ring-primary-500 shadow-2xs transition-colors bg-white placeholder:text-slate-400"
+                        placeholder="Cari agenda atau lokasi...">
+                    @if($search)
+                    <button wire:click="$set('search', '')" class="absolute inset-y-0 right-0 pr-2.5 flex items-center text-slate-400 hover:text-slate-600 transition-colors" title="Hapus pencarian">
+                        <svg class="w-4 h-4 bg-slate-100 rounded-full p-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                    @endif
+                </div>
+
+                @if($statusFilter || $roleFilter || $search)
+                <button wire:click="resetFilters"
+                    class="w-full sm:w-auto h-10 inline-flex items-center justify-center gap-1.5 px-3.5 rounded-xl text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 active:scale-95 transition-all border border-rose-200/80 shadow-2xs cursor-pointer shrink-0"
+                    title="Reset semua filter">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    <span>Reset Filter</span>
+                </button>
+                @endif
+            </div>
+
+            <!-- Row 2: Filter Tabs (Status & Peran) -->
+            <div class="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 pt-1 border-t border-slate-200/60">
+                <!-- Status Filter Pills -->
                 @unless(auth()->user()->hasActiveRole('pimpinan'))
-                <div class="lg:col-span-7 xl:col-span-8 grid grid-cols-2 sm:grid-cols-4 gap-2 w-full" x-data="{ currentFilter: @entangle('statusFilter').live }">
+                <div class="flex items-center gap-2 overflow-x-auto pb-1 lg:pb-0" x-data="{ currentFilter: @entangle('statusFilter').live }">
+                    <span class="text-xs font-bold text-slate-400 uppercase tracking-wider shrink-0 mr-1 hidden sm:inline">Status:</span>
                     <button @click="currentFilter = ''"
                         :class="currentFilter === '' ? 'bg-slate-900 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900'"
-                        class="inline-flex items-center justify-center gap-1.5 h-10 px-3 rounded-xl text-sm font-bold transition-all cursor-pointer">
-                        Semua
-                        <span :class="currentFilter === '' ? 'bg-slate-800 text-slate-300' : 'bg-slate-100 text-slate-600'" class="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-bold">{{ $counts['total'] }}</span>
+                        class="inline-flex items-center justify-center gap-1.5 h-9 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0">
+                        Semua Status
+                        <span :class="currentFilter === '' ? 'bg-slate-800 text-slate-300' : 'bg-slate-100 text-slate-600'" class="inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-[11px] font-bold">{{ $counts['total'] }}</span>
                     </button>
                     <button @click="currentFilter = 'scheduled'"
                         :class="currentFilter === 'scheduled' ? 'bg-slate-600 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-700'"
-                        class="inline-flex items-center justify-center gap-1.5 h-10 px-3 rounded-xl text-sm font-bold transition-all cursor-pointer">
+                        class="inline-flex items-center justify-center gap-1.5 h-9 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0">
                         <span :class="currentFilter === 'scheduled' ? 'bg-slate-300' : 'bg-slate-400'" class="w-1.5 h-1.5 rounded-full"></span>
                         Dijadwalkan
-                        <span :class="currentFilter === 'scheduled' ? 'bg-slate-700 text-slate-100' : 'bg-slate-100 text-slate-700'" class="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-bold">{{ $counts['scheduled'] }}</span>
+                        <span :class="currentFilter === 'scheduled' ? 'bg-slate-700 text-slate-100' : 'bg-slate-100 text-slate-700'" class="inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-[11px] font-bold">{{ $counts['scheduled'] }}</span>
                     </button>
                     <button @click="currentFilter = 'ongoing'"
                         :class="currentFilter === 'ongoing' ? 'bg-rose-600 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-rose-300 hover:bg-rose-50 hover:text-rose-700'"
-                        class="inline-flex items-center justify-center gap-1.5 h-10 px-3 rounded-xl text-sm font-bold transition-all cursor-pointer">
+                        class="inline-flex items-center justify-center gap-1.5 h-9 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0">
                         <span :class="currentFilter === 'ongoing' ? 'bg-rose-200' : 'bg-rose-500'" class="w-1.5 h-1.5 rounded-full"></span>
                         Berlangsung
-                        <span :class="currentFilter === 'ongoing' ? 'bg-rose-700 text-rose-100' : 'bg-rose-100 text-rose-700'" class="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-bold">{{ $counts['ongoing'] }}</span>
+                        <span :class="currentFilter === 'ongoing' ? 'bg-rose-700 text-rose-100' : 'bg-rose-100 text-rose-700'" class="inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-[11px] font-bold">{{ $counts['ongoing'] }}</span>
                     </button>
                     <button @click="currentFilter = 'completed'"
                         :class="currentFilter === 'completed' ? 'bg-primary-600 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-primary-300 hover:bg-primary-50 hover:text-primary-700'"
-                        class="inline-flex items-center justify-center gap-1.5 h-10 px-3 rounded-xl text-sm font-bold transition-all cursor-pointer">
+                        class="inline-flex items-center justify-center gap-1.5 h-9 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0">
                         <span :class="currentFilter === 'completed' ? 'bg-primary-200' : 'bg-primary-500'" class="w-1.5 h-1.5 rounded-full"></span>
                         Selesai
-                        <span :class="currentFilter === 'completed' ? 'bg-primary-700 text-primary-100' : 'bg-primary-100 text-primary-700'" class="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-bold">{{ $counts['completed'] }}</span>
+                        <span :class="currentFilter === 'completed' ? 'bg-primary-700 text-primary-100' : 'bg-primary-100 text-primary-700'" class="inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-[11px] font-bold">{{ $counts['completed'] }}</span>
                     </button>
                 </div>
                 @endunless
 
-                <!-- Search Field & Reset -->
-                <div class="{{ auth()->user()->hasActiveRole('pimpinan') ? 'lg:col-span-12' : 'lg:col-span-5 xl:col-span-4' }} grid {{ $statusFilter ? 'grid-cols-[1fr_auto]' : 'grid-cols-1' }} gap-2.5 w-full">
-                    <div class="relative w-full">
-                        <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                            <svg class="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                            </svg>
-                        </div>
-                        <input wire:model.live.debounce.300ms="search" type="text"
-                            class="block w-full h-10 rounded-xl border border-slate-200 pl-9 pr-9 py-2 text-base sm:text-sm focus:border-primary-500 focus:ring-primary-500 shadow-2xs transition-colors bg-white placeholder:text-slate-400"
-                            placeholder="Cari agenda atau lokasi...">
-                        @if($search)
-                        <button wire:click="$set('search', '')" class="absolute inset-y-0 right-0 pr-2.5 flex items-center text-slate-400 hover:text-slate-600 transition-colors" title="Hapus pencarian">
-                            <svg class="w-4 h-4 bg-slate-100 rounded-full p-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                            </svg>
-                        </button>
-                        @endif
-                    </div>
-
-                    @if($statusFilter)
-                    <button wire:click="resetFilters"
-                        class="h-10 inline-flex items-center justify-center gap-1.5 px-3.5 rounded-xl text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 active:scale-95 transition-all border border-rose-200/80 shadow-2xs cursor-pointer shrink-0"
-                        title="Reset semua filter">
-                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                        </svg>
-                        <span>Reset</span>
+                <!-- Role Filter Pills -->
+                <div class="flex items-center gap-2 overflow-x-auto pb-1 lg:pb-0" x-data="{ currentRole: @entangle('roleFilter').live }">
+                    <span class="text-xs font-bold text-slate-400 uppercase tracking-wider shrink-0 mr-1 hidden sm:inline">Peran:</span>
+                    <button @click="currentRole = ''"
+                        :class="currentRole === '' ? 'bg-slate-900 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900'"
+                        class="inline-flex items-center justify-center gap-1.5 h-9 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0">
+                        Semua Peran
+                        <span :class="currentRole === '' ? 'bg-slate-800 text-slate-300' : 'bg-slate-100 text-slate-600'" class="inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-[11px] font-bold">{{ $roleCounts['all'] }}</span>
                     </button>
-                    @endif
+                    @unless(auth()->user()->hasActiveRole('pimpinan'))
+                    <button @click="currentRole = 'penyelenggara'"
+                        :class="currentRole === 'penyelenggara' ? 'bg-emerald-600 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700'"
+                        class="inline-flex items-center justify-center gap-1.5 h-9 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0">
+                        <span :class="currentRole === 'penyelenggara' ? 'bg-emerald-200' : 'bg-emerald-500'" class="w-1.5 h-1.5 rounded-full"></span>
+                        Penyelenggara
+                        <span :class="currentRole === 'penyelenggara' ? 'bg-emerald-700 text-emerald-100' : 'bg-slate-100 text-slate-700'" class="inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-[11px] font-bold">{{ $roleCounts['penyelenggara'] }}</span>
+                    </button>
+                    @endunless
+                    <button @click="currentRole = 'peserta'"
+                        :class="currentRole === 'peserta' ? 'bg-sky-600 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-sky-300 hover:bg-sky-50 hover:text-sky-700'"
+                        class="inline-flex items-center justify-center gap-1.5 h-9 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0">
+                        <span :class="currentRole === 'peserta' ? 'bg-sky-200' : 'bg-sky-500'" class="w-1.5 h-1.5 rounded-full"></span>
+                        Peserta
+                        <span :class="currentRole === 'peserta' ? 'bg-sky-700 text-sky-100' : 'bg-slate-100 text-slate-700'" class="inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-[11px] font-bold">{{ $roleCounts['peserta'] }}</span>
+                    </button>
+                    <button @click="currentRole = 'penandatangan'"
+                        :class="currentRole === 'penandatangan' ? 'bg-indigo-600 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700'"
+                        class="inline-flex items-center justify-center gap-1.5 h-9 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0">
+                        <span :class="currentRole === 'penandatangan' ? 'bg-indigo-200' : 'bg-indigo-500'" class="w-1.5 h-1.5 rounded-full"></span>
+                        Penandatangan
+                        <span :class="currentRole === 'penandatangan' ? 'bg-indigo-700 text-indigo-100' : 'bg-slate-100 text-slate-700'" class="inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-[11px] font-bold">{{ $roleCounts['penandatangan'] }}</span>
+                    </button>
                 </div>
             </div>
         </div>

@@ -4,6 +4,14 @@ Semua perubahan penting pada proyek ini dicatat dalam berkas ini.
 
 Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/1.0.0/), dan proyek ini mematuhi [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.38] - 2026-10-11
+
+### Ditambahkan
+- **Filter Partisipasi Rapat (`resources/views/livewire/meetings/index.blade.php`)**:
+  - Menambahkan filter peran partisipasi (**Semua Peran**, **Penyelenggara**, **Peserta**, dan **Penandatangan**) pada bilah alat (toolbar) daftar rapat.
+  - Menghitung jumlah rapat per kategori peran partisipasi secara dinamis berdasarkan filter status yang sedang aktif.
+  - Menyelaraskan filter peran dengan filter status, kata kunci pencarian, dan tombol *Reset Filter*.
+
 ## [1.5.37] - 2026-10-11
 
 ### Ditambahkan
