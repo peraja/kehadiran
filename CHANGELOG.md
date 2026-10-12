@@ -4,6 +4,17 @@ Semua perubahan penting pada proyek ini dicatat dalam berkas ini.
 
 Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/1.0.0/), dan proyek ini mematuhi [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.40] - 2026-10-12
+
+### Ditambahkan
+- **Fitur Logout Otomatis Berbasis Inaktivitas (`resources/views/components/auto-logout.blade.php`, `resources/views/livewire/admin/settings.blade.php`)**:
+  - Menambahkan pengawas inaktivitas (*idle watcher*) berbasis Alpine.js untuk mendeteksi ketiadaan interaksi pengguna (*mouse*, *keyboard*, *scroll*, *touch*).
+  - Sinkronisasi aktivitas sesi lintas tab browser menggunakan `localStorage` agar aktivitas pengguna di satu tab tidak menyebabkan logout di tab lain.
+  - Menyediakan modal peringatan interaktif 60 detik sebelum sesi berakhir lengkap dengan hitung mundur (*countdown timer*).
+  - Menyediakan opsi perpanjangan sesi ("Tetap Masuk") melalui ping rute `GET /session/ping` tanpa memuat ulang halaman.
+  - Menambahkan pengaturan batas waktu inaktif (*auto_logout_minutes*) di panel Super Admin dengan nilai *default* 15 menit.
+  - Menambahkan penanganan pesan notifikasi saat ter-logout otomatis pada halaman login (`routes/auth.php`, `resources/views/components/auth-session-status.blade.php`).
+
 ## [1.5.39] - 2026-10-12
 
 ### Diubah

@@ -6,6 +6,7 @@ use Livewire\Attributes\Layout;
 
 new #[Layout('layouts.app')] class extends Component {
     public string $skm_url = '';
+    public int $auto_logout_minutes = 15;
 
     public function mount(): void
     {
@@ -14,6 +15,7 @@ new #[Layout('layouts.app')] class extends Component {
         }
 
         $this->skm_url = Setting::get('skm_url', 'https://skm.go.id/share/instansi/22748fb4-56a9-4101-9e6d-4145a727e0f5/1');
+        $this->auto_logout_minutes = (int) Setting::get('auto_logout_minutes', 15);
     }
 
     public function saveSettings(): void
@@ -24,12 +26,18 @@ new #[Layout('layouts.app')] class extends Component {
 
         $this->validate([
             'skm_url' => 'required|url|max:500',
+            'auto_logout_minutes' => 'required|integer|min:1|max:1440',
         ], [
             'skm_url.required' => 'Link SKM wajib diisi.',
             'skm_url.url' => 'Link SKM tidak valid.',
+            'auto_logout_minutes.required' => 'Durasi logout otomatis wajib diisi.',
+            'auto_logout_minutes.integer' => 'Durasi harus berupa angka bulat.',
+            'auto_logout_minutes.min' => 'Durasi minimal 1 menit.',
+            'auto_logout_minutes.max' => 'Durasi maksimal 1440 menit (24 jam).',
         ]);
 
         Setting::set('skm_url', trim($this->skm_url));
+        Setting::set('auto_logout_minutes', $this->auto_logout_minutes);
 
         session()->flash('message', 'Pengaturan berhasil disimpan.');
     }
@@ -82,6 +90,28 @@ new #[Layout('layouts.app')] class extends Component {
                     @endif
                 </div>
                 @error('skm_url') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
+            </div>
+        </div>
+
+        <!-- Card: Keamanan Sesi & Logout Otomatis -->
+        <div class="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 sm:p-8 space-y-5">
+            <div class="border-b border-slate-100 pb-3">
+                <h2 class="text-base font-bold text-slate-900">
+                    Keamanan Sesi &amp; Logout Otomatis
+                </h2>
+                <p class="text-xs text-slate-500 mt-0.5">
+                    Sesi pengguna akan logout secara otomatis apabila tidak ada aktivitas (inaktif) dalam durasi waktu yang ditentukan.
+                </p>
+            </div>
+
+            <div>
+                <label for="auto_logout_minutes" class="block text-sm font-bold text-slate-700 mb-1">Batas Waktu Inaktif (Menit)</label>
+                <div class="flex items-center gap-3 max-w-xs">
+                    <x-text-input wire:model="auto_logout_minutes" id="auto_logout_minutes" type="number" min="1" max="1440" step="1" class="w-32 text-base sm:text-sm py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-primary-500 focus:border-primary-500 shadow-xs transition-colors" placeholder="15" required />
+                    <span class="text-sm font-bold text-slate-600">Menit</span>
+                </div>
+                <p class="text-xs text-slate-400 mt-1.5">Standar: 15 menit. Dialog konfirmasi peringatan akan muncul 1 menit sebelum sesi otomatis berakhir.</p>
+                @error('auto_logout_minutes') <span class="text-xs text-rose-600 mt-1 block font-medium">{{ $message }}</span> @enderror
             </div>
         </div>
 

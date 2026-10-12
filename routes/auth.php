@@ -9,8 +9,11 @@ Route::middleware('guest')->group(function () {
 });
 
 Route::middleware('auth')->group(function () {
-    Route::post('logout', function (\App\Livewire\Actions\Logout $logout) {
+    Route::post('logout', function (\Illuminate\Http\Request $request, \App\Livewire\Actions\Logout $logout) {
         $logout();
+        if ($request->input('reason') === 'timeout') {
+            return redirect()->route('login')->with('status', 'Sesi Anda telah berakhir karena tidak ada aktivitas. Silakan login kembali.');
+        }
         return redirect('/');
     })->name('logout');
 });

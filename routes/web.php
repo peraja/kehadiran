@@ -61,4 +61,8 @@ Volt::route('audit-logs', 'admin.audit-logs')
     ->middleware(['auth'])
     ->name('admin.audit-logs');
 
+Route::get('session/ping', function () {
+    return response()->json(['status' => 'active', 'timestamp' => now()->timestamp]);
+})->middleware(['auth'])->name('session.ping');
+
 require __DIR__.'/auth.php';

@@ -77,6 +77,9 @@
             </footer>
         </div>
     </div>
+
+    <!-- Auto-Logout Watcher for Authenticated Users -->
+    <x-auto-logout />
 </body>
 
 </html>
