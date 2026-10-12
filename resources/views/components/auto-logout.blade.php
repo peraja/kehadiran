@@ -1,5 +1,5 @@
 @props([
-    'timeoutMinutes' => (int) \App\Models\Setting::get('auto_logout_minutes', 15),
+    'timeoutMinutes' => 15,
     'warningSeconds' => 60,
 ])
 
@@ -66,7 +66,7 @@
 
                     <div class="space-y-3 text-sm text-slate-600">
                         <p class="text-xs sm:text-sm leading-relaxed">
-                            Sesi Anda akan otomatis keluar karena tidak ada aktivitas dalam waktu tertentu demi menjaga keamanan akun.
+                            Sesi Anda akan berakhir karena tidak ada aktivitas.
                         </p>
 
                         <div class="bg-amber-50/80 border border-amber-200 rounded-2xl p-4 flex items-center justify-between">

@@ -4,6 +4,13 @@ Semua perubahan penting pada proyek ini dicatat dalam berkas ini.
 
 Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/1.0.0/), dan proyek ini mematuhi [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.41] - 2026-10-12
+
+### Diubah
+- **Penyederhanaan Teks & Pengaturan Logout Otomatis (`resources/views/components/auto-logout.blade.php`, `resources/views/livewire/admin/settings.blade.php`, `routes/auth.php`)**:
+  - Menyederhanakan teks peringatan pada modal hitung mundur sesi dan notifikasi status login menjadi lebih ringkas dan to-the-point.
+  - Menghapus formulir konfigurasi batas waktu inaktif di panel pengaturan Admin dan menetapkan batas inaktivitas statis (15 menit).
+
 ## [1.5.40] - 2026-10-12
 
 ### Ditambahkan

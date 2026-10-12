@@ -12,7 +12,7 @@ Route::middleware('auth')->group(function () {
     Route::post('logout', function (\Illuminate\Http\Request $request, \App\Livewire\Actions\Logout $logout) {
         $logout();
         if ($request->input('reason') === 'timeout') {
-            return redirect()->route('login')->with('status', 'Sesi Anda telah berakhir karena tidak ada aktivitas. Silakan login kembali.');
+            return redirect()->route('login')->with('status', 'Sesi telah berakhir karena tidak ada aktivitas.');
         }
         return redirect('/');
     })->name('logout');
