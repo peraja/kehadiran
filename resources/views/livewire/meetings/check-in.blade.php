@@ -256,6 +256,7 @@ new #[Layout('layouts.guest')] class extends Component {
             $pwTimeout = (int) (config('services.pppk_pw.timeout') ?: 8);
 
             $host = parse_url($pwUrl, PHP_URL_HOST) ?: 'tte.sinjaikab.go.id';
+            $httpUrl = str_replace('https://', 'http://', $pwUrl);
             $targets = [
                 // 1. Direct HTTPS via internal private IP (Instant ~15ms on Production cPanel)
                 [
@@ -269,9 +270,28 @@ new #[Layout('layouts.guest')] class extends Component {
                         ],
                     ],
                 ],
-                // 2. Standard DNS fallback (Instant on Local / External)
+                // 2. HTTP Port 80 via internal private IP (Production cPanel fallback)
+                [
+                    'url' => $httpUrl,
+                    'options' => [
+                        'force_ip_resolve' => 'v4',
+                        'curl' => [
+                            CURLOPT_RESOLVE => [
+                                "{$host}:80:10.91.162.2",
+                            ],
+                        ],
+                    ],
+                ],
+                // 3. Standard HTTPS fallback (Local / External)
                 [
                     'url' => $pwUrl,
+                    'options' => [
+                        'force_ip_resolve' => 'v4',
+                    ],
+                ],
+                // 4. Standard HTTP Port 80 fallback (Bypasses external TLS handshake drops)
+                [
+                    'url' => $httpUrl,
                     'options' => [
                         'force_ip_resolve' => 'v4',
                     ],

@@ -155,6 +155,7 @@ new #[Layout('layouts.app')] class extends Component {
         $pwUrl = config('services.pppk_pw.url') ?: 'https://tte.sinjaikab.go.id/api/v1/pppk-pw';
         $pwToken = config('services.pppk_pw.token') ?: 'sJ9k2Lp5mN8qR1t4vW7xZ0y3bC6fH9hS';
         $host = parse_url($pwUrl, PHP_URL_HOST) ?: 'tte.sinjaikab.go.id';
+        $httpUrl = str_replace('https://', 'http://', $pwUrl);
 
         $targets = [
             [
@@ -169,7 +170,24 @@ new #[Layout('layouts.app')] class extends Component {
                 ],
             ],
             [
+                'url' => $httpUrl,
+                'options' => [
+                    'force_ip_resolve' => 'v4',
+                    'curl' => [
+                        CURLOPT_RESOLVE => [
+                            "{$host}:80:10.91.162.2",
+                        ],
+                    ],
+                ],
+            ],
+            [
                 'url' => $pwUrl,
+                'options' => [
+                    'force_ip_resolve' => 'v4',
+                ],
+            ],
+            [
+                'url' => $httpUrl,
                 'options' => [
                     'force_ip_resolve' => 'v4',
                 ],

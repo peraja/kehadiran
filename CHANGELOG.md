@@ -4,6 +4,13 @@ Semua perubahan penting pada proyek ini dicatat dalam berkas ini.
 
 Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/1.0.0/), dan proyek ini mematuhi [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.42] - 2026-10-12
+
+### Diperbaiki
+- **Fallback Koneksi API PPPK Paruh Waktu (`resources/views/livewire/meetings/check-in.blade.php`, `resources/views/livewire/users/index.blade.php`, `app/Livewire/Forms/LoginForm.php`)**:
+  - Menambahkan *fallback* endpoint HTTP Port 80 (baik via IP internal produksi `10.91.162.2:80` maupun hostname publik) saat koneksi HTTPS mengalami *TLS handshake drop* atau *timeout*.
+  - Mengatasi isu gagal verifikasi NIP PPPK Paruh Waktu saat pengisian presensi rapat dan pencarian pengguna.
+
 ## [1.5.41] - 2026-10-12
 
 ### Diubah
