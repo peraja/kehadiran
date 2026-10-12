@@ -4,6 +4,15 @@ Semua perubahan penting pada proyek ini dicatat dalam berkas ini.
 
 Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/1.0.0/), dan proyek ini mematuhi [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.39] - 2026-10-12
+
+### Diubah
+- **Navigasi 2 Tab pada Halaman Daftar Rapat (`resources/views/livewire/meetings/index.blade.php`)**:
+  - Mengubah antarmuka daftar rapat menjadi sistem 2 tab utama tanpa ikon untuk tampilan yang lebih bersih dan terstruktur.
+  - Untuk peran **Pegawai** dan **Admin OPD**: menampilkan Tab **Rapat Dibuat** dan Tab **Rapat Dihadiri**.
+  - Untuk peran **Pimpinan**: menampilkan Tab **Rapat Ditandatangani** dan Tab **Rapat Dihadiri**.
+  - Menghapus badge Penyelenggara yang redundan pada tabel dan menyelaraskan filter status serta counter badge di masing-masing tab secara dinamis.
+
 ## [1.5.38] - 2026-10-11
 
 ### Ditambahkan
