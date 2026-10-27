@@ -4,6 +4,14 @@ Semua perubahan penting pada proyek ini dicatat dalam berkas ini.
 
 Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/1.0.0/), dan proyek ini mematuhi [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.43] - 2026-10-27
+
+### Diperbaiki
+- **Normalisasi Awalan Jabatan Struktural (`app/Models/Opd.php`)**:
+  - Menambahkan normalisasi otomatis awalan `Kepala` pada fungsi `Opd::normalizePosition` untuk jabatan struktural yang langsung diawali kata unit kerja (`Bidang`, `Bagian`, `Sub Bagian`, `Sub Bidang`, atau `Seksi`) dari API SIMPEG.
+  - Membersihkan spasi ganda nama bidang atau unit kerja pada fungsi `Opd::cleanBidangName`.
+  - Menyesuaikan penentuan posisi penandatangan eselon III dan IV pada fungsi `Opd::syncSignersFromApi` agar dapat mengenali format jabatan tanpa kata `Kepala`.
+
 ## [1.5.42] - 2026-10-12
 
 ### Diperbaiki

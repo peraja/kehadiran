@@ -171,7 +171,7 @@ class Opd extends Model
      */
     public static function cleanBidangName(string $title): string
     {
-        $title = trim($title);
+        $title = preg_replace('/\s+/', ' ', trim($title));
         $res = $title;
 
         if (preg_match('/^(?:Plt\.\s+|Pj\.\s+|Pjs\.\s+)?Sekretaris\b/i', $title)) {
@@ -403,6 +403,16 @@ class Opd extends Model
                 $clean = $namaJbt . ' ' . $jenjang;
             } elseif (preg_match('/^(kepala\s+bidang|kabid|kepala\s+bagian|kabag|kepala\s+seksi|kasi|kepala\s+sub\s+bagian|kasubag|kepala\s+sub\s+bidang|kasubid)\b/i', $clean)) {
                 $clean = self::formatJabatanTitleCase($clean);
+            } elseif (preg_match('/^bidang\s+(.+)$/i', $clean, $m)) {
+                $clean = 'Kepala Bidang ' . self::formatJabatanTitleCase($m[1]);
+            } elseif (preg_match('/^bagian\s+(.+)$/i', $clean, $m)) {
+                $clean = 'Kepala Bagian ' . self::formatJabatanTitleCase($m[1]);
+            } elseif (preg_match('/^(sub\s*bagian|subbag)\s+(.+)$/i', $clean, $m)) {
+                $clean = 'Kepala Sub Bagian ' . self::formatJabatanTitleCase($m[2]);
+            } elseif (preg_match('/^(sub\s*bidang|subbid)\s+(.+)$/i', $clean, $m)) {
+                $clean = 'Kepala Sub Bidang ' . self::formatJabatanTitleCase($m[2]);
+            } elseif (preg_match('/^seksi\s+(.+)$/i', $clean, $m)) {
+                $clean = 'Kepala Seksi ' . self::formatJabatanTitleCase($m[1]);
             } else {
                 $clean = self::formatJabatanTitleCase($clean);
             }
@@ -817,7 +827,7 @@ class Opd extends Model
 
                 $eselon = trim((string)($p['jabatan_jenis_eselon'] ?? ($p['eselon'] ?? null)));
                 $isPlt = str_starts_with(strtolower($title), 'plt') || ($p['jabatan_status_id'] ?? null) == '2';
-                $isSignerPosition = preg_match('/^(?:Plt\.\s+|Pj\.\s+|Pjs\.\s+)?(?:Sekretaris|Kepala\s+(?:Bidang|Bagian)|Inspektur\s+Pembantu|Irban)\b/i', $title);
+                $isSignerPosition = preg_match('/^(?:Plt\.\s+|Pj\.\s+|Pjs\.\s+)?(?:Sekretaris|Kepala\s+(?:Bidang|Bagian)|(?:Bidang|Bagian)\b|Inspektur\s+Pembantu|Irban)\b/i', $title);
                 $isEselonValid = !empty($eselon) && in_array(strtoupper($eselon), $allowedEselons, true);
 
                 // Lolos jika eselon resmi II/III ATAU jika merupakan Plt pada posisi penandatangan eselon III
@@ -826,9 +836,9 @@ class Opd extends Model
                 }
 
                 if (empty($eselon) || $eselon === '-' || !in_array(strtoupper($eselon), $allowedEselons, true)) {
-                    if (preg_match('/^(?:Plt\.\s+)?Sekretaris\b/i', $title) || preg_match('/^(?:Plt\.\s+)?Kepala\s+Bagian\b/i', $title) || preg_match('/^(?:Plt\.\s+)?Inspektur\s+Pembantu\b/i', $title)) {
+                    if (preg_match('/^(?:Plt\.\s+)?Sekretaris\b/i', $title) || preg_match('/^(?:Plt\.\s+)?(?:Kepala\s+)?Bagian\b/i', $title) || preg_match('/^(?:Plt\.\s+)?Inspektur\s+Pembantu\b/i', $title)) {
                         $eselon = 'III.a';
-                    } elseif (preg_match('/^(?:Plt\.\s+)?Kepala\s+Bidang\b/i', $title)) {
+                    } elseif (preg_match('/^(?:Plt\.\s+)?(?:Kepala\s+)?Bidang\b/i', $title)) {
                         $eselon = 'III.b';
                     } else {
                         $eselon = $eselon ?: 'III.b';
