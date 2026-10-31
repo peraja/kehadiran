@@ -7,6 +7,8 @@ Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/
 ## [1.5.44] - 2026-10-31
 
 ### Ditambahkan
+- **Informasi Pembuat Rapat untuk Super Admin (`resources/views/livewire/meetings/index.blade.php`, `resources/views/livewire/meetings/history.blade.php`)**:
+  - Menampilkan lencana identitas pembuat rapat di sebelah nama OPD pada tabel Daftar Rapat dan Riwayat Rapat khusus untuk pengguna dengan peran aktif Super Admin.
 - **Pencatatan Audit Log Manajemen Pengguna (`resources/views/livewire/users/index.blade.php`, `app/Models/AuditLog.php`, `resources/views/livewire/admin/audit-logs.blade.php`)**:
   - Menambahkan pencatatan audit log otomatis untuk aksi penambahan pengguna baru (`create_user`), pembaruan profil dan perubahan peran (`update_user`), serta penghapusan pengguna (`delete_user`).
   - Menambahkan pelabelan aksi dan lencana status untuk kategori aktivitas manajemen pengguna pada model `AuditLog`.

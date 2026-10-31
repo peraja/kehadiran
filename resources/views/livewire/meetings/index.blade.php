@@ -668,12 +668,20 @@ new #[Layout('layouts.app')] class extends Component {
                             @if(auth()->user()->hasActiveRole('admin'))
                             @php
                                 $opdName = $meeting->opd?->name ?? ($meeting->creator?->unit_name ?? 'Pemerintah Kabupaten Sinjai');
+                                $creatorName = $meeting->creator?->name;
                             @endphp
-                            <div class="mt-1.5 flex items-center">
+                            <div class="mt-1.5 flex flex-wrap items-center gap-1.5">
                                 <span class="inline-flex items-center text-[11px] font-bold text-slate-600 bg-slate-100 hover:bg-slate-200/80 transition-colors border border-slate-200/80 px-2 py-0.5 rounded-md max-w-[280px] sm:max-w-md truncate cursor-default shadow-2xs"
                                     title="{{ $opdName }}">
                                     <span class="truncate">{{ $opdName }}</span>
                                 </span>
+                                @if($creatorName)
+                                <span class="inline-flex items-center text-[11px] font-medium text-slate-600 bg-slate-50 border border-slate-200/80 px-2 py-0.5 rounded-md max-w-[220px] truncate cursor-default shadow-2xs"
+                                    title="Dibuat oleh {{ $creatorName }}">
+                                    <span class="text-slate-400 mr-1 font-normal">Oleh</span>
+                                    <span class="truncate">{{ $creatorName }}</span>
+                                </span>
+                                @endif
                             </div>
                             @endif
                         </td>
