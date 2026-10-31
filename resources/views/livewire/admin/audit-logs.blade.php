@@ -269,7 +269,7 @@ new #[Layout('layouts.app')] class extends Component {
 
                         <!-- Keterangan -->
                         <td class="py-4 px-6 text-left">
-                            <div class="text-sm font-semibold text-slate-800 leading-snug break-words line-clamp-2 max-w-xl" title="{{ $log->description }}">
+                            <div class="text-sm font-semibold text-slate-800 leading-relaxed break-words" title="{{ $log->description }}">
                                 {{ $log->description }}
                             </div>
                         </td>

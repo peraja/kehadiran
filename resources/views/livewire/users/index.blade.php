@@ -296,12 +296,11 @@ new #[Layout('layouts.app')] class extends Component {
             $user->forgetPositionsCache();
 
             $newRoles = $user->fresh()->roles->pluck('name')->sort()->values()->toArray();
-            $nipInfo = $user->nip ? "NIP {$user->nip}" : 'tanpa NIP';
-            $desc = "Ubah data pengguna {$user->name}, {$nipInfo}";
+            $formatRoles = fn(array $r) => implode(', ', array_map([User::class, 'getRoleLabel'], $r));
+
+            $desc = $user->name;
             if ($oldRoles !== $newRoles) {
-                $oldRolesStr = implode(', ', $oldRoles) ?: 'tanpa peran';
-                $newRolesStr = implode(', ', $newRoles) ?: 'tanpa peran';
-                $desc .= ", peran berubah dari {$oldRolesStr} menjadi {$newRolesStr}";
+                $desc .= ': ' . ($formatRoles($newRoles) ?: 'tanpa peran');
             }
             AuditLogger::log('update_user', $desc);
 
@@ -320,9 +319,9 @@ new #[Layout('layouts.app')] class extends Component {
             $user->syncRoles($validated['roles']);
             $user->forgetPositionsCache();
 
-            $nipInfo = $user->nip ? "NIP {$user->nip}" : 'tanpa NIP';
-            $rolesStr = implode(', ', $validated['roles']);
-            AuditLogger::log('create_user', "Tambah pengguna {$user->name}, {$nipInfo}, peran {$rolesStr}");
+            $formatRoles = fn(array $r) => implode(', ', array_map([User::class, 'getRoleLabel'], $r));
+            $roleLabelStr = $formatRoles($validated['roles']) ?: 'tanpa peran';
+            AuditLogger::log('create_user', "{$user->name}: {$roleLabelStr}");
 
             session()->flash('message', 'Pengguna berhasil ditambahkan.');
         }
@@ -350,14 +349,12 @@ new #[Layout('layouts.app')] class extends Component {
 
         $user = User::findOrFail($id);
         $deletedName = $user->name;
-        $deletedNip = $user->nip ? "NIP {$user->nip}" : 'tanpa NIP';
-        $deletedRoles = implode(', ', $user->roles->pluck('name')->toArray()) ?: 'tanpa peran';
 
         $user->forgetPositionsCache();
         $user->delete();
         \Illuminate\Support\Facades\Cache::forget('user_role_counts');
 
-        AuditLogger::log('delete_user', "Hapus pengguna {$deletedName}, {$deletedNip}, peran {$deletedRoles}");
+        AuditLogger::log('delete_user', $deletedName);
 
         session()->flash('message', 'Pengguna berhasil dihapus.');
     }

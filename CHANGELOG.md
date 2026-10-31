@@ -12,6 +12,11 @@ Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/
   - Menambahkan pelabelan aksi dan lencana status untuk kategori aktivitas manajemen pengguna pada model `AuditLog`.
   - Menambahkan tab filter `Pengguna` dan penghitung aktivitas terkait pada antarmuka Audit Log Super Admin.
 
+### Diperbaiki
+- **Tampilan Teks Keterangan Audit Log (`resources/views/livewire/admin/audit-logs.blade.php`, `resources/views/livewire/users/index.blade.php`)**:
+  - Menghapus kelas pembatas baris `line-clamp-2` pada kolom Keterangan di tabel log agar teks deskripsi tidak lagi terpotong elipsis.
+  - Mempersingkat format teks deskripsi perubahan dan pembuatan pengguna agar lebih padat dan to-the-point.
+
 ## [1.5.43] - 2026-10-27
 
 ### Diperbaiki
