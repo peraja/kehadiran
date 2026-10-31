@@ -54,6 +54,9 @@ class AuditLog extends Model
             'create_meeting' => 'Buat Rapat',
             'delete_meeting' => 'Hapus Rapat',
             'sign_tte' => 'TTE',
+            'create_user' => 'Tambah Pengguna',
+            'update_user' => 'Ubah Pengguna',
+            'delete_user' => 'Hapus Pengguna',
             default => ucfirst(str_replace('_', ' ', $this->action)),
         };
     }
@@ -69,6 +72,9 @@ class AuditLog extends Model
             'create_meeting' => 'bg-primary-50 text-primary-700 border-primary-200',
             'delete_meeting' => 'bg-rose-50 text-rose-700 border-rose-200',
             'sign_tte' => 'bg-indigo-50 text-indigo-700 border-indigo-200',
+            'create_user' => 'bg-teal-50 text-teal-700 border-teal-200',
+            'update_user' => 'bg-amber-50 text-amber-700 border-amber-200',
+            'delete_user' => 'bg-rose-50 text-rose-700 border-rose-200',
             default => 'bg-slate-50 text-slate-700 border-slate-200',
         };
     }

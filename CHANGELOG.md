@@ -4,6 +4,14 @@ Semua perubahan penting pada proyek ini dicatat dalam berkas ini.
 
 Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/1.0.0/), dan proyek ini mematuhi [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.44] - 2026-10-31
+
+### Ditambahkan
+- **Pencatatan Audit Log Manajemen Pengguna (`resources/views/livewire/users/index.blade.php`, `app/Models/AuditLog.php`, `resources/views/livewire/admin/audit-logs.blade.php`)**:
+  - Menambahkan pencatatan audit log otomatis untuk aksi penambahan pengguna baru (`create_user`), pembaruan profil dan perubahan peran (`update_user`), serta penghapusan pengguna (`delete_user`).
+  - Menambahkan pelabelan aksi dan lencana status untuk kategori aktivitas manajemen pengguna pada model `AuditLog`.
+  - Menambahkan tab filter `Pengguna` dan penghitung aktivitas terkait pada antarmuka Audit Log Super Admin.
+
 ## [1.5.43] - 2026-10-27
 
 ### Diperbaiki

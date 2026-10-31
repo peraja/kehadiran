@@ -67,6 +67,8 @@ new #[Layout('layouts.app')] class extends Component {
                 $query->whereIn('action', ['create_meeting', 'delete_meeting']);
             } elseif ($this->actionFilter === 'tte') {
                 $query->where('action', 'sign_tte');
+            } elseif ($this->actionFilter === 'user') {
+                $query->whereIn('action', ['create_user', 'update_user', 'delete_user']);
             } else {
                 $query->where('action', $this->actionFilter);
             }
@@ -86,7 +88,8 @@ new #[Layout('layouts.app')] class extends Component {
             COUNT(*) as total,
             SUM(CASE WHEN action IN ('login', 'logout') THEN 1 ELSE 0 END) as auth,
             SUM(CASE WHEN action IN ('create_meeting', 'delete_meeting') THEN 1 ELSE 0 END) as meeting,
-            SUM(CASE WHEN action = 'sign_tte' THEN 1 ELSE 0 END) as tte
+            SUM(CASE WHEN action = 'sign_tte' THEN 1 ELSE 0 END) as tte,
+            SUM(CASE WHEN action IN ('create_user', 'update_user', 'delete_user') THEN 1 ELSE 0 END) as user_mgmt
         ")->first();
 
         $counts = [
@@ -94,6 +97,7 @@ new #[Layout('layouts.app')] class extends Component {
             'auth' => (int) ($countRow->auth ?? 0),
             'meeting' => (int) ($countRow->meeting ?? 0),
             'tte' => (int) ($countRow->tte ?? 0),
+            'user' => (int) ($countRow->user_mgmt ?? 0),
         ];
 
         return [
@@ -132,7 +136,7 @@ new #[Layout('layouts.app')] class extends Component {
         <!-- Toolbar (Top Pills + Filter Bar) -->
         <div class="p-5 sm:p-6 border-b border-slate-100 bg-slate-50/50 space-y-4">
             <!-- Filter Pills (Grid) -->
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 w-full" x-data="{ currentFilter: @entangle('actionFilter').live }">
+            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 w-full" x-data="{ currentFilter: @entangle('actionFilter').live }">
                 <button @click="currentFilter = ''"
                     :class="currentFilter === '' ? 'bg-slate-900 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900'"
                     class="inline-flex items-center justify-center gap-1.5 h-10 px-3 sm:px-4 rounded-xl text-sm font-bold transition-all cursor-pointer">
@@ -159,6 +163,13 @@ new #[Layout('layouts.app')] class extends Component {
                     <span :class="currentFilter === 'tte' ? 'bg-indigo-200' : 'bg-indigo-500'" class="w-1.5 h-1.5 rounded-full"></span>
                     TTE
                     <span :class="currentFilter === 'tte' ? 'bg-indigo-700 text-indigo-100' : 'bg-indigo-100 text-indigo-700'" class="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-bold">{{ $counts['tte'] }}</span>
+                </button>
+                <button @click="currentFilter = 'user'"
+                    :class="currentFilter === 'user' ? 'bg-amber-600 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-amber-300 hover:bg-amber-50 hover:text-amber-700'"
+                    class="inline-flex items-center justify-center gap-1.5 h-10 px-3 sm:px-4 rounded-xl text-sm font-bold transition-all cursor-pointer">
+                    <span :class="currentFilter === 'user' ? 'bg-amber-200' : 'bg-amber-500'" class="w-1.5 h-1.5 rounded-full"></span>
+                    Pengguna
+                    <span :class="currentFilter === 'user' ? 'bg-amber-700 text-amber-100' : 'bg-amber-100 text-amber-700'" class="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-bold">{{ $counts['user'] }}</span>
                 </button>
             </div>
 

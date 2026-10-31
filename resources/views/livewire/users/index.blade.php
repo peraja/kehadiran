@@ -4,6 +4,7 @@ use Livewire\Volt\Component;
 use App\Models\Opd;
 use App\Models\OpdSigner;
 use App\Models\User;
+use App\Services\AuditLogger;
 use Spatie\Permission\Models\Role;
 use Livewire\WithPagination;
 use Livewire\Attributes\Layout;
@@ -280,6 +281,8 @@ new #[Layout('layouts.app')] class extends Component {
 
         if ($this->isEdit) {
             $user = User::findOrFail($this->userId);
+            $oldRoles = $user->roles->pluck('name')->sort()->values()->toArray();
+
             $user->update([
                 'name'      => $validated['name'],
                 'nip'       => $validated['nip'],
@@ -291,6 +294,16 @@ new #[Layout('layouts.app')] class extends Component {
 
             $user->syncRoles($validated['roles']);
             $user->forgetPositionsCache();
+
+            $newRoles = $user->fresh()->roles->pluck('name')->sort()->values()->toArray();
+            $nipInfo = $user->nip ? "NIP {$user->nip}" : 'tanpa NIP';
+            $desc = "Ubah data pengguna {$user->name}, {$nipInfo}";
+            if ($oldRoles !== $newRoles) {
+                $oldRolesStr = implode(', ', $oldRoles) ?: 'tanpa peran';
+                $newRolesStr = implode(', ', $newRoles) ?: 'tanpa peran';
+                $desc .= ", peran berubah dari {$oldRolesStr} menjadi {$newRolesStr}";
+            }
+            AuditLogger::log('update_user', $desc);
 
             session()->flash('message', 'Pengguna berhasil diperbarui.');
         } else {
@@ -306,6 +319,10 @@ new #[Layout('layouts.app')] class extends Component {
 
             $user->syncRoles($validated['roles']);
             $user->forgetPositionsCache();
+
+            $nipInfo = $user->nip ? "NIP {$user->nip}" : 'tanpa NIP';
+            $rolesStr = implode(', ', $validated['roles']);
+            AuditLogger::log('create_user', "Tambah pengguna {$user->name}, {$nipInfo}, peran {$rolesStr}");
 
             session()->flash('message', 'Pengguna berhasil ditambahkan.');
         }
@@ -332,9 +349,16 @@ new #[Layout('layouts.app')] class extends Component {
         }
 
         $user = User::findOrFail($id);
+        $deletedName = $user->name;
+        $deletedNip = $user->nip ? "NIP {$user->nip}" : 'tanpa NIP';
+        $deletedRoles = implode(', ', $user->roles->pluck('name')->toArray()) ?: 'tanpa peran';
+
         $user->forgetPositionsCache();
         $user->delete();
         \Illuminate\Support\Facades\Cache::forget('user_role_counts');
+
+        AuditLogger::log('delete_user', "Hapus pengguna {$deletedName}, {$deletedNip}, peran {$deletedRoles}");
+
         session()->flash('message', 'Pengguna berhasil dihapus.');
     }
 
