@@ -4,6 +4,20 @@ Semua perubahan penting pada proyek ini dicatat dalam berkas ini.
 
 Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/1.0.0/), dan proyek ini mematuhi [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.45] - 2026-11-01
+
+### Diubah
+- **Akses Login Pegawai PPPK Paruh Waktu (`app/Livewire/Forms/LoginForm.php`)**:
+  - Mengizinkan akun PPPK Paruh Waktu login ke dasbor dengan peran bawaan `pegawai` menggunakan NIP dan kata sandi SIMPEG.
+  - Menghapus pembatasan khusus pada alur autentikasi login.
+- **Pembersihan Dependensi API Sekunder (`app/Livewire/Forms/LoginForm.php`, `resources/views/livewire/meetings/check-in.blade.php`, `resources/views/livewire/users/index.blade.php`, `config/services.php`)**:
+  - Menghapus seluruh pemanggilan dan konfigurasi API sekunder PPPK Paruh Waktu karena seluruh pegawai paruh waktu telah terdaftar resmi di database SIMPEG Sinjai.
+  - Menyederhanakan alur presensi rapat dan sinkronisasi manajemen pengguna menjadi murni bersumber dari API SIMPEG.
+
+### Diperbaiki
+- **Penanganan Status Batas Frekuensi API SIMPEG (`app/Livewire/Forms/LoginForm.php`, `resources/views/livewire/meetings/check-in.blade.php`)**:
+  - Menambahkan deteksi respon HTTP 429 dan kendala koneksi server SIMPEG agar sistem menampilkan pesan koneksi yang informatif alih-alih keliru menyatakan NIP tidak terdaftar.
+
 ## [1.5.44] - 2026-10-31
 
 ### Ditambahkan

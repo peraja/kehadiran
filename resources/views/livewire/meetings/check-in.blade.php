@@ -17,8 +17,6 @@ new #[Layout('layouts.guest')] class extends Component {
     // Pemkab Sinjai
     public $nip = '';
     public $nip_checked = false;
-    public bool $is_pppk_pw = false;
-    public $pppk_parent_unit = '';
     public $employee_name = '';
     public $employee_jabatan = '';
     public $employee_unit = '';
@@ -60,8 +58,6 @@ new #[Layout('layouts.guest')] class extends Component {
     public function resetNip()
     {
         $this->nip_checked = false;
-        $this->is_pppk_pw = false;
-        $this->pppk_parent_unit = '';
         $this->available_roles = [];
         $this->selected_role_index = 0;
         $this->employee_name = '';
@@ -248,192 +244,33 @@ new #[Layout('layouts.guest')] class extends Component {
             \Illuminate\Support\Facades\Log::warning("SIMPEG API error for NIP {$nip}: " . $e->getMessage());
         }
 
-        // 2. If not found in SIMPEG, check PPPK Paruh Waktu API (Presensi only, do NOT persist to users table)
-        $isUserStub = $user && (trim((string)$user->name) === $nip || trim((string)($user->jabatan ?? '')) === '-' || empty(trim((string)($user->jabatan ?? ''))));
-        if (!$simpegFound && (!$user || $isUserStub)) {
-            $pwUrl = config('services.pppk_pw.url') ?: 'https://tte.sinjaikab.go.id/api/v1/pppk-pw';
-            $pwToken = config('services.pppk_pw.token') ?: 'sJ9k2Lp5mN8qR1t4vW7xZ0y3bC6fH9hS';
-            $pwTimeout = (int) (config('services.pppk_pw.timeout') ?: 8);
-
-            $host = parse_url($pwUrl, PHP_URL_HOST) ?: 'tte.sinjaikab.go.id';
-            $httpUrl = str_replace('https://', 'http://', $pwUrl);
-            $targets = [
-                // 1. Direct HTTPS via internal private IP (Instant ~15ms on Production cPanel)
-                [
-                    'url' => $pwUrl,
-                    'options' => [
-                        'force_ip_resolve' => 'v4',
-                        'curl' => [
-                            CURLOPT_RESOLVE => [
-                                "{$host}:443:10.91.162.2",
-                            ],
-                        ],
-                    ],
-                ],
-                // 2. HTTP Port 80 via internal private IP (Production cPanel fallback)
-                [
-                    'url' => $httpUrl,
-                    'options' => [
-                        'force_ip_resolve' => 'v4',
-                        'curl' => [
-                            CURLOPT_RESOLVE => [
-                                "{$host}:80:10.91.162.2",
-                            ],
-                        ],
-                    ],
-                ],
-                // 3. Standard HTTPS fallback (Local / External)
-                [
-                    'url' => $pwUrl,
-                    'options' => [
-                        'force_ip_resolve' => 'v4',
-                    ],
-                ],
-                // 4. Standard HTTP Port 80 fallback (Bypasses external TLS handshake drops)
-                [
-                    'url' => $httpUrl,
-                    'options' => [
-                        'force_ip_resolve' => 'v4',
-                    ],
-                ],
-            ];
-
-            $pwResponse = null;
-
-            foreach ($targets as $target) {
-                try {
-                    $req = \Illuminate\Support\Facades\Http::timeout(4)
-                        ->connectTimeout(1)
-                        ->withoutVerifying()
-                        ->withHeaders([
-                            'Host' => $host,
-                            'User-Agent' => 'Mozilla/5.0 (compatible; eRapat/1.5; +https://rapat.sinjaikab.go.id)',
-                            'Accept' => 'application/json',
-                        ])
-                        ->withToken($pwToken);
-
-                    if (!empty($target['options'])) {
-                        $req->withOptions($target['options']);
-                    }
-
-                    $pwResponse = $req->get($target['url'], ['nip' => $nip]);
-
-                    if ($pwResponse && $pwResponse->successful()) {
-                        break;
-                    }
-                } catch (\Throwable $e) {
-                    \Illuminate\Support\Facades\Log::warning("PPPK-PW check failed on {$target['url']}: " . $e->getMessage());
-                }
-            }
-
-            if ($pwResponse) {
-                \Illuminate\Support\Facades\Log::info("PPPK-PW HTTP status for {$nip}: " . $pwResponse->status() . " - body: " . substr($pwResponse->body(), 0, 100));
-            } else {
-                \Illuminate\Support\Facades\Log::warning("PPPK-PW response was null for {$nip}");
-            }
-
-            if ($pwResponse && $pwResponse->successful()) {
-                $pwJson = $pwResponse->json();
-                $pwList = $pwJson['data'] ?? [];
-                if (!empty($pwList) && isset($pwList[0])) {
-                    $pw = $pwList[0];
-                    $name = $pw['name'] ?? $nip;
-                    $rawJabatan = trim((string)($pw['jabatan'] ?? ''));
-                    $jabatan = $rawJabatan ?: 'PPPK Paruh Waktu';
-                    $unit_id = $pw['api_unit_id'] ?? null;
-                    $rawUnit = trim((string)($pw['unit_kerja'] ?? ''));
-
-                    // Resolve Parent OPD strictly from master Opd table
-                    $opdName = 'Pemerintah Kabupaten Sinjai';
-                    if ($unit_id) {
-                        $opd = \App\Models\Opd::where('unit_id', $unit_id)->first();
-                        if ($opd) {
-                            $opdName = $opd->name;
-                        }
-                    }
-
-                    $childUnit = null;
-                    $parentUnit = $opdName;
-
-                    if (!empty($rawUnit)) {
-                        $normOpd = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $opdName));
-                        $normRaw = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $rawUnit));
-                        if ($normOpd !== $normRaw) {
-                            $childUnit = $rawUnit;
-                        }
-                    }
-
-                    $displayUnit = $childUnit ?: $parentUnit;
-
-                    // If a stub user existed locally, clean it up or update
-                    if ($isUserStub && $user) {
-                        try {
-                            $user->delete();
-                            $user = null;
-                        } catch (\Throwable $e) {
-                            $user->update([
-                                'name' => $name,
-                                'jabatan' => $jabatan,
-                                'unit_name' => $displayUnit,
-                            ]);
-                        }
-                    }
-
-                    // Check if PPPK-PW already checked in to this meeting
-                    $existingAttendance = $this->meeting->attendances()
-                        ->where(function ($q) use ($nip, $name, $user) {
-                            $q->where('guest_nip', $nip)
-                              ->orWhere(function ($sub) use ($name) {
-                                  $sub->whereNull('user_id')->where('guest_name', $name);
-                              });
-                            if ($user) {
-                                $q->orWhere('user_id', $user->id);
-                            }
-                        })
-                        ->first();
-
-                    if ($existingAttendance) {
-                        $this->status = 'success';
-                        $this->employee_name = $existingAttendance->guest_name ?: $name;
-                        $this->employee_unit = $existingAttendance->guest_agency ?: $displayUnit;
-                        $this->employee_jabatan = $existingAttendance->guest_position ?: $jabatan;
-                        $this->recorded_time = $existingAttendance->check_in ? $existingAttendance->check_in->format('H:i') . ' WITA' : now()->format('H:i') . ' WITA';
-                        $this->message = 'Presensi sudah tercatat sebelumnya.';
-                        return;
-                    }
-
-                    // Set state without creating User record in database (no login access)
-                    $this->is_pppk_pw = true;
-                    $this->employee_id = null;
-                    $this->employee_name = $name;
-                    $this->employee_jabatan = $jabatan;
-                    $this->employee_unit = $displayUnit;
-                    $this->pppk_parent_unit = $childUnit ? $parentUnit : '';
-                    $this->nip_checked = true;
-                    return;
-                }
-            }
-        }
-
         if (!$user) {
             $this->nip_checked = false;
-            $this->addError('nip', 'NIP tidak ditemukan.');
+            if (isset($pegawaiResponse) && ($pegawaiResponse->status() === 429 || $pegawaiResponse->serverError())) {
+                $this->addError('nip', 'Koneksi SIMPEG sedang sibuk. Silakan coba beberapa saat lagi.');
+            } else {
+                $this->addError('nip', 'NIP tidak ditemukan.');
+            }
             return;
         }
 
         // Check if already checked in
-        $existingAttendance = $this->meeting->attendances()->where('user_id', $user->id)->first();
+        $existingAttendance = $this->meeting->attendances()
+            ->where(function ($q) use ($user, $nip) {
+                $q->where('user_id', $user->id)
+                  ->orWhere('guest_nip', $nip);
+            })
+            ->first();
         if ($existingAttendance) {
             $this->status = 'success';
-            $this->employee_name = $user->name;
-            $this->employee_unit = $displayUnit ?: ($user->unit_name ?: 'Pemkab Sinjai');
-            $this->employee_jabatan = $user->jabatan ?: 'Pegawai';
+            $this->employee_name = $existingAttendance->guest_name ?: $user->name;
+            $this->employee_unit = $existingAttendance->guest_agency ?: ($displayUnit ?: ($user->unit_name ?: 'Pemkab Sinjai'));
+            $this->employee_jabatan = $existingAttendance->guest_position ?: ($user->jabatan ?: 'Pegawai');
             $this->recorded_time = $existingAttendance->check_in ? $existingAttendance->check_in->format('H:i') . ' WITA' : now()->format('H:i') . ' WITA';
             $this->message = 'Presensi sudah tercatat sebelumnya.';
             return;
         }
 
-        $this->is_pppk_pw = false;
         $this->employee_id = $user->id;
         $this->employee_name = $user->name;
         $this->employee_jabatan = $user->jabatan ?: 'Pegawai';

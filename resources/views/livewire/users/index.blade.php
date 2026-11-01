@@ -149,100 +149,10 @@ new #[Layout('layouts.app')] class extends Component {
                 return;
             }
         } catch (\Exception $e) {
-            // Lanjutkan ke pengecekan PPPK-PW
+            \Illuminate\Support\Facades\Log::warning("SIMPEG lookup error for NIP {$nip}: " . $e->getMessage());
         }
 
-        // Fallback: Cek API PPPK Paruh Waktu
-        $pwUrl = config('services.pppk_pw.url') ?: 'https://tte.sinjaikab.go.id/api/v1/pppk-pw';
-        $pwToken = config('services.pppk_pw.token') ?: 'sJ9k2Lp5mN8qR1t4vW7xZ0y3bC6fH9hS';
-        $host = parse_url($pwUrl, PHP_URL_HOST) ?: 'tte.sinjaikab.go.id';
-        $httpUrl = str_replace('https://', 'http://', $pwUrl);
-
-        $targets = [
-            [
-                'url' => $pwUrl,
-                'options' => [
-                    'force_ip_resolve' => 'v4',
-                    'curl' => [
-                        CURLOPT_RESOLVE => [
-                            "{$host}:443:10.91.162.2",
-                        ],
-                    ],
-                ],
-            ],
-            [
-                'url' => $httpUrl,
-                'options' => [
-                    'force_ip_resolve' => 'v4',
-                    'curl' => [
-                        CURLOPT_RESOLVE => [
-                            "{$host}:80:10.91.162.2",
-                        ],
-                    ],
-                ],
-            ],
-            [
-                'url' => $pwUrl,
-                'options' => [
-                    'force_ip_resolve' => 'v4',
-                ],
-            ],
-            [
-                'url' => $httpUrl,
-                'options' => [
-                    'force_ip_resolve' => 'v4',
-                ],
-            ],
-        ];
-
-        foreach ($targets as $target) {
-            try {
-                $req = Http::timeout(4)->connectTimeout(1)->withoutVerifying()->withToken($pwToken);
-                if (!empty($target['options'])) {
-                    $req->withOptions($target['options']);
-                }
-                $res = $req->get($target['url'], ['nip' => $nip]);
-                if ($res->successful()) {
-                    $json = $res->json();
-                    if (!empty($json['data'][0])) {
-                        $pw = $json['data'][0];
-                        $this->name = $pw['name'] ?? $this->name;
-                        $this->jabatan = trim((string)($pw['jabatan'] ?? '')) ?: 'PPPK Paruh Waktu';
-                        $this->nik = trim((string)($pw['nik'] ?? '')) ?: $this->nik;
-                        $this->pangkat = '';
-
-                        $unit_id = $pw['api_unit_id'] ?? null;
-                        $rawUnit = trim((string)($pw['unit_kerja'] ?? ''));
-                        $opdName = 'Pemerintah Kabupaten Sinjai';
-                        if ($unit_id) {
-                            $opd = Opd::where('unit_id', $unit_id)->first();
-                            if ($opd) {
-                                $opdName = $opd->name;
-                            }
-                        }
-
-                        $childUnit = null;
-                        $parentUnit = $opdName;
-                        if (!empty($rawUnit)) {
-                            $normOpd = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $opdName));
-                            $normRaw = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $rawUnit));
-                            if ($normOpd !== $normRaw) {
-                                $childUnit = $rawUnit;
-                            }
-                        }
-
-                        $this->unit_name = $childUnit ?: $parentUnit;
-                        $this->apiSynced = true;
-                        $this->apiStatusMessage = 'Data pegawai berhasil disinkronkan dari Database PPPK Paruh Waktu.';
-                        return;
-                    }
-                }
-            } catch (\Throwable $e) {
-                // Abaikan dan coba target berikutnya
-            }
-        }
-
-        $this->addError('nip', 'NIP tidak ditemukan dalam database SIMPEG maupun PPPK Paruh Waktu.');
+        $this->addError('nip', 'NIP tidak ditemukan di SIMPEG Sinjai.');
     }
 
     public function saveUser()
