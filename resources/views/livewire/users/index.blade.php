@@ -243,6 +243,10 @@ new #[Layout('layouts.app')] class extends Component {
             Opd::where('leader_nip', $nip)->update(['leader_nik' => $nik]);
         }
 
+        if (!empty($nip)) {
+            MeetingAttendance::whereNull('user_id')->where('guest_nip', $nip)->update(['user_id' => $user->id]);
+        }
+
         \Illuminate\Support\Facades\Cache::forget('user_role_counts');
         $this->dispatch('close-modal', 'user-form-modal');
         $this->reset(['userId', 'name', 'nip', 'nik', 'roles', 'unit_name', 'jabatan', 'pangkat', 'password', 'apiSynced', 'apiStatusMessage']);

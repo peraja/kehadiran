@@ -4,6 +4,13 @@ Semua perubahan penting pada proyek ini dicatat dalam berkas ini.
 
 Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/1.0.0/), dan proyek ini mematuhi [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.46] - 2026-11-01
+
+### Ditambahkan
+- **Penautan Otomatis Presensi Terdahulu ke Akun Baru (`app/Livewire/Forms/LoginForm.php`, `resources/views/livewire/meetings/check-in.blade.php`, `resources/views/livewire/users/index.blade.php`)**:
+  - Menautkan seluruh riwayat kehadiran rapat terdahulu (`meeting_attendances`) yang sebelumnya berstatus `user_id = null` ke ID pengguna baru berdasarkan kesesuaian NIP secara otomatis saat pegawai melakukan login pertama kali, melakukan presensi rapat baru, atau saat didaftarkan oleh admin.
+  - Memastikan seluruh daftar rapat yang pernah dihadiri langsung terdata pada ringkasan dasbor pribadi pegawai.
+
 ## [1.5.45] - 2026-11-01
 
 ### Diubah

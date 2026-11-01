@@ -239,6 +239,10 @@ new #[Layout('layouts.guest')] class extends Component {
                 } else {
                     $user->update($userData);
                 }
+
+                \App\Models\MeetingAttendance::whereNull('user_id')
+                    ->where('guest_nip', $nip)
+                    ->update(['user_id' => $user->id]);
             }
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::warning("SIMPEG API error for NIP {$nip}: " . $e->getMessage());
