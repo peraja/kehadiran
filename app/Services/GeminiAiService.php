@@ -17,9 +17,9 @@ class GeminiAiService
     protected array $models = [
         'gemini-3.6-flash',       // Primary: Cepat, stabil & akurat
         'gemini-3.5-flash',       // Fallback 1: Sangat stabil
-        'gemini-3.1-flash-lite',  // Fallback 2: Ringan & hemat kuota
-        'gemini-3-flash-preview', // Fallback 3: Preview flash engine
-        'gemini-3.7-flash',       // Fallback 4: Next-gen flash engine
+        'gemini-3.5-flash-lite',  // Fallback 2: Ringan, hemat kuota & responsif
+        'gemini-3.1-flash-lite',  // Fallback 3: Ringan & hemat kuota
+        'gemini-3-flash-preview', // Fallback 4: Preview flash engine
     ];
 
     /**
@@ -139,62 +139,14 @@ class GeminiAiService
     }
 
     /**
-     * Generate meeting minutes from uploaded audio file and optional notes.
-     */
-    public function generateMinutesFromAudio(Meeting $meeting, $audioFile, ?string $additionalNotes = null): array
-    {
-        if (!$this->isConfigured()) {
-            return [
-                'success' => false,
-                'message' => 'API Key Gemini belum dikonfigurasi.',
-            ];
-        }
-
-        try {
-            $mimeType = $audioFile->getMimeType() ?: 'audio/mp3';
-            $fileContent = file_get_contents($audioFile->getRealPath());
-            $base64Audio = base64_encode($fileContent);
-
-            $inlineAudio = [
-                'mime_type' => $mimeType,
-                'data' => $base64Audio,
-            ];
-
-            $context = $this->buildContextPrompt($meeting);
-            $userPrompt = "Dengarkan rekaman audio rapat terlampir"
-                . (!empty($additionalNotes) ? " beserta catatan pendukung berikut:\n\"\"\"" . trim($additionalNotes) . "\"\"\"" : "")
-                . ".\n\nSusun notulen kedinasan resmi (1. Pembukaan, 2. Pembahasan, 3. Kesimpulan) dengan memanfaatkan data konteks rapat secara proporsional.";
-
-            return $this->callGeminiApi($context, $userPrompt, $inlineAudio);
-        } catch (\Exception $e) {
-            Log::error('Gemini generateMinutesFromAudio error: ' . $e->getMessage());
-            return [
-                'success' => false,
-                'message' => 'Gagal memproses audio.',
-            ];
-        }
-    }
-
-    /**
      * Call Gemini API with automatic model fallback iteration.
      */
-    protected function callGeminiApi(string $context, string $userPrompt, ?array $inlineAudio = null): array
+    protected function callGeminiApi(string $context, string $userPrompt): array
     {
         $apiKey = $this->getApiKey();
         $systemInstruction = $this->buildSystemInstruction();
 
-        $parts = [];
-        if ($inlineAudio) {
-            $parts[] = [
-                'inline_data' => [
-                    'mime_type' => $inlineAudio['mime_type'],
-                    'data' => $inlineAudio['data'],
-                ]
-            ];
-        }
-
         $fullPrompt = (!empty($context) ? "[Konteks Rapat: {$context}]\n\n" : "") . $userPrompt;
-        $parts[] = ['text' => $fullPrompt];
 
         $payload = [
             'system_instruction' => [
@@ -204,7 +156,9 @@ class GeminiAiService
             ],
             'contents' => [
                 [
-                    'parts' => $parts
+                    'parts' => [
+                        ['text' => $fullPrompt]
+                    ]
                 ]
             ],
             'generationConfig' => [
@@ -297,14 +251,20 @@ INSTRUCTION;
      */
     protected function buildContextPrompt(Meeting $meeting): string
     {
+        // Pastikan atribut dan relasi rapat dimuat ulang dari basis data terbaru
+        if ($meeting->exists) {
+            $meeting->refresh();
+            $meeting->load(['opd', 'creator']);
+        }
+
         $opdName = $meeting->opd?->name ?? ($meeting->creator?->unit_name ?? 'Pemerintah Kabupaten Sinjai');
         $dateFormatted = $meeting->start_time ? $meeting->start_time->translatedFormat('l, d F Y') : ($meeting->date ? $meeting->date->translatedFormat('l, d F Y') : '-');
         $timeFormatted = $meeting->start_time && $meeting->end_time
             ? $meeting->start_time->format('H:i') . ' - ' . $meeting->end_time->format('H:i') . ' WITA'
             : ($meeting->start_time ? $meeting->start_time->format('H:i') . ' WITA' : '-');
 
-        $signerName = $meeting->signer_name ?? ($meeting->signer?->name ?? '-');
-        $signerTitle = $meeting->signer_title ?? ($meeting->signer?->title ?? 'Pimpinan');
+        $signerName = !empty($meeting->signer_name) ? $meeting->signer_name : ($meeting->opd?->leader_name ?: '-');
+        $signerTitle = !empty($meeting->signer_title) ? $meeting->signer_title : ($meeting->opd?->leader_title ?: 'Pimpinan');
 
         // Unsur/Instansi peserta yang hadir (tanpa nama individu)
         $attendingUnits = $meeting->attendances()
@@ -324,12 +284,11 @@ INSTRUCTION;
 
         return <<<CONTEXT
 DATA & KONTEKS RAPAT:
-- Judul / Topik Rapat : {$meeting->title}
-- Agenda Pembahasan  : {$meeting->agenda}
-- Penyelenggara / OPD : {$opdName}
-- Waktu Pelaksanaan   : {$dateFormatted}, Pukul {$timeFormatted}
-- Tempat / Lokasi     : {$meeting->location}
-- Pimpinan / Pengesah : {$signerName} ({$signerTitle})
+- Agenda / Topik Rapat : {$meeting->title}
+- Penyelenggara / OPD  : {$opdName}
+- Waktu Pelaksanaan    : {$dateFormatted}, Pukul {$timeFormatted}
+- Tempat / Lokasi      : {$meeting->location}
+- Pimpinan / Pengesah  : {$signerName} ({$signerTitle})
 - Unsur / Instansi Peserta : {$attendeesSummary}
 CONTEXT;
     }

@@ -26,11 +26,13 @@ new #[Layout('layouts.app')] class extends Component {
     // State AI Notulen Modal
     public string $aiResult = '';
     public string $aiErrorMessage = '';
+    public string $aiModel = '';
 
     public function mount(Meeting $meeting)
     {
         $this->meeting = $meeting;
         $this->minutes = $meeting->minutes;
+        $this->aiModel = app(GeminiAiService::class)->getModel();
 
         $user = auth()->user();
         $isAttendee = $meeting->attendances()->where('user_id', $user->id)->exists();
@@ -99,6 +101,7 @@ new #[Layout('layouts.app')] class extends Component {
         $this->resetErrorBag('content');
         $this->aiErrorMessage = '';
         $this->aiResult = '';
+        $this->aiModel = $aiService->getModel();
 
         if (!$aiService->isConfigured()) {
             $this->aiErrorMessage = 'API Key Gemini belum dikonfigurasi.';
@@ -114,10 +117,12 @@ new #[Layout('layouts.app')] class extends Component {
             return;
         }
 
+        $this->meeting->refresh();
         $response = $aiService->generateMinutesFromText($this->meeting, $rawText);
 
         if ($response['success']) {
             $this->aiResult = $response['content'];
+            $this->aiModel = $response['model'] ?? $this->aiModel;
         } else {
             $this->aiErrorMessage = $response['message'];
         }
@@ -430,9 +435,16 @@ new #[Layout('layouts.app')] class extends Component {
              class="p-6 space-y-4">
             <!-- Header Modal -->
             <div class="flex justify-between items-center pb-3 border-b border-slate-100">
-                <h2 class="text-base font-extrabold text-slate-900">
-                    Notulen AI
-                </h2>
+                <div class="flex items-center gap-2">
+                    <h2 class="text-base font-extrabold text-slate-900">
+                        Notulen AI
+                    </h2>
+                    @if($aiModel)
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-purple-50 text-purple-700 border border-purple-200 font-mono">
+                        {{ $aiModel }}
+                    </span>
+                    @endif
+                </div>
                 <button type="button" x-on:click="$dispatch('close-modal', 'ai-minutes-modal')" wire:click="closeAiModal" class="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer" title="Tutup">
                     <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -441,12 +453,15 @@ new #[Layout('layouts.app')] class extends Component {
             </div>
 
             <!-- Loading State Saat AI Memproses -->
-            <div x-show="isProcessing" class="py-24 flex flex-col items-center justify-center text-center space-y-3 w-full">
+            <div x-show="isProcessing" class="py-20 flex flex-col items-center justify-center text-center space-y-3.5 w-full">
                 <svg class="animate-spin w-10 h-10 text-primary-600 mx-auto" fill="none" viewBox="0 0 24 24">
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
                 </svg>
-                <p class="text-sm font-semibold text-slate-600">Merapikan notulen...</p>
+                <div class="space-y-1">
+                    <p class="text-sm font-bold text-slate-800">Merapikan notulen</p>
+                    <p class="text-xs text-slate-500 font-mono">{{ $aiModel ?: app(\App\Services\GeminiAiService::class)->getModel() }}</p>
+                </div>
             </div>
 
             <!-- Content Area Saat Selesai Loading -->

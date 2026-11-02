@@ -4,6 +4,23 @@ Semua perubahan penting pada proyek ini dicatat dalam berkas ini.
 
 Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/1.0.0/), dan proyek ini mematuhi [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.47] - 2026-11-02
+
+### Diubah
+- **Pembaruan Model Google Gemini AI (`app/Services/GeminiAiService.php`)**:
+  - Memperbarui rantai prioritas model AI menjadi `gemini-3.6-flash` (utama), `gemini-3.5-flash` (cadangan 1), `gemini-3.5-flash-lite` (cadangan 2), `gemini-3.1-flash-lite` (cadangan 3), dan `gemini-3-flash-preview` (cadangan 4).
+  - Menghapus ketergantungan pada model lama yang didepresiasi serta model preview yang belum stabil.
+- **Pembersihan Pemrosesan Rekaman Suara (`app/Services/GeminiAiService.php`)**:
+  - Menghapus metode `generateMinutesFromAudio` dan penanganan data audio multimodal inline agar fokus penuh pada perapian catatan notulen berbasis teks.
+- **Optimasi Konteks Prompt AI (`app/Services/GeminiAiService.php`)**:
+  - Mengonsolidasikan baris judul dan agenda rapat menjadi satu baris definitif guna menghindari duplikasi nilai pada prompt AI.
+  - Memastikan data dan relasi rapat dimuat ulang secara segar (`$meeting->refresh()`) langsung dari basis data sebelum diproses oleh AI.
+
+### Ditambahkan
+- **Indikator Model AI pada Antarmuka Notulen (`resources/views/livewire/meetings/notulen.blade.php`)**:
+  - Menampilkan nama model AI aktif secara langsung pada teks animasi *loading state* saat proses notulen AI berlangsung.
+  - Menampilkan lencana nama model AI pada header modal Notulen AI yang otomatis terbarui sesuai model yang berhasil mengeksekusi permintaan.
+
 ## [1.5.46] - 2026-11-01
 
 ### Ditambahkan
