@@ -435,16 +435,9 @@ new #[Layout('layouts.app')] class extends Component {
              class="p-6 space-y-4">
             <!-- Header Modal -->
             <div class="flex justify-between items-center pb-3 border-b border-slate-100">
-                <div class="flex items-center gap-2">
-                    <h2 class="text-base font-extrabold text-slate-900">
-                        Notulen AI
-                    </h2>
-                    @if($aiModel)
-                    <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-purple-50 text-purple-700 border border-purple-200 font-mono">
-                        {{ $aiModel }}
-                    </span>
-                    @endif
-                </div>
+                <h2 class="text-base font-extrabold text-slate-900">
+                    Notulen AI
+                </h2>
                 <button type="button" x-on:click="$dispatch('close-modal', 'ai-minutes-modal')" wire:click="closeAiModal" class="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer" title="Tutup">
                     <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />

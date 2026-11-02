@@ -19,7 +19,6 @@ Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/
 ### Ditambahkan
 - **Indikator Model AI pada Antarmuka Notulen (`resources/views/livewire/meetings/notulen.blade.php`)**:
   - Menampilkan nama model AI aktif secara langsung pada teks animasi *loading state* saat proses notulen AI berlangsung.
-  - Menampilkan lencana nama model AI pada header modal Notulen AI yang otomatis terbarui sesuai model yang berhasil mengeksekusi permintaan.
 
 ## [1.5.46] - 2026-11-01
 
