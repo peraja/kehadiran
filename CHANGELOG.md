@@ -4,6 +4,14 @@ Semua perubahan penting pada proyek ini dicatat dalam berkas ini.
 
 Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/1.0.0/), dan proyek ini mematuhi [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.49] - 2026-11-10
+
+### Diperbaiki
+- **Penanganan Galat Unggah Foto HEIC Dokumentasi Rapat (`resources/views/livewire/meetings/dokumentasi.blade.php`)**:
+  - Menambahkan pengamanan `isPreviewable()` sebelum memanggil URL pratinjau sementara foto guna mencegah galat fatal 500 saat berkas non-pratinjau diunggah.
+  - Membatasi atribut `accept` pada formulir unggah berkas ke format spesifik (`.jpg,.jpeg,.png,.webp`) agar peramban iOS secara otomatis mengonversi foto HEIC menjadi JPEG.
+  - Menambahkan validasi tipe MIME gambar pada Livewire dan pemeriksaan format berkas di sisi peramban.
+
 ## [1.5.48] - 2026-11-10
 
 ### Diubah

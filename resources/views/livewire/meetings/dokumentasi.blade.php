@@ -167,9 +167,10 @@ new #[Layout('layouts.app')] class extends Component {
 
         try {
             $this->validate([
-                'photos.*' => 'image|max:5120',
+                'photos.*' => 'image|mimes:jpeg,jpg,png,webp|max:5120',
             ], [
                 'photos.*.image' => 'File harus berupa gambar.',
+                'photos.*.mimes' => 'Format foto harus JPG, PNG, atau WEBP.',
                 'photos.*.max' => 'Ukuran foto maksimal 5 MB.',
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
@@ -187,10 +188,11 @@ new #[Layout('layouts.app')] class extends Component {
 
         $this->validate([
             'photos' => 'required',
-            'photos.*' => 'image|max:5120',
+            'photos.*' => 'image|mimes:jpeg,jpg,png,webp|max:5120',
         ], [
             'photos.required' => 'Pilih foto terlebih dahulu.',
             'photos.*.image' => 'File harus berupa gambar.',
+            'photos.*.mimes' => 'Format foto harus JPG, PNG, atau WEBP.',
             'photos.*.max' => 'Ukuran foto maksimal 5 MB.',
         ]);
 
@@ -337,8 +339,17 @@ new #[Layout('layouts.app')] class extends Component {
                     checkFiles(e) {
                         this.clientError = '';
                         const files = e.target.files;
-                        if (!files) return;
+                        if (!files || files.length === 0) return;
+                        const allowedExts = ['jpg', 'jpeg', 'png', 'webp'];
                         for (let i = 0; i < files.length; i++) {
+                            const name = files[i].name || '';
+                            const ext = name.split('.').pop().toLowerCase();
+                            if (ext === 'heic' || ext === 'heif') {
+                                this.clientError = 'Format HEIC tidak didukung. Harap gunakan foto JPG, PNG, atau WEBP.';
+                                e.target.value = '';
+                                $wire.set('photos', []);
+                                return false;
+                            }
                             if (files[i].size > 5 * 1024 * 1024) {
                                 this.clientError = 'Ukuran foto maksimal 5 MB.';
                                 e.target.value = '';
@@ -348,10 +359,10 @@ new #[Layout('layouts.app')] class extends Component {
                         }
                     }
                 }"
-                    x-on:livewire-upload-error="clientError = 'Ukuran foto maksimal 5 MB.'; $wire.set('photos', [])">
+                    x-on:livewire-upload-error="clientError = 'Ukuran foto maksimal 5 MB atau format tidak didukung.'; $wire.set('photos', [])">
                     <label for="photos" class="block text-sm font-bold text-slate-700 mb-1.5">Pilih Foto</label>
                     <div class="relative">
-                        <input type="file" wire:model="photos" :key="$uploadKey" id="photos" multiple accept="image/*"
+                        <input type="file" wire:model="photos" :key="$uploadKey" id="photos" multiple accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
                             @change="checkFiles($event)"
                             class="block w-full text-sm text-slate-500 file:mr-3 sm:file:mr-4 file:py-2.5 sm:file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-white file:text-slate-700 hover:file:bg-slate-100 hover:file:text-slate-900 file:shadow-xs file:ring-1 file:ring-slate-300 file:transition-all focus:outline-none cursor-pointer bg-white rounded-xl border border-slate-300 p-1.5" required>
                     </div>
@@ -389,7 +400,16 @@ new #[Layout('layouts.app')] class extends Component {
                     <div class="p-3 bg-white border border-slate-200 rounded-xl flex gap-3 overflow-x-auto shadow-2xs">
                         @foreach($photos as $index => $photo)
                         <div class="relative group shrink-0">
+                            @if(method_exists($photo, 'isPreviewable') && $photo->isPreviewable())
                             <img src="{{ $photo->temporaryUrl() }}" class="h-20 w-24 object-cover rounded-xl border border-slate-200 shadow-2xs">
+                            @else
+                            <div class="h-20 w-24 flex flex-col items-center justify-center bg-slate-100 rounded-xl border border-slate-200 text-slate-400 p-1 text-center">
+                                <svg class="w-6 h-6 mb-1 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
+                                <span class="text-[10px] font-bold uppercase truncate max-w-full">{{ method_exists($photo, 'getClientOriginalExtension') ? $photo->getClientOriginalExtension() : 'FOTO' }}</span>
+                            </div>
+                            @endif
                             <button type="button" wire:click="removeTempPhoto({{ $index }})" class="absolute -top-1.5 -right-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-full p-1 shadow-sm transition-transform active:scale-90" title="Hapus foto ini">
                                 <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
