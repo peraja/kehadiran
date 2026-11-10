@@ -4,6 +4,14 @@ Semua perubahan penting pada proyek ini dicatat dalam berkas ini.
 
 Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/1.0.0/), dan proyek ini mematuhi [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.50] - 2026-11-10
+
+### Ditambahkan
+- **Dukungan Penuh Unggah Foto HEIC Dokumentasi Rapat (`resources/views/livewire/meetings/dokumentasi.blade.php`, `resources/js/app.js`)**:
+  - Mengizinkan pemilihan berkas berformat `.heic` dan `.heif` dari galeri kamera ponsel iPhone dan gawai modern lainnya.
+  - Mengintegrasikan pustaka `heic2any` secara dinamis (*lazy load*) untuk mengonversi berkas HEIC menjadi JPEG standar di peramban pengguna sebelum diunggah ke server.
+  - Menambahkan indikator progres konversi berkas dan perlindungan terhadap klik ganda pada formulir unggah dokumentasi.
+
 ## [1.5.49] - 2026-11-10
 
 ### Diperbaiki

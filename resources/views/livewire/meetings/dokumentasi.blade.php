@@ -336,44 +336,96 @@ new #[Layout('layouts.app')] class extends Component {
             <form wire:submit="savePhotos" class="space-y-4">
                 <div x-data="{
                     clientError: '',
-                    checkFiles(e) {
+                    isProcessing: false,
+                    statusText: '',
+                    async handleFiles(e) {
                         this.clientError = '';
-                        const files = e.target.files;
-                        if (!files || files.length === 0) return;
-                        const allowedExts = ['jpg', 'jpeg', 'png', 'webp'];
-                        for (let i = 0; i < files.length; i++) {
-                            const name = files[i].name || '';
-                            const ext = name.split('.').pop().toLowerCase();
-                            if (ext === 'heic' || ext === 'heif') {
-                                this.clientError = 'Format HEIC tidak didukung. Harap gunakan foto JPG, PNG, atau WEBP.';
-                                e.target.value = '';
-                                $wire.set('photos', []);
-                                return false;
+                        const rawFiles = Array.from(e.target.files || []);
+                        if (rawFiles.length === 0) return;
+
+                        this.isProcessing = true;
+                        this.statusText = 'Memeriksa berkas foto...';
+
+                        const processedFiles = [];
+
+                        try {
+                            for (let i = 0; i < rawFiles.length; i++) {
+                                const file = rawFiles[i];
+                                const name = file.name || '';
+                                const ext = name.split('.').pop().toLowerCase();
+
+                                if (ext === 'heic' || ext === 'heif' || file.type === 'image/heic' || file.type === 'image/heif') {
+                                    this.statusText = 'Mengonversi foto HEIC ' + (i + 1) + ' dari ' + rawFiles.length + '...';
+                                    const heic2any = await window.loadHeic2any();
+                                    const convertedBlob = await heic2any({
+                                        blob: file,
+                                        toType: 'image/jpeg',
+                                        quality: 0.85
+                                    });
+                                    const blob = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
+                                    const newName = name.replace(/\.(heic|heif)$/i, '.jpg');
+                                    const convertedFile = new File([blob], newName, { type: 'image/jpeg', lastModified: Date.now() });
+
+                                    if (convertedFile.size > 5 * 1024 * 1024) {
+                                        this.clientError = 'Foto ' + name + ' melebihi batas 5 MB setelah dikonversi.';
+                                        this.resetInput();
+                                        return;
+                                    }
+                                    processedFiles.push(convertedFile);
+                                } else {
+                                    if (file.size > 5 * 1024 * 1024) {
+                                        this.clientError = 'Foto ' + name + ' melebihi batas maksimal 5 MB.';
+                                        this.resetInput();
+                                        return;
+                                    }
+                                    processedFiles.push(file);
+                                }
                             }
-                            if (files[i].size > 5 * 1024 * 1024) {
-                                this.clientError = 'Ukuran foto maksimal 5 MB.';
-                                e.target.value = '';
-                                $wire.set('photos', []);
-                                return false;
-                            }
+
+                            this.statusText = 'Mengunggah foto...';
+
+                            $wire.uploadMultiple('photos', processedFiles,
+                                () => {
+                                    this.isProcessing = false;
+                                    this.statusText = '';
+                                },
+                                () => {
+                                    this.isProcessing = false;
+                                    this.statusText = '';
+                                    this.clientError = 'Gagal mengunggah foto. Pastikan koneksi stabil.';
+                                    this.resetInput();
+                                }
+                            );
+                        } catch (err) {
+                            console.error('HEIC conversion error:', err);
+                            this.clientError = 'Gagal memproses berkas foto HEIC.';
+                            this.resetInput();
                         }
+                    },
+                    resetInput() {
+                        this.isProcessing = false;
+                        this.statusText = '';
+                        const inputEl = document.getElementById('photos-input');
+                        if (inputEl) inputEl.value = '';
+                        $wire.set('photos', []);
                     }
                 }"
-                    x-on:livewire-upload-error="clientError = 'Ukuran foto maksimal 5 MB atau format tidak didukung.'; $wire.set('photos', [])">
-                    <label for="photos" class="block text-sm font-bold text-slate-700 mb-1.5">Pilih Foto</label>
+                    x-effect="if ($wire.photos.length === 0 && !isProcessing) { const el = document.getElementById('photos-input'); if (el) el.value = ''; }">
+                    <label for="photos-input" class="block text-sm font-bold text-slate-700 mb-1.5">Pilih Foto</label>
                     <div class="relative">
-                        <input type="file" wire:model="photos" :key="$uploadKey" id="photos" multiple accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
-                            @change="checkFiles($event)"
-                            class="block w-full text-sm text-slate-500 file:mr-3 sm:file:mr-4 file:py-2.5 sm:file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-white file:text-slate-700 hover:file:bg-slate-100 hover:file:text-slate-900 file:shadow-xs file:ring-1 file:ring-slate-300 file:transition-all focus:outline-none cursor-pointer bg-white rounded-xl border border-slate-300 p-1.5" required>
+                        <input type="file" :key="$uploadKey" id="photos-input" multiple accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.jpg,.jpeg,.png,.webp,.heic,.heif"
+                            @change="handleFiles($event)"
+                            :disabled="isProcessing"
+                            class="block w-full text-sm text-slate-500 file:mr-3 sm:file:mr-4 file:py-2.5 sm:file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-white file:text-slate-700 hover:file:bg-slate-100 hover:file:text-slate-900 file:shadow-xs file:ring-1 file:ring-slate-300 file:transition-all focus:outline-none cursor-pointer bg-white rounded-xl border border-slate-300 p-1.5">
                     </div>
-                    <div wire:loading wire:target="photos" class="mt-2 text-xs font-semibold text-primary-700 bg-primary-50 border border-primary-200 px-3.5 py-2 rounded-xl flex items-center gap-2">
+                    <div x-show="isProcessing" x-cloak class="mt-2 text-xs font-semibold text-primary-700 bg-primary-50 border border-primary-200 px-3.5 py-2 rounded-xl flex items-center gap-2">
                         <svg class="animate-spin w-4 h-4 text-primary-600 shrink-0" fill="none" viewBox="0 0 24 24">
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
                         </svg>
-                        <span>Memuat foto...</span>
+                        <span x-text="statusText"></span>
                     </div>
-                    <p class="text-xs text-slate-400 font-medium mt-1">Format JPG, PNG, atau WEBP maksimal 5 MB per foto.</p>
+                    <p class="text-xs text-slate-400 font-medium mt-1">Format JPG, PNG, WEBP, atau HEIC kamera ponsel maksimal 5 MB per foto.</p>
 
                     <div x-show="clientError" x-cloak class="mt-2 text-xs font-semibold text-rose-700 bg-rose-50 border border-rose-200 px-3.5 py-2 rounded-xl flex items-center gap-2">
                         <svg class="w-4 h-4 text-rose-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -395,7 +447,7 @@ new #[Layout('layouts.app')] class extends Component {
                 <div class="pt-2">
                     <div class="flex items-center justify-between mb-2">
                         <p class="text-xs font-bold text-slate-700">Pratinjau ({{ count($photos) }} foto):</p>
-                        <button type="button" wire:click="$set('photos', [])" class="text-[11px] font-bold text-rose-600 hover:text-rose-700">Batal Semua</button>
+                        <button type="button" wire:click="$set('photos', [])" @click="resetInput()" class="text-[11px] font-bold text-rose-600 hover:text-rose-700">Batal Semua</button>
                     </div>
                     <div class="p-3 bg-white border border-slate-200 rounded-xl flex gap-3 overflow-x-auto shadow-2xs">
                         @foreach($photos as $index => $photo)
@@ -422,7 +474,7 @@ new #[Layout('layouts.app')] class extends Component {
                 @endif
 
                 <div class="flex justify-end pt-2">
-                    <button type="submit" wire:loading.attr="disabled" wire:target="photos, savePhotos" class="w-full sm:w-auto inline-flex items-center justify-center px-6 py-3 sm:py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl font-bold text-sm transition-all shadow-sm gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
+                    <button type="submit" :disabled="isProcessing" wire:loading.attr="disabled" wire:target="photos, savePhotos" class="w-full sm:w-auto inline-flex items-center justify-center px-6 py-3 sm:py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-xl font-bold text-sm transition-all shadow-sm gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
                         <svg wire:loading.remove wire:target="savePhotos" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
                         </svg>
