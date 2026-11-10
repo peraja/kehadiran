@@ -4,6 +4,13 @@ Semua perubahan penting pada proyek ini dicatat dalam berkas ini.
 
 Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/1.0.0/), dan proyek ini mematuhi [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.48] - 2026-11-10
+
+### Diubah
+- **Peningkatan Batas Ukuran Unggah Dokumentasi Rapat (`resources/views/livewire/meetings/dokumentasi.blade.php`)**:
+  - Menaikkan batas ukuran foto dokumentasi rapat dari 2 MB menjadi 5 MB pada validasi sisi peramban dan validasi sisi server.
+  - Memperbarui teks petunjuk format serta pesan galat validasi ukuran foto.
+
 ## [1.5.47] - 2026-11-02
 
 ### Diubah

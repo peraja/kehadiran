@@ -167,10 +167,10 @@ new #[Layout('layouts.app')] class extends Component {
 
         try {
             $this->validate([
-                'photos.*' => 'image|max:2048',
+                'photos.*' => 'image|max:5120',
             ], [
                 'photos.*.image' => 'File harus berupa gambar.',
-                'photos.*.max' => 'Ukuran foto maksimal 2MB.',
+                'photos.*.max' => 'Ukuran foto maksimal 5 MB.',
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
             $this->photos = [];
@@ -187,11 +187,11 @@ new #[Layout('layouts.app')] class extends Component {
 
         $this->validate([
             'photos' => 'required',
-            'photos.*' => 'image|max:2048',
+            'photos.*' => 'image|max:5120',
         ], [
             'photos.required' => 'Pilih foto terlebih dahulu.',
             'photos.*.image' => 'File harus berupa gambar.',
-            'photos.*.max' => 'Ukuran foto maksimal 2MB.',
+            'photos.*.max' => 'Ukuran foto maksimal 5 MB.',
         ]);
 
         $manager = new \Intervention\Image\ImageManager(new \Intervention\Image\Drivers\Gd\Driver());
@@ -339,8 +339,8 @@ new #[Layout('layouts.app')] class extends Component {
                         const files = e.target.files;
                         if (!files) return;
                         for (let i = 0; i < files.length; i++) {
-                            if (files[i].size > 2 * 1024 * 1024) {
-                                this.clientError = 'Ukuran foto maksimal 2MB.';
+                            if (files[i].size > 5 * 1024 * 1024) {
+                                this.clientError = 'Ukuran foto maksimal 5 MB.';
                                 e.target.value = '';
                                 $wire.set('photos', []);
                                 return false;
@@ -348,7 +348,7 @@ new #[Layout('layouts.app')] class extends Component {
                         }
                     }
                 }"
-                    x-on:livewire-upload-error="clientError = 'Ukuran foto maksimal 2MB.'; $wire.set('photos', [])">
+                    x-on:livewire-upload-error="clientError = 'Ukuran foto maksimal 5 MB.'; $wire.set('photos', [])">
                     <label for="photos" class="block text-sm font-bold text-slate-700 mb-1.5">Pilih Foto</label>
                     <div class="relative">
                         <input type="file" wire:model="photos" :key="$uploadKey" id="photos" multiple accept="image/*"
@@ -362,7 +362,7 @@ new #[Layout('layouts.app')] class extends Component {
                         </svg>
                         <span>Memuat foto...</span>
                     </div>
-                    <p class="text-xs text-slate-400 font-medium mt-1">Format JPG, PNG, WEBP (maks. 2MB per foto).</p>
+                    <p class="text-xs text-slate-400 font-medium mt-1">Format JPG, PNG, atau WEBP maksimal 5 MB per foto.</p>
 
                     <div x-show="clientError" x-cloak class="mt-2 text-xs font-semibold text-rose-700 bg-rose-50 border border-rose-200 px-3.5 py-2 rounded-xl flex items-center gap-2">
                         <svg class="w-4 h-4 text-rose-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
